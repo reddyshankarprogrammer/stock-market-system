@@ -1,0 +1,29 @@
+# IntelliJ
+.idea/
+
+# Build
+target/
+build/
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java
+*.class
+
+# Local Config
+application-local.yml
+
+# Kubernetes
+*.kubeconfig
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar

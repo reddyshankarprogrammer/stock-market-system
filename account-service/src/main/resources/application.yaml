@@ -1,0 +1,223 @@
+server:
+  port: ${ACCOUNT_SERVICE_PORT:8086}
+
+# Hosts of the infrastructure and downstream services.
+# .env host names (mysql, kafka) only resolve inside the docker network,
+# so the default profile targets localhost; the docker profile overrides these.
+hosts:
+  mysql: localhost
+  kafka: localhost:${KAFKA_PORT:9092}
+  market-data-service: localhost
+  user-service: localhost
+
+spring:
+  application:
+    name: account-service
+  # Load the shared .env at the repo root (works when started from the service dir or the repo root).
+  # Real environment variables still take precedence over these values.
+  config:
+    import:
+      - optional:file:../.env[.properties]
+      - optional:file:.env[.properties]
+
+  datasource:
+    url: jdbc:mysql://${hosts.mysql}:${MYSQL_PORT:3306}/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_ROOT_PASSWORD}
+  jpa:
+    hibernate:
+      # Flyway owns the schema (src/main/resources/db/migration); Hibernate only checks it.
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    # The schema is shared with the other services, so it is not empty on the first run:
+    # baseline at version 0 so V1 still runs, and use a history table of our own.
+    table: account_flyway_schema_history
+    baseline-on-migrate: true
+    baseline-version: 0
+
+  servlet:
+    multipart:
+      # Statement uploads: 20 MB per file (account.statements.max-file-size checks it again).
+      max-file-size: 20MB
+      max-request-size: 21MB
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          user-service:
+            connect-timeout: 2000
+            read-timeout: 3000
+
+  kafka:
+    bootstrap-servers: ${hosts.kafka}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+
+# Base URLs of the services this one calls.
+services:
+  market-data:
+    url: http://${hosts.market-data-service}:${MARKET_DATA_SERVICE_PORT:8082}
+    connect-timeout: 2s
+    read-timeout: 3s
+  user:
+    url: http://${hosts.user-service}:${USER_SERVICE_PORT:8081}
+
+# Topics this service publishes to.
+kafka:
+  topics:
+    trade-executed: account.trade.executed
+    fund-transaction: account.fund.transaction
+
+account:
+  statements:
+    # Relative to the working directory (the service folder when started by scripts/start-all.ps1).
+    storage-dir: ${ACCOUNT_STATEMENTS_DIR:uploads/statements}
+    max-file-size: 20MB
+
+  # Broker statement layouts. Header aliases are matched case-insensitively; the defaults follow
+  # each broker's current export and can be changed here without a code release.
+  # Section labels map a label fragment to CHARGE:<ChargeType>, TAX:<TaxType>, a summary field
+  # (REALIZED_PNL, UNREALIZED_PNL, CHARGES, TAXES, NET_PNL) or IGNORE.
+  import:
+    max-rows: 100000
+    header-search-rows: 50
+    brokers:
+      zerodha:
+        trade-mode: EXECUTION
+        date-formats: ["yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd", "dd-MM-yyyy", "dd/MM/yyyy"]
+        columns:
+          symbol: [symbol, tradingsymbol, trading symbol]
+          side: [trade_type, trade type, type]
+          quantity: [quantity, qty]
+          price: [price, trade price, average price]
+          date: [order_execution_time, order execution time, trade_date, trade date]
+          exchange: [exchange]
+          id: [trade_id, trade id]
+        charges:
+          label-columns: [account head, particulars, charge, charges]
+          amount-columns: [debit, amount, value]
+          labels:
+            "[brokerage]": CHARGE:BROKERAGE
+            "[exchange transaction charges]": CHARGE:EXCHANGE_FEE
+            "[clearing charges]": CHARGE:EXCHANGE_FEE
+            "[securities transaction tax]": CHARGE:STT
+            "[stt]": CHARGE:STT
+            "[dp charges]": CHARGE:DP_CHARGE
+            "[sebi turnover fee]": CHARGE:OTHER
+            "[stamp duty]": CHARGE:OTHER
+            "[gst]": TAX:GST
+            "[integrated gst]": TAX:GST
+            "[central gst]": TAX:GST
+            "[state gst]": TAX:GST
+        summary:
+          label-columns: [account head, particulars, charge, charges, summary]
+          amount-columns: [debit, amount, value]
+          labels:
+            "[realized p&l]": REALIZED_PNL
+            "[realised p&l]": REALIZED_PNL
+            "[unrealized p&l]": UNREALIZED_PNL
+            "[unrealised p&l]": UNREALIZED_PNL
+            "[total charges]": CHARGES
+            "[net p&l]": NET_PNL
+      groww:
+        trade-mode: CLOSED_POSITION
+        default-exchange: NSE
+        date-formats: ["dd-MM-yyyy", "dd MMM yyyy", "dd/MM/yyyy", "yyyy-MM-dd"]
+        columns:
+          symbol: [symbol, stock name, scrip name, name]
+          quantity: [quantity, qty]
+          buydate: [buy date]
+          buyprice: [buy price, avg buy price, average buy price]
+          selldate: [sell date]
+          sellprice: [sell price, avg sell price, average sell price]
+          pnl: [realised p&l, realized p&l, realised pnl, realized pnl, p&l]
+          exchange: [exchange]
+        charges:
+          label-columns: [charges, particulars, charge]
+          amount-columns: [amount, value]
+          labels:
+            "[brokerage]": CHARGE:BROKERAGE
+            "[exchange transaction charges]": CHARGE:EXCHANGE_FEE
+            "[stt]": CHARGE:STT
+            "[securities transaction tax]": CHARGE:STT
+            "[dp charges]": CHARGE:DP_CHARGE
+            "[sebi]": CHARGE:OTHER
+            "[stamp duty]": CHARGE:OTHER
+            "[gst]": TAX:GST
+            "[total]": IGNORE
+        summary:
+          label-columns: [summary, particulars]
+          amount-columns: [amount, value]
+          labels:
+            "[realised p&l]": REALIZED_PNL
+            "[realized p&l]": REALIZED_PNL
+            "[unrealised p&l]": UNREALIZED_PNL
+            "[unrealized p&l]": UNREALIZED_PNL
+            "[charges]": CHARGES
+      binance:
+        trade-mode: EXECUTION
+        default-exchange: BINANCE
+        date-formats: ["yyyy-MM-dd HH:mm:ss", "yy-MM-dd HH:mm:ss"]
+        columns:
+          date: [date(utc), date (utc), date, time]
+          symbol: [pair, market, symbol]
+          side: [side, type]
+          price: [price]
+          quantity: [executed, filled, amount]
+          brokerage: [fee]
+          id: [trade id, tradeid, order id]
+      exness:
+        trade-mode: CLOSED_POSITION
+        default-exchange: EXNESS
+        signed-row-charges: true
+        date-formats: ["yyyy-MM-dd HH:mm:ss", "yyyy.MM.dd HH:mm:ss", "yyyy.MM.dd HH:mm"]
+        columns:
+          id: [ticket, position, order]
+          symbol: [symbol, instrument]
+          side: [type, direction]
+          quantity: [lots, volume, volume (lots)]
+          openprice: [opening_price, opening price, open price]
+          closeprice: [closing_price, closing price, close price]
+          opendate: [opening_time_utc, opening time, open time]
+          closedate: [closing_time_utc, closing time, close time]
+          brokerage: [commission]
+          fee: [swap, swaps]
+          pnl: [profit]
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,info}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:always}
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    com.stockmarket.accountservice: DEBUG
+
+---
+# Running inside docker-compose on trading-network: use the container host names from .env.
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+hosts:
+  mysql: ${MYSQL_HOST}
+  kafka: ${KAFKA_BOOTSTRAP_SERVERS}
+  market-data-service: market-data-service
+  user-service: user-service

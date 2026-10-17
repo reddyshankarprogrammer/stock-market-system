@@ -1,0 +1,166 @@
+services:
+
+  # ==========================================
+  # MYSQL
+  # ==========================================
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+    networks:
+      - trading-network
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # REDIS
+  # ==========================================
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: unless-stopped
+
+    command: redis-server --appendonly yes
+
+    ports:
+      - "${REDIS_PORT}:6379"
+
+    volumes:
+      - redis-data:/data
+
+    networks:
+      - trading-network
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # KAFKA (KRaft Mode)
+  # ==========================================
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    restart: unless-stopped
+
+    ports:
+      - "${KAFKA_PORT}:9092"
+
+    environment:
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:9093,PLAINTEXT_HOST://0.0.0.0:9092
+
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+      KAFKA_HEAP_OPTS: ${KAFKA_HEAP_OPTS}
+
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+
+    networks:
+      - trading-network
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "kafka-broker-api-versions --bootstrap-server localhost:9092 > /dev/null 2>&1"
+        ]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+
+  # ==========================================
+  # KAFKA UI
+  # ==========================================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: unless-stopped
+
+    ports:
+      - "${KAFKA_UI_PORT}:8080"
+
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+
+    depends_on:
+      - kafka
+
+    networks:
+      - trading-network
+
+  # ==========================================
+  # ACCOUNT SERVICE
+  # Opt-in: only starts with `docker compose --profile app up -d`, so the default
+  # `docker compose up -d` (used by scripts/start-all.ps1) still runs infrastructure only.
+  # ==========================================
+  account-service:
+    build: ./account-service
+    container_name: account-service
+    restart: unless-stopped
+    profiles: ["app"]
+
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+    ports:
+      - "${ACCOUNT_SERVICE_PORT}:8086"
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+    networks:
+      - trading-network
+
+volumes:
+  mysql-data:
+  redis-data:
+  kafka-data:
+
+networks:
+  trading-network:
+    driver: bridge

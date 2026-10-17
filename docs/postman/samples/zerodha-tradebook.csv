@@ -1,0 +1,9 @@
+symbol,isin,trade_date,exchange,segment,series,trade_type,auction,quantity,price,trade_id,order_id,order_execution_time
+INFY,INE009A01021,2026-10-01,NSE,EQ,EQ,buy,false,10,1500,7001,9001,2026-10-01T09:20:00
+INFY,INE009A01021,2026-10-02,NSE,EQ,EQ,buy,false,10,1700,7002,9002,2026-10-02T09:20:00
+INFY,INE009A01021,2026-10-05,NSE,EQ,EQ,sell,false,5,1800,7003,9003,2026-10-05T10:00:00
+
+Account Head,Debit
+Brokerage,20
+Securities Transaction Tax,15.5
+Integrated GST,3.6

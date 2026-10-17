@@ -1,0 +1,94 @@
+server:
+  port: ${API_GATEWAY_PORT:8080}
+
+
+# Hosts of the downstream services.
+# The default profile targets localhost; the docker profile overrides these.
+hosts:
+  user-service: localhost
+  market-data-service: localhost
+  order-service: localhost
+  portfolio-service: localhost
+  notification-service: localhost
+  account-service: localhost
+
+spring:
+  application:
+    name: api-gateway
+
+  # Load the shared .env at the repo root (works when started from the service dir or the repo root).
+  # Real environment variables still take precedence over these values.
+  config:
+    import:
+      - optional:file:../.env[.properties]
+      - optional:file:.env[.properties]
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          # JWT validation is done by JwtAuthFilter (servlet filter) for every /api/** request.
+          routes:
+            - id: user-service
+              uri: http://${hosts.user-service}:${USER_SERVICE_PORT:8081}
+              predicates:
+                - Path=/api/v1/users/**
+
+            - id: market-data-service
+              uri: http://${hosts.market-data-service}:${MARKET_DATA_SERVICE_PORT:8082}
+              predicates:
+                - Path=/api/v1/market-data/**
+
+            - id: order-service
+              uri: http://${hosts.order-service}:${ORDER_SERVICE_PORT:8083}
+              predicates:
+                - Path=/api/v1/orders/**
+
+            - id: portfolio-service
+              uri: http://${hosts.portfolio-service}:${PORTFOLIO_SERVICE_PORT:8084}
+              predicates:
+                - Path=/api/v1/portfolio/**
+
+            - id: notification-service
+              uri: http://${hosts.notification-service}:${NOTIFICATION_SERVICE_PORT:8085}
+              predicates:
+                - Path=/api/v1/notifications/**
+
+            - id: account-service
+              uri: http://${hosts.account-service}:${ACCOUNT_SERVICE_PORT:8086}
+              predicates:
+                - Path=/api/v1/accounts/**,/api/v1/trades/**,/api/v1/holdings/**,/api/v1/fees/**,/api/v1/taxes/**,/api/v1/dividends/**,/api/v1/interest/**,/api/v1/statements/**,/api/v1/charges/**
+
+# Must match user-service's jwt.secret / jwt.issuer, or every token is rejected.
+jwt:
+  secret: ${JWT_SECRET}
+  issuer: ${JWT_ISSUER:stock-market-system}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,info}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:always}
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    com.stockmarket.apigateway: DEBUG
+
+---
+# Running inside docker-compose on trading-network: use the container host names.
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+hosts:
+  user-service: user-service
+  market-data-service: market-data-service
+  order-service: order-service
+  portfolio-service: portfolio-service
+  notification-service: notification-service
+  account-service: account-service

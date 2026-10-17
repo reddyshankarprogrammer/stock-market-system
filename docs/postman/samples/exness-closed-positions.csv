@@ -1,0 +1,3 @@
+ticket,opening_time_utc,closing_time_utc,type,lots,symbol,opening_price,closing_price,commission,swap,profit
+5001,2026-10-01 08:00:00,2026-10-01 12:00:00,buy,0.10,EURUSD,1.0850,1.0900,-0.70,-0.30,50.00
+5002,2026-10-02 09:00:00,2026-10-02 10:30:00,sell,0.20,XAUUSD,2400.00,2390.00,-1.40,0.00,200.00

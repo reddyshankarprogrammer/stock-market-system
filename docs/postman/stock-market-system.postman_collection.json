@@ -1,0 +1,4025 @@
+{
+  "info": {
+    "_postman_id": "8f3d6c2a-5b1e-4c7d-9a0f-2e6b4d8c1a57",
+    "name": "Stock Market System",
+    "description": "End-to-end tests for the stock-market microservices.\n\nRun folders 0-6 in order, or the whole collection with the Collection Runner. Register saves accessToken / refreshToken / userId to the environment; every later gateway request uses that token (collection-level Bearer auth).\n\nFolder 7 calls each service directly on its own port with an X-User-Id header, for debugging one service without the gateway.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "0. Health",
+      "description": "Actuator health of each service on its own port. All should be UP.",
+      "item": [
+        {
+          "name": "api-gateway health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/actuator/health",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "user-service health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{userServiceUrl}}/actuator/health",
+              "host": [
+                "{{userServiceUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "market-data-service health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{marketDataServiceUrl}}/actuator/health",
+              "host": [
+                "{{marketDataServiceUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "order-service health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderServiceUrl}}/actuator/health",
+              "host": [
+                "{{orderServiceUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "portfolio-service health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{portfolioServiceUrl}}/actuator/health",
+              "host": [
+                "{{portfolioServiceUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "notification-service health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notificationServiceUrl}}/actuator/health",
+              "host": [
+                "{{notificationServiceUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "account-service health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('UP', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{accountServiceUrl}}/actuator/health",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Users & Auth",
+      "description": "user-service through the gateway. Register creates a fresh user on every run.",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Unique email per run so Register never collides with an existing user",
+                  "pm.environment.set('email', `user${Date.now()}@example.com`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const b = pm.response.json();",
+                  "pm.environment.set('accessToken', b.accessToken);",
+                  "pm.environment.set('refreshToken', b.refreshToken);",
+                  "pm.environment.set('userId', b.userId);",
+                  "pm.test('Wallet starts at 10000', () => pm.expect(b.walletBalance).to.eql(10000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/users/register",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "register"
+              ]
+            },
+            "description": "Publishes user.registered; notification-service creates a WELCOME notification.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"firstName\": \"Asha\",\n  \"lastName\": \"Rao\",\n  \"initialBalance\": 10000\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('accessToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/users/login",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "login"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Login - wrong password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected', () => pm.expect(pm.response.code).to.be.oneOf([400, 401]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/users/login",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "login"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"wrong-password\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Register - invalid body",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Field errors', () => pm.expect(pm.response.json().errors).to.have.property('email'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/users/register",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "register"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"not-an-email\",\n  \"password\": \"123\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Get my profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Is me', () => pm.expect(pm.response.json().id).to.eql(pm.environment.get('userId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/users/me",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get user by id (own)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/users/{{userId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Add funds",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Balance increased', () => pm.expect(pm.response.json().walletBalance).to.be.above(10000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/users/{{userId}}/funds/add?amount=5000",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{userId}}",
+                "funds",
+                "add"
+              ],
+              "query": [
+                {
+                  "key": "amount",
+                  "value": "5000"
+                }
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Market Data",
+      "description": "market-data-service through the gateway (public, no token). Prices move every market.price-update-interval ms.",
+      "item": [
+        {
+          "name": "All stocks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Seeded stocks present', () => pm.expect(pm.response.json().length).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/market-data/stocks",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "market-data",
+                "stocks"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Stock by symbol",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('lastPrice', pm.response.json().price);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/market-data/stocks/{{symbol}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "market-data",
+                "stocks",
+                "{{symbol}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Stock list (text)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/market-data/stocks/list",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "market-data",
+                "stocks",
+                "list"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Unknown symbol",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/market-data/stocks/ZZZZ",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "market-data",
+                "stocks",
+                "ZZZZ"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Orders",
+      "description": "order-service through the gateway. Orders fill at the current market price; BUY deducts and SELL credits the wallet via user-service.",
+      "item": [
+        {
+          "name": "Place BUY order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const o = pm.response.json();",
+                  "pm.environment.set('orderId', o.id);",
+                  "pm.test('Executed', () => pm.expect(o.status).to.eql('EXECUTED'));",
+                  "pm.test('total = price x qty', () => pm.expect(o.totalAmount).to.be.closeTo(o.price * o.quantity, 0.01));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/orders",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "description": "Publishes order.executed; portfolio-service adds the holding and notification-service notifies.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"{{symbol}}\",\n  \"type\": \"BUY\",\n  \"quantity\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "Place SELL order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Executed', () => pm.expect(pm.response.json().status).to.eql('EXECUTED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/orders",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"{{symbol}}\",\n  \"type\": \"SELL\",\n  \"quantity\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "Get order by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Same order', () => pm.expect(pm.response.json().id).to.eql(pm.environment.get('orderId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/orders/{{orderId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "{{orderId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "My orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has orders', () => pm.expect(pm.response.json().length).to.be.at.least(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/orders/my-orders",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "my-orders"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "BUY - insufficient funds",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Reason given', () => pm.expect(pm.response.json().message).to.include('Insufficient'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/orders",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "description": "Saved as FAILED; order.failed is published and an ORDER_FAILED notification is created.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"{{symbol}}\",\n  \"type\": \"BUY\",\n  \"quantity\": 1000000\n}"
+            }
+          }
+        },
+        {
+          "name": "BUY - unknown symbol",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/orders",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"ZZZZ\",\n  \"type\": \"BUY\",\n  \"quantity\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "BUY - invalid body",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/orders",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"\",\n  \"quantity\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "Order not found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/orders/does-not-exist",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "does-not-exist"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Portfolio",
+      "description": "portfolio-service through the gateway. Holdings update asynchronously from order.executed; if a check fails right after placing orders, send it again after a second.",
+      "item": [
+        {
+          "name": "My portfolio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.response.json();",
+                  "const h = p.holdings.find(x => x.symbol === pm.environment.get('symbol'));",
+                  "pm.test('Holding = BUY 5 - SELL 2', () => pm.expect(h && h.quantity).to.eql(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/portfolio/me",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portfolio",
+                "me"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Notifications",
+      "description": "notification-service through the gateway. Expect WELCOME, ORDER_EXECUTED and ORDER_FAILED for this run's user.",
+      "item": [
+        {
+          "name": "My notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const types = pm.response.json().map(n => n.type);",
+                  "['WELCOME', 'ORDER_EXECUTED', 'ORDER_FAILED'].forEach(t =>",
+                  "    pm.test(`Has ${t}`, () => pm.expect(types).to.include(t)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/notifications",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Gateway security",
+      "description": "Negative tests for JwtAuthFilter and the ownership checks.",
+      "item": [
+        {
+          "name": "No token -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/orders/my-orders",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "my-orders"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Garbage token -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer not-a-real-token"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/orders/my-orders",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "my-orders"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Refresh token as access -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{refreshToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/orders/my-orders",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "my-orders"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Spoofed X-User-Id is ignored",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Still me', () => pm.expect(pm.response.json().id).to.eql(pm.environment.get('userId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "someone-else"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/users/me",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Other user's profile -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/users/someone-else",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "someone-else"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Internal deduct blocked -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/users/{{userId}}/funds/deduct?amount=1",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{userId}}",
+                "funds",
+                "deduct"
+              ],
+              "query": [
+                {
+                  "key": "amount",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Account Service - platform trading",
+      "description": "account-service PLATFORM account through the gateway: cash, market-price trades, fees, taxes, ledger.",
+      "item": [
+        {
+          "name": "Create platform account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const a = pm.response.json();",
+                  "pm.environment.set('platformAccountId', a.id);",
+                  "pm.test('PLATFORM, ACTIVE, zero balance', () => { pm.expect(a.brokerName).to.eql('PLATFORM'); pm.expect(a.status).to.eql('ACTIVE'); pm.expect(a.balance).to.eql(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountName\": \"Main\",\n  \"accountType\": \"INDIVIDUAL\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Deposit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Balance 10000', () => pm.expect(pm.response.json().balanceAfter).to.eql(10000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}/deposit",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}",
+                "deposit"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 10000.0,\n  \"reference\": \"BANK-1\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Buy AAPL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const t = pm.response.json();",
+                  "pm.environment.set('platformTradeId', t.id);",
+                  "pm.test('Executed at market price with fees', () => { pm.expect(t.source).to.eql('PLATFORM'); pm.expect(t.feeAmount).to.be.above(0); pm.expect(t.balanceAfter).to.be.below(10000); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/trades/buy",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "trades",
+                "buy"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"{{platformAccountId}}\",\n  \"symbol\": \"AAPL\",\n  \"quantity\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "Sell AAPL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Realized profit set', () => pm.expect(pm.response.json().realizedProfit).to.not.be.null);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/trades/sell",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "trades",
+                "sell"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"{{platformAccountId}}\",\n  \"symbol\": \"AAPL\",\n  \"quantity\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "Sell more than held -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/trades/sell",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "trades",
+                "sell"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"{{platformAccountId}}\",\n  \"symbol\": \"AAPL\",\n  \"quantity\": 100\n}"
+            }
+          }
+        },
+        {
+          "name": "Holdings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('AAPL 3 held', () => pm.expect(pm.response.json()[0].quantity).to.eql(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/holdings/account/{{platformAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "holdings",
+                "account",
+                "{{platformAccountId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Withdraw",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Withdrawal fee charged', () => pm.expect(pm.response.json().feeAmount).to.eql(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}/withdraw",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}",
+                "withdraw"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100.0\n}"
+            }
+          }
+        },
+        {
+          "name": "Fund transactions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const types = pm.response.json().map(t => t.transactionType);",
+                  "pm.test('Deposit and withdrawal listed', () => pm.expect(types).to.include.members(['DEPOSIT', 'WITHDRAWAL']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}/fund-transactions",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}",
+                "fund-transactions"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Summary",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('One open position', () => pm.expect(pm.response.json().openPositions).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}/summary",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}",
+                "summary"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Statement (today)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('today', new Date().toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const s = pm.response.json();",
+                  "pm.test('Closing = opening + credits - debits', () => pm.expect(s.closingBalance).to.be.closeTo(s.openingBalance + s.totalCredits - s.totalDebits, 0.001));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}/statement?from={{today}}&to={{today}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}",
+                "statement"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{today}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Ledger (today)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const l = pm.response.json();",
+                  "pm.test('Entries numbered from 1', () => pm.expect(l[0].entryNumber).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}/ledger?from={{today}}&to={{today}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}",
+                "ledger"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{today}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Fee schedule",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('4 fees', () => pm.expect(pm.response.json().length).to.eql(4));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/fees",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fees"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Fee preview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Brokerage capped: 27.25', () => pm.expect(pm.response.json().totalFees).to.eql(27.25));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/fees/calculate",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fees",
+                "calculate"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 50000.0,\n  \"kind\": \"TRADE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Fees charged to account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const types = pm.response.json().map(f => f.feeType);",
+                  "pm.test('Trade and withdrawal fees', () => pm.expect(types).to.include.members(['BROKERAGE', 'PLATFORM', 'WITHDRAWAL']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/fees/account/{{platformAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fees",
+                "account",
+                "{{platformAccountId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Tax rules",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('3 active rules', () => pm.expect(pm.response.json().length).to.eql(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/taxes",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "taxes"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Tax preview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('0.50 trade tax + 10.00 CGT', () => pm.expect(pm.response.json().totalTax).to.eql(10.5));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/taxes/calculate",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "taxes",
+                "calculate"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"SELL\",\n  \"tradeValue\": 1000.0,\n  \"realizedProfit\": 100.0\n}"
+            }
+          }
+        },
+        {
+          "name": "Taxes charged to account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('SELL trade tax recorded', () => pm.expect(pm.response.json().map(t => t.taxType)).to.include('TRADE_TAX'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/taxes/account/{{platformAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "taxes",
+                "account",
+                "{{platformAccountId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Performance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.response.json();",
+                  "pm.test('net = gross - charges - taxes', () => pm.expect(p.netProfit).to.be.closeTo(p.grossProfit - p.totalCharges - p.totalTaxes, 0.001));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}/performance",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}",
+                "performance"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Audit trail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const actions = pm.response.json().map(a => a.action);",
+                  "['CREATE', 'DEPOSIT', 'BUY', 'SELL', 'FEE_CALCULATION', 'TAX_CALCULATION', 'HOLDING_UPDATE', 'WITHDRAW'].forEach(x =>",
+                  "    pm.test(`Has ${x}`, () => pm.expect(actions).to.include(x)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}/audit",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}",
+                "audit"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Rename account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json();",
+                  "pm.test('Renamed', () => { pm.expect(a.accountName).to.eql('Main portfolio'); pm.expect(a.remarks).to.eql('renamed from Postman'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountName\": \"Main portfolio\",\n  \"remarks\": \"renamed from Postman\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Close account with balance -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Open a spare account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('spareAccountId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountName\": \"Spare\",\n  \"accountType\": \"INDIVIDUAL\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Close empty account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json();",
+                  "pm.test('CLOSED with closedAt', () => { pm.expect(a.status).to.eql('CLOSED'); pm.expect(a.closedAt).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{spareAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{spareAccountId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Deposit into closed account -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{spareAccountId}}/deposit",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{spareAccountId}}",
+                "deposit"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 10.0\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Account Service - tracking accounts and statements",
+      "description": "Tracking accounts: a ZERODHA account end to end (docs/postman/samples/zerodha-tradebook.csv), then one upload per other broker sample (Groww, Binance, Exness). Covers import history, holdings, charges, taxes, manual trades, adjustments. In the Postman app, select the sample file on the upload request if it is not found.",
+      "item": [
+        {
+          "name": "Create Zerodha account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('trackingAccountId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountName\": \"Zerodha Equity\",\n  \"accountType\": \"EQUITY\",\n  \"brokerName\": \"ZERODHA\",\n  \"remarks\": \"Postman\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Upload statement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const s = pm.response.json();",
+                  "pm.environment.set('statementId', s.id);",
+                  "pm.test('Imported', () => { pm.expect(s.status).to.eql('PROCESSED'); pm.expect(s.latestImport.tradesImported).to.eql(3); pm.expect(s.latestImport.chargesImported).to.eql(2); pm.expect(s.latestImport.taxesImported).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{trackingAccountId}}/statements/upload",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{trackingAccountId}}",
+                "statements",
+                "upload"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/zerodha-tradebook.csv"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload same file again -> 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Points to the first upload', () => pm.expect(pm.response.json().existingId).to.eql(pm.environment.get('statementId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{trackingAccountId}}/statements/upload",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{trackingAccountId}}",
+                "statements",
+                "upload"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/zerodha-tradebook.csv"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List statements",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('One statement', () => pm.expect(pm.response.json().length).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{trackingAccountId}}/statements",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{trackingAccountId}}",
+                "statements"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get statement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/statements/{{statementId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "statements",
+                "{{statementId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Import history",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Attempt 1 SUCCESS', () => pm.expect(pm.response.json()[0].status).to.eql('SUCCESS'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/statements/{{statementId}}/imports",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "statements",
+                "{{statementId}}",
+                "imports"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Download statement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Original CSV', () => pm.expect(pm.response.text()).to.include('order_execution_time'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/statements/{{statementId}}/download",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "statements",
+                "{{statementId}}",
+                "download"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Holdings (INFY 15 @ 1600)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const h = pm.response.json()[0];",
+                  "pm.test('INFY 15 units, avg 1600, realized 1000', () => { pm.expect(h.quantity).to.eql(15); pm.expect(h.averagePrice).to.eql(1600); pm.expect(h.realizedProfit).to.eql(1000); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/holdings/account/{{trackingAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "holdings",
+                "account",
+                "{{trackingAccountId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Imported trades",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('3 imported trades', () => pm.expect(pm.response.json().filter(t => t.source === 'IMPORT').length).to.eql(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/trades/account/{{trackingAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "trades",
+                "account",
+                "{{trackingAccountId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Charge summary 2026",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('35.50 charges', () => pm.expect(pm.response.json().totalCharges).to.eql(35.5));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/charges/account/{{trackingAccountId}}/summary?year=2026",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "charges",
+                "account",
+                "{{trackingAccountId}}",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2026"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Tax summary 2026",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('3.60 GST', () => pm.expect(pm.response.json().totalTaxes).to.eql(3.6));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/taxes/account/{{trackingAccountId}}/summary?year=2026",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "taxes",
+                "account",
+                "{{trackingAccountId}}",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2026"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Record manual trade",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const t = pm.response.json();",
+                  "pm.environment.set('manualTradeId', t.id);",
+                  "pm.test('MANUAL, no cash moved', () => pm.expect(t.source).to.eql('MANUAL'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/trades",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "trades"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"{{trackingAccountId}}\",\n  \"symbol\": \"TCS\",\n  \"exchange\": \"NSE\",\n  \"side\": \"BUY\",\n  \"quantity\": 2,\n  \"buyPrice\": 3600,\n  \"brokerage\": 5,\n  \"tradeDate\": \"2026-10-06T10:00:00\",\n  \"externalTradeId\": \"MAN-{{$timestamp}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get trade",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/trades/{{manualTradeId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "trades",
+                "{{manualTradeId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Manual trade on platform account -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/trades",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "trades"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": \"{{platformAccountId}}\",\n  \"symbol\": \"AAPL\",\n  \"side\": \"BUY\",\n  \"quantity\": 1,\n  \"buyPrice\": 100,\n  \"tradeDate\": \"2026-10-06T10:00:00\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Cash adjustment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('ADJUSTMENT_IN', () => pm.expect(pm.response.json().transactionType).to.eql('ADJUSTMENT_IN'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{trackingAccountId}}/adjustments",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{trackingAccountId}}",
+                "adjustments"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 250.0,\n  \"description\": \"Opening cash at Zerodha\",\n  \"statementId\": \"{{statementId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Charges list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Statement and manual charges', () => pm.expect(pm.response.json().length).to.eql(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/charges/account/{{trackingAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "charges",
+                "account",
+                "{{trackingAccountId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Performance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const p = pm.response.json();",
+                  "pm.test('Realized 1000', () => pm.expect(p.realizedProfit).to.eql(1000));",
+                  "pm.test('net = gross - charges - taxes', () => pm.expect(p.netProfit).to.be.closeTo(p.grossProfit - p.totalCharges - p.totalTaxes, 0.001));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{trackingAccountId}}/performance",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{trackingAccountId}}",
+                "performance"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Reprocess statement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Attempt 2, no duplicates', () => { const i = pm.response.json().latestImport; pm.expect(i.attemptNumber).to.eql(2); pm.expect(i.tradesImported).to.eql(3); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/statements/{{statementId}}/reprocess",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "statements",
+                "{{statementId}}",
+                "reprocess"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Delete statement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/statements/{{statementId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "statements",
+                "{{statementId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Holdings after delete (TCS only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Only the manual TCS trade remains', () => pm.expect(pm.response.json().map(h => h.symbol)).to.eql(['TCS']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/holdings/account/{{trackingAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "holdings",
+                "account",
+                "{{trackingAccountId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Groww: create account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('growwAccountId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountName\": \"Groww\",\n  \"accountType\": \"EQUITY\",\n  \"brokerName\": \"GROWW\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Groww: upload groww-pnl.csv",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const s = pm.response.json(); const i = s.latestImport;",
+                  "pm.test('2 closed positions, 3 charges, GST', () => { pm.expect(s.status).to.eql('PROCESSED'); pm.expect(i.tradesImported).to.eql(2); pm.expect(i.chargesImported).to.eql(3); pm.expect(i.taxesImported).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{growwAccountId}}/statements/upload",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{growwAccountId}}",
+                "statements",
+                "upload"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/groww-pnl.csv"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Binance: create account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('binanceAccountId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountName\": \"Binance\",\n  \"accountType\": \"CRYPTO\",\n  \"brokerName\": \"BINANCE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Binance: upload binance-trade-history.csv",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const s = pm.response.json(); const i = s.latestImport;",
+                  "pm.test('2 fills imported', () => { pm.expect(s.status).to.eql('PROCESSED'); pm.expect(i.tradesImported).to.eql(2); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{binanceAccountId}}/statements/upload",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{binanceAccountId}}",
+                "statements",
+                "upload"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/binance-trade-history.csv"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Exness: create account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('exnessAccountId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountName\": \"Exness\",\n  \"accountType\": \"FOREX\",\n  \"brokerName\": \"EXNESS\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Exness: upload exness-closed-positions.csv",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const s = pm.response.json(); const i = s.latestImport;",
+                  "pm.test('2 closed positions, 3 charges', () => { pm.expect(s.status).to.eql('PROCESSED'); pm.expect(i.tradesImported).to.eql(2); pm.expect(i.chargesImported).to.eql(3); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{exnessAccountId}}/statements/upload",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{exnessAccountId}}",
+                "statements",
+                "upload"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/exness-closed-positions.csv"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Account Service - roles",
+      "description": "USER vs ADMIN. ADMIN requests are skipped unless adminEmail/adminPassword are set for a user promoted with UPDATE users SET role='ADMIN' WHERE email='...'.",
+      "item": [
+        {
+          "name": "USER posts dividend -> 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}/dividends",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}",
+                "dividends"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"dividendPerShare\": 0.5,\n  \"paymentDate\": \"2026-10-10\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Admin login",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.unset('adminAccessToken');",
+                  "if (!pm.environment.get('adminEmail')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.environment.set('adminAccessToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/users/login",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "login"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "ADMIN reads the user's account",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Needs an ADMIN user: set adminEmail/adminPassword in the environment (see the user manual).",
+                  "if (!pm.environment.get('adminAccessToken')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "ADMIN lists the user's accounts",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Needs an ADMIN user: set adminEmail/adminPassword in the environment (see the user manual).",
+                  "if (!pm.environment.get('adminAccessToken')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "const ids = pm.response.json().map(a => a.id);",
+                  "pm.test('Includes the platform and tracking accounts', () => pm.expect(ids).to.include.members([pm.environment.get('platformAccountId'), pm.environment.get('trackingAccountId')]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/user/{{userId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "user",
+                "{{userId}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "ADMIN posts dividend",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Needs an ADMIN user: set adminEmail/adminPassword in the environment (see the user manual).",
+                  "if (!pm.environment.get('adminAccessToken')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('3 x 0.50 gross', () => pm.expect(pm.response.json().grossAmount).to.eql(1.5));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}/dividends",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}",
+                "dividends"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"dividendPerShare\": 0.5,\n  \"paymentDate\": \"2026-10-10\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "ADMIN posts interest",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Needs an ADMIN user: set adminEmail/adminPassword in the environment (see the user manual).",
+                  "if (!pm.environment.get('adminAccessToken')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}/interest",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}",
+                "interest"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"annualRate\": 4.5,\n  \"periodStart\": \"2026-09-01\",\n  \"periodEnd\": \"2026-09-30\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "USER sees the dividend",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Needs an ADMIN user: set adminEmail/adminPassword in the environment (see the user manual).",
+                  "if (!pm.environment.get('adminAccessToken')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('One dividend', () => pm.expect(pm.response.json().length).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/dividends/account/{{platformAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dividends",
+                "account",
+                "{{platformAccountId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "USER sees the interest",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Needs an ADMIN user: set adminEmail/adminPassword in the environment (see the user manual).",
+                  "if (!pm.environment.get('adminAccessToken')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('One interest posting', () => pm.expect(pm.response.json().length).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/interest/account/{{platformAccountId}}",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "interest",
+                "account",
+                "{{platformAccountId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "ADMIN cannot deposit into the user's account -> 403",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Needs an ADMIN user: set adminEmail/adminPassword in the environment (see the user manual).",
+                  "if (!pm.environment.get('adminAccessToken')) { pm.execution.skipRequest(); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{gatewayUrl}}/api/v1/accounts/{{platformAccountId}}/deposit",
+              "host": [
+                "{{gatewayUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}",
+                "deposit"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 1.0\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Direct service calls (no gateway)",
+      "description": "Each service on its own port, sending X-User-Id yourself. For debugging one service in isolation; these ports must never be exposed publicly.",
+      "item": [
+        {
+          "name": "user-service: me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{userServiceUrl}}/api/v1/users/me",
+              "host": [
+                "{{userServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "user-service: deduct funds (internal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{userServiceUrl}}/api/v1/users/{{userId}}/funds/deduct?amount=1",
+              "host": [
+                "{{userServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{userId}}",
+                "funds",
+                "deduct"
+              ],
+              "query": [
+                {
+                  "key": "amount",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "user-service: credit funds (internal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{userServiceUrl}}/api/v1/users/{{userId}}/funds/credit?amount=1",
+              "host": [
+                "{{userServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "{{userId}}",
+                "funds",
+                "credit"
+              ],
+              "query": [
+                {
+                  "key": "amount",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "market-data-service: stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{marketDataServiceUrl}}/api/v1/market-data/stocks/{{symbol}}",
+              "host": [
+                "{{marketDataServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "market-data",
+                "stocks",
+                "{{symbol}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "order-service: my orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{orderServiceUrl}}/api/v1/orders/my-orders",
+              "host": [
+                "{{orderServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "my-orders"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "portfolio-service: portfolio by userId (internal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{portfolioServiceUrl}}/api/v1/portfolio/{{userId}}",
+              "host": [
+                "{{portfolioServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portfolio",
+                "{{userId}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "notification-service: my notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{notificationServiceUrl}}/api/v1/notifications",
+              "host": [
+                "{{notificationServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "account-service: platform account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{userId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{accountServiceUrl}}/api/v1/accounts/{{platformAccountId}}",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "accounts",
+                "{{platformAccountId}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "account-service: Swagger OpenAPI",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Documents the API', () => pm.expect(Object.keys(pm.response.json().paths).length).to.be.above(30));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{accountServiceUrl}}/v3/api-docs",
+              "host": [
+                "{{accountServiceUrl}}"
+              ],
+              "path": [
+                "v3",
+                "api-docs"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+server:
+  port: ${NOTIFICATION_SERVICE_PORT:8085}
+
+# Hosts of the infrastructure.
+# The .env Kafka host only resolves inside the docker network,
+# so the default profile targets localhost; the docker profile overrides it.
+hosts:
+  kafka: localhost:${KAFKA_PORT:9092}
+
+spring:
+  application:
+    name: notification-service
+  # Load the shared .env at the repo root (works when started from the service dir or the repo root).
+  # Real environment variables still take precedence over these values.
+  config:
+    import:
+      - optional:file:../.env[.properties]
+      - optional:file:.env[.properties]
+
+  kafka:
+    bootstrap-servers: ${hosts.kafka}
+    consumer:
+      group-id: notification-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # ErrorHandlingDeserializer turns malformed JSON into a skipped record instead of a poison pill.
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+        # Producers on Boot 3 add type headers; ignore them and always read a Map.
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: java.util.HashMap
+
+# Topics this service consumes.
+kafka:
+  topics:
+    user-registered: user.registered
+    order-executed: order.executed
+    order-failed: order.failed
+
+notification:
+  max-per-user: 100
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,info}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:always}
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    org.apache.kafka: INFO
+    com.stockmarket.notificationservice: DEBUG
+
+---
+# Running inside docker-compose on trading-network: use the container host names.
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+hosts:
+  kafka: ${KAFKA_BOOTSTRAP_SERVERS}

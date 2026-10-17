@@ -1,0 +1,21 @@
+C:\Repo\stock-market-system
+│
+├── docker-compose.yml
+├── .env
+├── services
+│   ├── user-service
+│   ├── order-service
+│   ├── portfolio-service
+│   ├── market-data-service
+│   └── api-gateway
+│
+└── scripts
+
+
+############# PORT Details ################
+API Gateway           : 8080
+Portfolio Service     : 8081
+Market Data Service   : 8082
+Order Service         : 8083
+User Service          : 8084
+Notification Service  : 8085

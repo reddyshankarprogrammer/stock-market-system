@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: user-service
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    open-in-view: false
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+jwt:
+  secret: myVerySecureSecretKeyForJwtTokenGeneration123456789
+  access-token-expiry-minutes: 15
+  refresh-token-expiry-days: 7
+  issuer: stock-market-system

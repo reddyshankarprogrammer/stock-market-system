@@ -1,0 +1,76 @@
+server:
+  port: ${ORDER_SERVICE_PORT:8083}
+
+# Hosts of the infrastructure and downstream services.
+# .env host names (mysql, kafka) only resolve inside the docker network,
+# so the default profile targets localhost; the docker profile overrides these.
+hosts:
+  mysql: localhost
+  kafka: localhost:${KAFKA_PORT:9092}
+  user-service: localhost
+  market-data-service: localhost
+
+spring:
+  application:
+    name: order-service
+  # Load the shared .env at the repo root (works when started from the service dir or the repo root).
+  # Real environment variables still take precedence over these values.
+  config:
+    import:
+      - optional:file:../.env[.properties]
+      - optional:file:.env[.properties]
+
+  datasource:
+    url: jdbc:mysql://${hosts.mysql}:${MYSQL_PORT:3306}/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_ROOT_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+  kafka:
+    bootstrap-servers: ${hosts.kafka}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+
+# Base URLs for the Feign clients.
+services:
+  user:
+    url: http://${hosts.user-service}:${USER_SERVICE_PORT:8081}
+  market-data:
+    url: http://${hosts.market-data-service}:${MARKET_DATA_SERVICE_PORT:8082}
+
+# Topics this service publishes order events to.
+kafka:
+  topics:
+    order-executed: order.executed
+    order-failed: order.failed
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,info}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:always}
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    com.stockmarket.orderservice: DEBUG
+
+---
+# Running inside docker-compose on trading-network: use the container host names.
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+hosts:
+  mysql: ${MYSQL_HOST}
+  kafka: ${KAFKA_BOOTSTRAP_SERVERS}
+  user-service: user-service
+  market-data-service: market-data-service

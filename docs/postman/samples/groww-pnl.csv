@@ -1,0 +1,9 @@
+Stock name,ISIN,Quantity,Buy date,Buy price,Sell date,Sell price,Realised P&L
+RELIANCE,INE002A01018,5,02-05-2026,2400,15-07-2026,2550.5,752.5
+HDFCBANK,INE040A01034,10,10-06-2026,1650,20-08-2026,1600,-500
+
+Charges,Amount
+Brokerage,40
+STT,12.30
+GST,7.20
+Stamp duty,1.50

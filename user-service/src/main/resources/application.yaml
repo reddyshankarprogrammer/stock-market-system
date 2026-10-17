@@ -1,0 +1,67 @@
+server:
+  port: ${USER_SERVICE_PORT:8081}
+
+# Hosts of the infrastructure.
+# .env host names (mysql, kafka) only resolve inside the docker network,
+# so the default profile targets localhost; the docker profile overrides these.
+hosts:
+  mysql: localhost
+  kafka: localhost:${KAFKA_PORT:9092}
+
+spring:
+  application:
+    name: user-service
+  # Load the shared .env at the repo root (works when started from the service dir or the repo root).
+  # Real environment variables still take precedence over these values.
+  config:
+    import:
+      - optional:file:../.env[.properties]
+      - optional:file:.env[.properties]
+
+  datasource:
+    url: jdbc:mysql://${hosts.mysql}:${MYSQL_PORT:3306}/${MYSQL_DATABASE}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_ROOT_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  kafka:
+    bootstrap-servers: ${hosts.kafka}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+# Must match the api-gateway's jwt.secret / jwt.issuer, or every token is rejected there.
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiry-minutes: ${JWT_ACCESS_TOKEN_EXPIRY_MINUTES:15}
+  refresh-token-expiry-days: ${JWT_REFRESH_TOKEN_EXPIRY_DAYS:7}
+  issuer: ${JWT_ISSUER:stock-market-system}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,info,metrics}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:always}
+
+---
+# Running inside docker-compose on trading-network: use the container host names from .env.
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+hosts:
+  mysql: ${MYSQL_HOST}
+  kafka: ${KAFKA_BOOTSTRAP_SERVERS}
