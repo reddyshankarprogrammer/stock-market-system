@@ -133,7 +133,9 @@ Every service has a production `Dockerfile`: Java 21, multi-stage (Maven wrapper
 docker build -t order-service order-service
 docker run --rm --network stock-market-system_trading-network --env-file .env -p 8083:8083 order-service
 
-# account-service is also wired into docker compose (opt-in profile)
+# every service is also wired into docker compose (opt-in profile), e.g. on an Ubuntu PC
+docker compose --profile app up -d --build
+# or a single one
 docker compose --profile app up -d --build account-service
 ```
 

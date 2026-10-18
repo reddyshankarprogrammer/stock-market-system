@@ -159,6 +159,119 @@ services:
     networks:
       - trading-network
 
+  # ==========================================
+  # REMAINING APPLICATION SERVICES (opt-in, same "app" profile)
+  # Start the whole system on one machine (e.g. an Ubuntu PC):
+  #   docker compose --profile app up -d --build
+  # Only the gateway port is published; the services trust X-User-Id headers, so their
+  # ports stay inside trading-network.
+  # ==========================================
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    restart: unless-stopped
+    profiles: ["app"]
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    mem_limit: 768m
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - trading-network
+
+  market-data-service:
+    build: ./market-data-service
+    container_name: market-data-service
+    restart: unless-stopped
+    profiles: ["app"]
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    mem_limit: 768m
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - trading-network
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    restart: unless-stopped
+    profiles: ["app"]
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    mem_limit: 768m
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - trading-network
+
+  portfolio-service:
+    build: ./portfolio-service
+    container_name: portfolio-service
+    restart: unless-stopped
+    profiles: ["app"]
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    mem_limit: 768m
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - trading-network
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    restart: unless-stopped
+    profiles: ["app"]
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    mem_limit: 768m
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - trading-network
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    restart: unless-stopped
+    profiles: ["app"]
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    mem_limit: 768m
+    ports:
+      - "${API_GATEWAY_PORT}:8080"
+    depends_on:
+      - user-service
+      - market-data-service
+      - order-service
+      - portfolio-service
+      - notification-service
+      - account-service
+    networks:
+      - trading-network
+
 volumes:
   mysql-data:
   redis-data:

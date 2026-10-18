@@ -2,6 +2,12 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-18: Whole system in Docker Compose
+
+| File | Change |
+|---|---|
+| `docker-compose.yml` | user, market-data, order, portfolio, notification services and api-gateway added to the opt-in `app` profile: `docker compose --profile app up -d --build` runs the complete system on one machine (only the gateway port 8080 is published) |
+
 ## 2026-10-18: Kubernetes platform, CI/CD and GitOps
 
 ### Features
