@@ -36,6 +36,26 @@ configs:
         end
       end
       return hs
+    # K3s local-path binds a claim only when its first pod starts (WaitForFirstConsumer).
+    # PVC mysql-backup is used only by the 02:00 CronJob, so on a fresh cluster it stays Pending;
+    # the built-in check reports that as Progressing and blocks every later sync wave.
+    # A Pending claim is therefore Healthy; a broken volume still shows on the pods that mount it.
+    resource.customizations.health.PersistentVolumeClaim: |
+      hs = {}
+      hs.status = "Progressing"
+      hs.message = ""
+      if obj.status ~= nil and obj.status.phase ~= nil then
+        if obj.status.phase == "Bound" then
+          hs.status = "Healthy"
+        elseif obj.status.phase == "Pending" then
+          hs.status = "Healthy"
+          hs.message = "Pending: bound when the first pod that mounts it starts"
+        elseif obj.status.phase == "Lost" then
+          hs.status = "Degraded"
+          hs.message = "The bound PersistentVolume no longer exists"
+        end
+      end
+      return hs
     # Strimzi and cert-manager write status fields that are not drift.
     resource.compareoptions: |
       ignoreAggregatedRoles: true

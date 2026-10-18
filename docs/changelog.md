@@ -2,6 +2,15 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-18: GitOps bootstrap fixes (found on the first K3s install)
+
+### Fixes
+
+| Problem | Fix | Where |
+|---|---|---|
+| Root application deadlocked: `namespaces` (wave -10) waited for the `stock-market` AppProject, which had wave 0 | AppProject gets `sync-wave: "-20"` | `k8s/argocd/project.yaml` |
+| `mysql` application stuck in Progressing: PVC `mysql-backup` stays Pending until the 02:00 CronJob (local-path binds on first consumer), blocking every later wave | Argo CD health check treats a Pending PVC as Healthy (Lost stays Degraded) | `k8s/argocd/argocd-values.yaml` (re-run `scripts/install-argocd.sh` to apply) |
+
 ## 2026-10-18: Kubernetes platform, CI/CD and GitOps
 
 ### Features
