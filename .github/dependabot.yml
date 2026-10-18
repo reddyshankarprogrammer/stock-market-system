@@ -1,0 +1,45 @@
+# Weekly dependency updates as pull requests (CI builds, tests and scans each one).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: maven
+    directories:
+      - /api-gateway
+      - /user-service
+      - /market-data-service
+      - /order-service
+      - /portfolio-service
+      - /notification-service
+      - /account-service
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 10
+    groups:
+      spring:
+        patterns: ["org.springframework*"]
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+    ignore:
+      # user-service stays on Spring Boot 3 until it is migrated deliberately (root CLAUDE.md rule 3).
+      - dependency-name: "org.springframework.boot:spring-boot-starter-parent"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker
+    directories:
+      - /api-gateway
+      - /user-service
+      - /market-data-service
+      - /order-service
+      - /portfolio-service
+      - /notification-service
+      - /account-service
+      - /ai-service
+    schedule: { interval: weekly, day: monday }
+    groups:
+      base-images:
+        patterns: ["*"]

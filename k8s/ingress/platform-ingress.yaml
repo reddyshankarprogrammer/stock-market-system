@@ -1,0 +1,59 @@
+# Operator UIs. Restrict them to the office / VPN network with nginx.org/server-snippets or a
+# firewall rule before exposing the node publicly.
+#   https://grafana.stockmarket.local   Grafana (admin password: see docs/monitoring-guide.md)
+#   https://argocd.stockmarket.local    Argo CD (admin password: see docs/argocd-guide.md)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    cert-manager.io/cluster-issuer: stockmarket-local-ca
+    nginx.org/redirect-to-https: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: ["grafana.stockmarket.local"]
+      secretName: grafana-tls
+  rules:
+    - host: grafana.stockmarket.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kube-prometheus-stack-grafana
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    cert-manager.io/cluster-issuer: stockmarket-local-ca
+    nginx.org/redirect-to-https: "true"
+    # Argo CD runs with server.insecure (TLS ends here); gRPC-web keeps the CLI working.
+    nginx.org/proxy-read-timeout: "300s"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: ["argocd.stockmarket.local"]
+      secretName: argocd-server-tls
+  rules:
+    - host: argocd.stockmarket.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80

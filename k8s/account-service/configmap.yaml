@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: account-service-config
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: account-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: stock-market-system
+data:
+  SPRING_PROFILES_ACTIVE: "docker"
+  TZ: "UTC"
+  LOG_LEVEL: "INFO"
+  LOGGING_STRUCTURED_FORMAT_CONSOLE: "logstash"
+  SERVER_SHUTDOWN: "graceful"
+  SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE: "25s"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus"
+  MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "never"
+  MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED: "true"
+  MANAGEMENT_METRICS_DISTRIBUTION_PERCENTILESHISTOGRAM_HTTP_SERVER_REQUESTS: "true"
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75 -XX:InitialRAMPercentage=50 -XX:+ExitOnOutOfMemoryError -XX:+UseG1GC"
+  ACCOUNT_SERVICE_PORT: "8086"
+  MANAGEMENT_METRICS_TAGS_APPLICATION: "account-service"
+  MYSQL_HOST: "mysql.database.svc.cluster.local"
+  MYSQL_PORT: "3306"
+  MYSQL_DATABASE: "stock_market_system_db"
+  KAFKA_BOOTSTRAP_SERVERS: "stock-market-kafka-kafka-bootstrap.messaging.svc.cluster.local:9092"
+  HOSTS_KAFKA: "stock-market-kafka-kafka-bootstrap.messaging.svc.cluster.local:9092"
+  HOSTS_MYSQL: "mysql.database.svc.cluster.local"
+  HOSTS_USER_SERVICE: "user-service.stock-market.svc.cluster.local"
+  USER_SERVICE_PORT: "8081"
+  HOSTS_MARKET_DATA_SERVICE: "market-data-service.stock-market.svc.cluster.local"
+  MARKET_DATA_SERVICE_PORT: "8082"
+  ACCOUNT_STATEMENTS_DIR: "/data/statements"

@@ -1,0 +1,130 @@
+# Human access (least privilege). Map identities to the groups through client-certificate
+# organisations (O=stock-market:developers) or an OIDC provider's groups claim.
+#
+#   stock-market:developers  read-only: workloads, logs, events, config (no Secrets)
+#   stock-market:operators   + restart / scale services, delete pods, run a manual backup
+#   cluster administrators   cluster-admin (K3s server kubeconfig); not bound here
+#
+# Workloads: every service has its own ServiceAccount with automountServiceAccountToken: false
+# and no Role, because none of them calls the Kubernetes API.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stock-market-operator
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale", "statefulsets", "statefulsets/scale"]
+    verbs: ["get", "list", "watch", "patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/log", "events", "services", "endpoints", "configmaps", "persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["cronjobs", "jobs"]
+    verbs: ["get", "list", "watch", "create"]
+---
+# --- developers: built-in "view" role (excludes Secrets) in the platform namespaces
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: developers-view
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+subjects:
+  - kind: Group
+    name: stock-market:developers
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: developers-view
+  namespace: messaging
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+subjects:
+  - kind: Group
+    name: stock-market:developers
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: developers-view
+  namespace: logging
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+subjects:
+  - kind: Group
+    name: stock-market:developers
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+# --- operators
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: operators
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+subjects:
+  - kind: Group
+    name: stock-market:operators
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: stock-market-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: operators
+  namespace: database
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+subjects:
+  - kind: Group
+    name: stock-market:operators
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: stock-market-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: operators
+  namespace: messaging
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+subjects:
+  - kind: Group
+    name: stock-market:operators
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: stock-market-operator
+  apiGroup: rbac.authorization.k8s.io

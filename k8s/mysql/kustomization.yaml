@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: database
+# mysql-secret.yaml is a template: the Secret is created by scripts/create-secrets.sh.
+resources:
+  - mysql-configmap.yaml
+  - mysql-pvc.yaml
+  - mysql-service.yaml
+  - mysql-deployment.yaml
+  - backup-cronjob.yaml

@@ -1,0 +1,36 @@
+# K3s local-path storage: the volume lives on the node at /var/lib/rancher/k3s/storage.
+# For multi-node clusters switch storageClassName to a replicated class (e.g. Longhorn).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+  namespace: database
+  labels:
+    app.kubernetes.io/name: mysql
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    # Never delete the database volume when the Argo CD application is pruned or deleted.
+    argocd.argoproj.io/sync-options: Delete=false,Prune=false
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-backup
+  namespace: database
+  labels:
+    app.kubernetes.io/name: mysql-backup
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false,Prune=false
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 30Gi

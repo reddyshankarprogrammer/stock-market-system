@@ -1,0 +1,138 @@
+# Release: promotes the exact images CI built and tested for a commit to a semantic version.
+# Nothing is rebuilt: sha-<7> images are re-tagged vX.Y.Z and vX.Y in GHCR, signed, and a
+# GitHub Release with generated notes is published.
+#
+#   git tag -a v1.4.0 -m "Release 1.4.0" && git push origin v1.4.0
+#   (or Actions -> Release -> Run workflow -> version 1.4.0, which creates the tag on main)
+#
+# Deploying the release: Actions -> CD -> Run workflow -> image_tag = v1.4.0 (approval required).
+name: Release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without the v prefix (e.g. 1.4.0); tags the current main"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  SERVICES: "api-gateway user-service market-data-service order-service portfolio-service notification-service account-service ai-service"
+
+jobs:
+  release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version and commit
+        id: v
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            [[ "${INPUT_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Version must be X.Y.Z"; exit 1; }
+            tag="v${INPUT_VERSION}"
+            git rev-parse -q --verify "refs/tags/${tag}" && { echo "::error::${tag} already exists"; exit 1; }
+            sha="$(git rev-parse origin/main)"
+          else
+            tag="${GITHUB_REF_NAME}"
+            sha="$(git rev-list -n1 "${tag}")"
+          fi
+          # Only commits on main can be released (those are the ones CD may deploy).
+          git merge-base --is-ancestor "${sha}" origin/main \
+            || { echo "::error::${tag} (${sha::7}) is not on main"; exit 1; }
+          minor="${tag%.*}"
+          {
+            echo "tag=${tag}"
+            echo "minor=${minor}"
+            echo "sha=${sha}"
+            echo "registry=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Find the images of the release commit
+        id: source
+        env:
+          SHA: ${{ steps.v.outputs.sha }}
+          REGISTRY: ${{ steps.v.outputs.registry }}
+        run: |
+          # CI skips commits that only touch docs or image tags (paths-ignore), so the tagged commit
+          # may have no images: use its nearest ancestor that CI built (identical service code).
+          for commit in $(git rev-list --max-count=50 "${SHA}"); do
+            if docker buildx imagetools inspect "${REGISTRY}/api-gateway:sha-${commit::7}" >/dev/null 2>&1; then
+              echo "short=sha-${commit::7}" >> "${GITHUB_OUTPUT}"
+              [[ "${commit}" == "${SHA}" ]] || echo "::notice::Using images of ${commit::7}, the nearest built ancestor of ${SHA::7}"
+              exit 0
+            fi
+          done
+          echo "::error::No CI-built images found for ${SHA::7} or its last 50 ancestors"
+          exit 1
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Promote images
+        env:
+          TAG: ${{ steps.v.outputs.tag }}
+          MINOR: ${{ steps.v.outputs.minor }}
+          SOURCE: ${{ steps.source.outputs.short }}
+          REGISTRY: ${{ steps.v.outputs.registry }}
+        run: |
+          echo "| Service | Image | Digest |" > images.md
+          echo "|---|---|---|" >> images.md
+          for svc in ${SERVICES}; do
+            src="${REGISTRY}/${svc}:${SOURCE}"
+            if ! docker buildx imagetools inspect "${src}" >/dev/null 2>&1; then
+              [[ "${svc}" == "ai-service" ]] && { echo "::notice::ai-service not built yet: skipped"; continue; }
+              echo "::error::${src} not found: CI must have pushed ${SOURCE} (push to main or develop)."
+              exit 1
+            fi
+            docker buildx imagetools create --tag "${REGISTRY}/${svc}:${TAG}" --tag "${REGISTRY}/${svc}:${MINOR}" "${src}"
+            digest="$(docker buildx imagetools inspect "${REGISTRY}/${svc}:${TAG}" --format '{{json .Manifest}}' | jq -r .digest)"
+            cosign sign --yes "${REGISTRY}/${svc}@${digest}"
+            echo "| ${svc} | \`${REGISTRY}/${svc}:${TAG}\` | \`${digest}\` |" >> images.md
+          done
+          cat images.md >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.v.outputs.tag }}
+          SHA: ${{ steps.v.outputs.sha }}
+        run: |
+          {
+            echo "## Container images"
+            echo
+            cat images.md
+            echo
+            echo "## Deploy"
+            echo
+            echo "Actions → **CD** → Run workflow → \`image_tag\` = \`${TAG}\`. A repository administrator approves the"
+            echo "\`production\` environment; Argo CD rolls the services out."
+          } > notes.md
+          gh release create "${TAG}" --target "${SHA}" --title "${TAG}" --notes-file notes.md --generate-notes --verify-tag=false

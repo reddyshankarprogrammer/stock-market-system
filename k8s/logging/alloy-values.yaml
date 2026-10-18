@@ -1,0 +1,158 @@
+# Helm values for Grafana Alloy (chart grafana/alloy), the log collector that replaces Promtail
+# (Promtail reached end of life on 2026-03-02). One Alloy pod per node tails the containers of
+# that node through the Kubernetes API and pushes them to Loki.
+#
+# Labels (low cardinality, used to select streams): namespace, app, pod, container, node, level
+# Structured metadata (high cardinality, filterable): userId, accountId, tradeId, statementId,
+#                                                     logger, thread
+# Example query:  {namespace="stock-market", app="account-service"} | accountId="7c1e..."
+controller:
+  type: daemonset
+  tolerations:
+    - operator: Exists
+
+alloy:
+  clustering:
+    enabled: false
+  extraEnv:
+    - name: NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+  mounts:
+    varlog: false
+    dockercontainers: false
+  configMap:
+    create: true
+    content: |
+      // ---------------------------------------------------------------- discovery
+      discovery.kubernetes "pods" {
+        role = "pod"
+        // Only the pods scheduled on this node: every node's Alloy tails its own pods.
+        selectors {
+          role  = "pod"
+          field = "spec.nodeName=" + sys.env("NODE_NAME")
+        }
+      }
+
+      discovery.relabel "pods" {
+        targets = discovery.kubernetes.pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_phase"]
+          regex         = "Pending|Succeeded|Failed|Unknown"
+          action        = "drop"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_node_name"]
+          target_label  = "node"
+        }
+        // app = app.kubernetes.io/name, else app, else the container name.
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name", "__meta_kubernetes_pod_label_app", "__meta_kubernetes_pod_container_name"]
+          separator     = ";"
+          regex         = ";*([^;]+).*"
+          target_label  = "app"
+        }
+      }
+
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.pods.output
+        forward_to = [loki.process.pods.receiver]
+      }
+
+      // ---------------------------------------------------------------- processing
+      loki.process "pods" {
+        // Spring Boot services log one JSON object per line (LOGGING_STRUCTURED_FORMAT_CONSOLE=logstash).
+        stage.match {
+          selector = "{namespace=\"stock-market\"}"
+
+          stage.json {
+            expressions = {
+              level  = "level",
+              logger = "logger_name",
+              thread = "thread_name",
+            }
+          }
+          stage.labels {
+            values = { level = "" }
+          }
+
+          // Business ids as written by the services, e.g. "userId=<uuid>", "for user: <uuid>",
+          // "on account <uuid>", "AUDIT account=<uuid>", "Statement <uuid> imported", "\"tradeId\":\"<uuid>\"".
+          stage.regex {
+            expression = `(?i)\buser(?:[ _]?id)?["']?\s*[=:]?\s*["']?(?P<userId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d+)\b`
+          }
+          stage.regex {
+            expression = `(?i)\baccount(?:[ _]?id)?["']?\s*[=:]?\s*["']?(?P<accountId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d+)\b`
+          }
+          stage.regex {
+            expression = `(?i)\btrade(?:[ _]?id)?["']?\s*[=:]?\s*["']?(?P<tradeId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d+)\b`
+          }
+          stage.regex {
+            expression = `(?i)\bstatement(?:[ _]?id)?["']?\s*[=:]?\s*["']?(?P<statementId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d+)\b`
+          }
+
+          stage.structured_metadata {
+            values = {
+              userId      = "",
+              accountId   = "",
+              tradeId     = "",
+              statementId = "",
+              logger      = "",
+              thread      = "",
+            }
+          }
+        }
+
+        // NGINX Ingress Controller JSON access log.
+        stage.match {
+          selector = "{namespace=\"platform\", app=\"nginx-ingress\"}"
+
+          stage.json {
+            expressions = {
+              status     = "status",
+              request_id = "request_id",
+              method     = "method",
+            }
+          }
+          stage.structured_metadata {
+            values = { request_id = "", status = "", method = "" }
+          }
+        }
+
+        forward_to = [loki.write.default.receiver]
+      }
+
+      loki.write "default" {
+        endpoint {
+          url = "http://loki-gateway.logging.svc.cluster.local/loki/api/v1/push"
+        }
+        external_labels = {
+          cluster = "stock-market-k3s",
+        }
+      }
+
+serviceMonitor:
+  enabled: true
+  additionalLabels:
+    release: kube-prometheus-stack

@@ -1,0 +1,198 @@
+# Helm values for kube-prometheus-stack (Prometheus Operator, Prometheus, Alertmanager, Grafana,
+# kube-state-metrics, node-exporter), installed into the monitoring namespace by
+# scripts/install-monitoring.sh. Release name must stay "kube-prometheus-stack".
+fullnameOverride: kube-prometheus-stack
+
+# K3s runs the control plane inside the k3s binary and does not expose scheduler,
+# controller-manager, proxy or etcd metrics endpoints: disable their scrapes and rules.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+kubeEtcd:
+  enabled: false
+
+defaultRules:
+  create: true
+  rules:
+    etcd: false
+    kubeControllerManager: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
+    kubeProxy: false
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    retentionSize: 18GB
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    # Pick up every ServiceMonitor / PodMonitor / PrometheusRule in the cluster, not only
+    # the ones carrying this release's label.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        cpu: "2"
+        memory: 3Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+    externalLabels:
+      cluster: stock-market-k3s
+
+alertmanager:
+  alertmanagerSpec:
+    retention: 120h
+    # Secret alertmanager-slack (key webhook-url), created by scripts/create-secrets.sh from
+    # ALERT_SLACK_WEBHOOK_URL in .env; mounted at /etc/alertmanager/secrets/alertmanager-slack.
+    secrets:
+      - alertmanager-slack
+    resources:
+      requests:
+        cpu: 20m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: slack-warnings
+      group_by: ["alertname", "namespace", "service"]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      routes:
+        # Heartbeat that proves the alerting pipeline works: never notify.
+        - receiver: "null"
+          matchers: ['alertname = "Watchdog"']
+        - receiver: "null"
+          matchers: ['alertname = "InfoInhibitor"']
+        - receiver: slack-critical
+          matchers: ['severity = "critical"']
+          repeat_interval: 1h
+    inhibit_rules:
+      - source_matchers: ['severity = "critical"']
+        target_matchers: ['severity = "warning"']
+        equal: ["alertname", "namespace"]
+    receivers:
+      - name: "null"
+      - name: slack-warnings
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/alertmanager-slack/webhook-url
+            channel: "#stock-market-alerts"
+            send_resolved: true
+            title: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+            text: >-
+              {{ range .Alerts }}*{{ .Labels.severity }}* {{ .Annotations.summary }}
+              {{ .Annotations.description }}
+              {{ end }}
+      - name: slack-critical
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/alertmanager-slack/webhook-url
+            channel: "#stock-market-alerts"
+            send_resolved: true
+            title: ':rotating_light: [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+            text: >-
+              {{ range .Alerts }}*{{ .Labels.severity }}* {{ .Annotations.summary }}
+              {{ .Annotations.description }}
+              {{ if .Annotations.runbook_url }}Runbook: {{ .Annotations.runbook_url }}{{ end }}
+              {{ end }}
+
+grafana:
+  # Secret grafana-admin (keys admin-user, admin-password), created by scripts/create-secrets.sh.
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  persistence:
+    enabled: true
+    storageClassName: local-path
+    size: 2Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+  grafana.ini:
+    server:
+      root_url: https://grafana.stockmarket.local
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+    auth.anonymous:
+      enabled: false
+    users:
+      allow_sign_up: false
+  sidecar:
+    dashboards:
+      enabled: true
+      # ConfigMaps from k8s/monitoring/kustomization.yaml.
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+      folderAnnotation: grafana_folder
+      provider:
+        foldersFromFilesStructure: true
+    datasources:
+      enabled: true
+      defaultDatasourceEnabled: true
+  # Fixed uids so the generated dashboards can reference the data sources.
+  additionalDataSources:
+    - name: Loki
+      uid: loki
+      type: loki
+      access: proxy
+      url: http://loki-gateway.logging.svc.cluster.local
+      jsonData:
+        maxLines: 5000
+        timeout: 60
+    - name: Alertmanager
+      uid: alertmanager
+      type: alertmanager
+      access: proxy
+      url: http://kube-prometheus-stack-alertmanager.monitoring.svc.cluster.local:9093
+      jsonData:
+        implementation: prometheus
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 64Mi
+
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi

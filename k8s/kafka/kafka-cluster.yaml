@@ -1,0 +1,125 @@
+# Kafka cluster in KRaft mode (no ZooKeeper), managed by the Strimzi operator.
+# Bootstrap address for the services:
+#   stock-market-kafka-kafka-bootstrap.messaging.svc.cluster.local:9092
+#
+# Sized for a single K3s node: one dual-role (controller + broker) node, replication factor 1.
+# High availability: set replicas: 3 below and the four *replication.factor / min.insync.replicas
+# settings to 3 / 3 / 2 / 2 (topics in kafka-topics.yaml: replicas: 3).
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: dual-role
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    # Removing the manifest from Git must never delete the brokers and their volumes.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  replicas: 1
+  roles:
+    - controller
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 20Gi
+        class: local-path
+        deleteClaim: false
+        kraftMetadata: shared
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 1536Mi
+  jvmOptions:
+    "-Xms": 768m
+    "-Xmx": 768m
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: stock-market-kafka
+  namespace: messaging
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  kafka:
+    listeners:
+      # Plain listener for the services; reachable only from namespaces allowed by NetworkPolicy.
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+        networkPolicyPeers:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: stock-market
+          - podSelector: {}
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        networkPolicyPeers:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: stock-market
+          - podSelector: {}
+    config:
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      default.replication.factor: 1
+      min.insync.replicas: 1
+      # Every topic is declared in kafka-topics.yaml; a typo in a topic name fails fast.
+      auto.create.topics.enable: false
+      num.partitions: 3
+      log.retention.hours: 168
+      log.segment.bytes: 268435456
+      group.initial.rebalance.delay.ms: 3000
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: kafka-metrics
+          key: kafka-metrics-config.yml
+    template:
+      pod:
+        priorityClassName: stock-market-critical
+  entityOperator:
+    topicOperator:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    userOperator:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+  # Consumer-group lag and topic offsets for Prometheus.
+  kafkaExporter:
+    topicRegex: ".*"
+    groupRegex: ".*"
+    resources:
+      requests:
+        cpu: 20m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi

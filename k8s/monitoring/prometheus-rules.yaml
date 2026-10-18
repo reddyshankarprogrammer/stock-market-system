@@ -1,0 +1,205 @@
+# Alerts of the stock-market platform (cluster-level alerts come from kube-prometheus-stack).
+# severity: critical -> Slack immediately, repeat hourly; warning -> Slack, repeat every 4h.
+# runbook_url points at docs/operations-runbook.md.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: stock-market-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: stock-market.services
+      rules:
+        - alert: ServiceDown
+          expr: sum by (service) (up{namespace="stock-market"}) == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.service }} has no healthy pod"
+            description: "No pod of {{ $labels.service }} answered /actuator/prometheus for 2 minutes."
+            runbook_url: https://github.com/reddyshankarprogrammer/stock-market-system/blob/main/docs/operations-runbook.md#service-down
+        - alert: ServiceHighErrorRate
+          expr: |
+            sum by (service) (rate(http_server_requests_seconds_count{namespace="stock-market", status=~"5..", uri!~"/actuator.*"}[5m]))
+              / sum by (service) (rate(http_server_requests_seconds_count{namespace="stock-market", uri!~"/actuator.*"}[5m]))
+              > 0.05
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.service }} 5xx ratio {{ $value | humanizePercentage }}"
+            description: "More than 5% of requests to {{ $labels.service }} fail with a server error."
+            runbook_url: https://github.com/reddyshankarprogrammer/stock-market-system/blob/main/docs/operations-runbook.md#high-error-rate
+        - alert: ServiceHighLatency
+          expr: |
+            histogram_quantile(0.95, sum by (le, service) (rate(http_server_requests_seconds_bucket{namespace="stock-market", uri!~"/actuator.*"}[5m]))) > 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.service }} p95 latency {{ $value | humanizeDuration }}"
+            description: "95th percentile latency above 1s for 10 minutes."
+            runbook_url: https://github.com/reddyshankarprogrammer/stock-market-system/blob/main/docs/operations-runbook.md#high-latency
+        - alert: JvmHeapNearlyFull
+          expr: |
+            sum by (service, pod) (jvm_memory_used_bytes{namespace="stock-market", area="heap"})
+              / sum by (service, pod) (jvm_memory_max_bytes{namespace="stock-market", area="heap"}) > 0.9
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.pod }} heap {{ $value | humanizePercentage }} used"
+            description: "Heap above 90% for 10 minutes: memory leak or limit too low."
+        - alert: DatabasePoolExhausted
+          expr: sum by (service, pod) (hikaricp_connections_pending{namespace="stock-market"}) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.pod }} is waiting for database connections"
+            description: "Threads have been waiting for a HikariCP connection for 5 minutes."
+        - alert: PodCrashLooping
+          expr: increase(kube_pod_container_status_restarts_total{namespace=~"stock-market|database|messaging"}[15m]) > 3
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} restarted {{ $value | humanize }} times in 15m"
+            description: "Check kubectl logs --previous and the events of the pod."
+            runbook_url: https://github.com/reddyshankarprogrammer/stock-market-system/blob/main/docs/operations-runbook.md#pod-crash-looping
+        - alert: AutoscalerAtMaximum
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas{namespace="stock-market"}
+              >= kube_horizontalpodautoscaler_spec_max_replicas{namespace="stock-market"}
+            and kube_horizontalpodautoscaler_spec_max_replicas{namespace="stock-market"} > 1
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.horizontalpodautoscaler }} at maxReplicas for 30m"
+            description: "Raise maxReplicas (and the namespace ResourceQuota) or find the hot path."
+
+    - name: stock-market.mysql
+      rules:
+        - alert: MySQLDown
+          expr: max(mysql_up{namespace="database"}) == 0 or absent(mysql_up{namespace="database"})
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "MySQL is down"
+            description: "mysqld-exporter cannot reach MySQL: every service that stores data is failing."
+            runbook_url: https://github.com/reddyshankarprogrammer/stock-market-system/blob/main/docs/operations-runbook.md#mysql-down
+        - alert: MySQLTooManyConnections
+          expr: max(mysql_global_status_threads_connected{namespace="database"}) / max(mysql_global_variables_max_connections{namespace="database"}) > 0.8
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "MySQL connections at {{ $value | humanizePercentage }} of max_connections"
+            description: "Scale-out of the services may hit max_connections (mysql-configmap.yaml)."
+        - alert: MySQLSlowQueries
+          expr: rate(mysql_global_status_slow_queries{namespace="database"}[5m]) > 0.5
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "MySQL logs {{ $value | humanize }} slow queries per second"
+            description: "Look at /var/lib/mysql/slow.log in the mysql pod."
+        - alert: MySQLBackupMissing
+          expr: |
+            time() - max(kube_cronjob_status_last_successful_time{namespace="database", cronjob="mysql-backup"}) > 93600
+            or absent(kube_cronjob_status_last_successful_time{namespace="database", cronjob="mysql-backup"})
+          for: 30m
+          labels:
+            severity: critical
+          annotations:
+            summary: "No successful MySQL backup in the last 26 hours"
+            description: "The nightly mysql-backup CronJob has not succeeded. Recovery point objective is at risk."
+            runbook_url: https://github.com/reddyshankarprogrammer/stock-market-system/blob/main/docs/operations-runbook.md#backup-failed
+        - alert: MySQLBackupJobFailed
+          expr: kube_job_status_failed{namespace="database", job_name=~"mysql-backup.*"} > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: "Backup job {{ $labels.job_name }} failed"
+            description: "kubectl -n database logs job/{{ $labels.job_name }}"
+            runbook_url: https://github.com/reddyshankarprogrammer/stock-market-system/blob/main/docs/operations-runbook.md#backup-failed
+
+    - name: stock-market.kafka
+      rules:
+        - alert: KafkaBrokerDown
+          expr: count(kafka_server_replicamanager_leadercount{namespace="messaging"}) < 1 or absent(kafka_server_replicamanager_leadercount{namespace="messaging"})
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Kafka has no broker online"
+            description: "Order, portfolio and notification events cannot be published or consumed."
+            runbook_url: https://github.com/reddyshankarprogrammer/stock-market-system/blob/main/docs/operations-runbook.md#kafka-down
+        - alert: KafkaOfflinePartitions
+          expr: sum(kafka_controller_kafkacontroller_offlinepartitionscount{namespace="messaging"}) > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $value }} Kafka partitions are offline"
+            description: "Partitions without a leader reject reads and writes."
+        - alert: KafkaUnderReplicatedPartitions
+          expr: sum(kafka_server_replicamanager_underreplicatedpartitions{namespace="messaging"}) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $value }} under-replicated Kafka partitions"
+            description: "A broker is down or lagging behind."
+        - alert: KafkaConsumerLagHigh
+          expr: sum by (consumergroup, topic) (kafka_consumergroup_lag{namespace="messaging"}) > 1000
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Consumer group {{ $labels.consumergroup }} lags {{ $value }} messages on {{ $labels.topic }}"
+            description: "The consuming service is down, slow, or failing to process records."
+            runbook_url: https://github.com/reddyshankarprogrammer/stock-market-system/blob/main/docs/operations-runbook.md#kafka-consumer-lag
+
+    - name: stock-market.platform
+      rules:
+        - alert: CertificateExpiringSoon
+          expr: certmanager_certificate_expiration_timestamp_seconds - time() < 14 * 24 * 3600
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Certificate {{ $labels.namespace }}/{{ $labels.name }} expires in {{ $value | humanizeDuration }}"
+            description: "cert-manager should have renewed it already: kubectl describe certificate -n {{ $labels.namespace }} {{ $labels.name }}"
+        - alert: PersistentVolumeFillingUp
+          expr: |
+            kubelet_volume_stats_available_bytes{namespace=~"database|messaging|stock-market|monitoring|logging"}
+              / kubelet_volume_stats_capacity_bytes{namespace=~"database|messaging|stock-market|monitoring|logging"} < 0.15
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Volume {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} has {{ $value | humanizePercentage }} free"
+            description: "Expand the PVC or clean up (backups, Kafka retention, Loki retention)."
+        - alert: ArgoCDApplicationOutOfSync
+          expr: argocd_app_info{sync_status!="Synced"} == 1
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Argo CD application {{ $labels.name }} is {{ $labels.sync_status }}"
+            description: "The cluster differs from Git for 30 minutes."
+        - alert: ArgoCDApplicationDegraded
+          expr: argocd_app_info{health_status=~"Degraded|Missing"} == 1
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Argo CD application {{ $labels.name }} is {{ $labels.health_status }}"
+            description: "argocd app get {{ $labels.name }} shows the failing resources."
+            runbook_url: https://github.com/reddyshankarprogrammer/stock-market-system/blob/main/docs/operations-runbook.md#argocd-degraded

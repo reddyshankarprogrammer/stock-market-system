@@ -1,0 +1,94 @@
+# Certificate issuers (cert-manager renews every certificate automatically, by default when
+# a third of its lifetime is left: day 60 of 90 for Let's Encrypt).
+#
+#   letsencrypt-staging   ACME staging (untrusted certificates, generous rate limits): test first
+#   letsencrypt-prod      ACME production (publicly trusted): needs a public DNS name pointing at
+#                         this cluster and port 80 reachable from the internet (HTTP-01)
+#   stockmarket-local-ca  private CA for *.stockmarket.local and other non-public names
+#
+# The HTTP-01 solver Ingress is marked as a "minion" so it merges into the host's master
+# Ingress of the F5 NGINX Ingress Controller instead of conflicting with it.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    # Optional: add "email: <operations mailbox>" for ACME account notices.
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx
+            ingressTemplate:
+              metadata:
+                annotations:
+                  nginx.org/mergeable-ingress-type: minion
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx
+            ingressTemplate:
+              metadata:
+                annotations:
+                  nginx.org/mergeable-ingress-type: minion
+---
+# Private CA: a self-signed root, then a CA issuer that signs the *.stockmarket.local certificates.
+# Trust it on client machines with:
+#   kubectl -n platform get secret stockmarket-local-ca -o jsonpath='{.data.ca\.crt}' | base64 -d > stockmarket-ca.crt
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-bootstrap
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: stockmarket-local-ca
+  # cert-manager's cluster resource namespace (where it is installed).
+  namespace: platform
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+spec:
+  isCA: true
+  commonName: Stock Market Local CA
+  secretName: stockmarket-local-ca
+  duration: 87600h      # 10 years
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-bootstrap
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: stockmarket-local-ca
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+spec:
+  ca:
+    secretName: stockmarket-local-ca

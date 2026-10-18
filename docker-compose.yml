@@ -147,6 +147,9 @@ services:
     ports:
       - "${ACCOUNT_SERVICE_PORT}:8086"
 
+    volumes:
+      - account-statements:/data/statements
+
     depends_on:
       mysql:
         condition: service_healthy
@@ -160,6 +163,7 @@ volumes:
   mysql-data:
   redis-data:
   kafka-data:
+  account-statements:
 
 networks:
   trading-network:

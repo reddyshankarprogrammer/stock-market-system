@@ -1,0 +1,108 @@
+# ai-service is a placeholder (ai-service/README.md): only an empty main.py exists, so no image is
+# built yet and the Deployment is scaled to 0. Enabling it:
+#   1. implement the service (FastAPI app object "app" in main.py, GET /health, port 8000) and
+#      add ai-service/requirements.txt: CI then builds and pushes the image automatically;
+#   2. add the gateway route /api/v1/ai/** (api-gateway application.yaml + JwtAuthFilter lists);
+#   3. remove "replicas: 0" below and add hpa.yaml to kustomization.yaml: the
+#      HorizontalPodAutoscaler then owns the replica count.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: ai-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    stock-market/description: "AI insights (placeholder, not implemented)."
+spec:
+  replicas: 0
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ai-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ai-service
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: stock-market-system
+      annotations:
+        kubectl.kubernetes.io/default-container: ai-service
+    spec:
+      serviceAccountName: ai-service
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      priorityClassName: stock-market-service
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ai-service
+          image: ghcr.io/reddyshankarprogrammer/ai-service:main
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: ai-service-config
+            - secretRef:
+                name: ai-service-secret
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop: ["ALL"]
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi

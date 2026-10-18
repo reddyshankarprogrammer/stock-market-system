@@ -1,0 +1,201 @@
+# Security scanning. Runs as part of every CI run (workflow_call), nightly against main to catch
+# newly published CVEs in unchanged code, and on demand.
+#
+#   secret-scan   gitleaks over the full Git history
+#   owasp         OWASP Dependency-Check per service (fails on CVSS >= OWASP_FAIL_CVSS, default 7)
+#   trivy-fs      Trivy: dependency vulnerabilities and secrets (gate), IaC misconfigurations (report)
+name: Security
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"   # 03:00 UTC nightly
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: "21"
+  DEPENDENCY_CHECK_VERSION: "12.1.0"
+  TRIVY_VERSION: "0.71.1"
+  GITLEAKS_VERSION: "v8.24.3"
+
+jobs:
+  # --------------------------------------------------------------------------------------------
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: gitleaks
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -v "${PWD}:/repo" -w /repo \
+            "zricethezav/gitleaks:${GITLEAKS_VERSION}" \
+            git /repo --config /repo/.gitleaks.toml --redact --verbose --exit-code 1 \
+            --report-format sarif --report-path /repo/gitleaks.sarif
+
+      - name: Upload gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks.sarif
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # --------------------------------------------------------------------------------------------
+  owasp-database:
+    name: OWASP NVD database
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      cache-key: ${{ steps.key.outputs.key }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Cache key (one database per day)
+        id: key
+        run: echo "key=dependency-check-db-${DEPENDENCY_CHECK_VERSION}-$(date -u +%Y-%m-%d)" >> "${GITHUB_OUTPUT}"
+
+      - name: Restore NVD database
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: ${{ steps.key.outputs.key }}
+          restore-keys: dependency-check-db-${{ env.DEPENDENCY_CHECK_VERSION }}-
+
+      - name: Update NVD database
+        if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        working-directory: notification-service
+        run: |
+          [[ -n "${NVD_API_KEY}" ]] || echo "::warning title=OWASP::NVD_API_KEY not set: the NVD download is slow and rate limited (docs/github-actions-guide.md)."
+          key_arg=()
+          [[ -n "${NVD_API_KEY}" ]] && key_arg=(-DnvdApiKey="${NVD_API_KEY}")
+          chmod +x mvnw
+          ./mvnw -B -ntp "org.owasp:dependency-check-maven:${DEPENDENCY_CHECK_VERSION}:update-only" \
+            "${key_arg[@]}" -DnvdApiDelay=6000
+
+  owasp:
+    name: OWASP Dependency-Check · ${{ matrix.service }}
+    needs: owasp-database
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - user-service
+          - market-data-service
+          - order-service
+          - portfolio-service
+          - notification-service
+          - account-service
+    defaults:
+      run:
+        working-directory: ${{ matrix.service }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+          cache-dependency-path: ${{ matrix.service }}/pom.xml
+
+      - name: Restore NVD database
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: ${{ needs.owasp-database.outputs.cache-key }}
+          restore-keys: dependency-check-db-${{ env.DEPENDENCY_CHECK_VERSION }}-
+
+      - name: Dependency-Check
+        env:
+          FAIL_CVSS: ${{ vars.OWASP_FAIL_CVSS || '7' }}
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -ntp "org.owasp:dependency-check-maven:${DEPENDENCY_CHECK_VERSION}:check" \
+            -DautoUpdate=false \
+            -DfailBuildOnCVSS="${FAIL_CVSS}" \
+            -DsuppressionFile="${GITHUB_WORKSPACE}/.github/dependency-check-suppressions.xml" \
+            -Dformats=HTML,SARIF,JSON \
+            -DossindexAnalyzerEnabled=false \
+            -DretireJsAnalyzerEnabled=false \
+            -DnodeAnalyzerEnabled=false \
+            -DassemblyAnalyzerEnabled=false
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-${{ matrix.service }}
+          path: ${{ matrix.service }}/target/dependency-check-report.*
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload SARIF to code scanning
+        if: always() && hashFiles(format('{0}/target/dependency-check-report.sarif', matrix.service)) != ''
+        continue-on-error: true   # code scanning needs a public repo or GitHub Advanced Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ matrix.service }}/target/dependency-check-report.sarif
+          category: owasp-${{ matrix.service }}
+
+  # --------------------------------------------------------------------------------------------
+  trivy-fs:
+    name: Trivy filesystem and IaC scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Scan
+        run: |
+          mkdir -p "${HOME}/.cache/trivy" trivy
+          trivy() {
+            docker run --rm \
+              -v "${PWD}:/src:ro" -v "${PWD}/trivy:/out" \
+              -v "${HOME}/.cache/trivy:/root/.cache/trivy" \
+              "aquasec/trivy:${TRIVY_VERSION}" "$@"
+          }
+          # Report: everything, including Dockerfile / Kubernetes misconfigurations.
+          trivy fs --scanners vuln,secret,misconfig --format sarif --output /out/fs.sarif /src
+          trivy fs --scanners misconfig --severity HIGH,CRITICAL --format table /src || true
+          # Gate: fixable HIGH / CRITICAL dependency vulnerabilities and any committed secret.
+          trivy fs --scanners vuln,secret --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+            --skip-dirs /src/docs/postman --format table /src
+
+      - name: Upload SARIF to code scanning
+        if: always() && hashFiles('trivy/fs.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy/fs.sarif
+          category: trivy-fs

@@ -1,0 +1,35 @@
+# App of apps. Applied once by scripts/install-argocd.sh; from then on Argo CD keeps
+# project.yaml and argocd-applications.yaml (and therefore every application) in sync with main.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: stock-market-root
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: stock-market
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # "default" project: the root manages the stock-market AppProject itself.
+  project: default
+  source:
+    repoURL: https://github.com/reddyshankarprogrammer/stock-market-system.git
+    targetRevision: main
+    path: k8s/argocd
+    directory:
+      include: "{project.yaml,argocd-applications.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

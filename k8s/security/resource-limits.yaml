@@ -1,0 +1,58 @@
+# Caps what the application namespace can consume, so a runaway HPA or a bad release cannot
+# starve MySQL, Kafka or the platform. Sized for maxReplicas of every HPA plus one surge pod each.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: stock-market-quota
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 20Gi
+    limits.cpu: "32"
+    limits.memory: 32Gi
+    pods: "60"
+    persistentvolumeclaims: "5"
+    requests.storage: 50Gi
+    services.loadbalancers: "0"
+    services.nodeports: "0"
+---
+# Defaults for any container that omits resources (every manifest here sets them explicitly).
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: stock-market-defaults
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 500m
+        memory: 512Mi
+      defaultRequest:
+        cpu: 50m
+        memory: 256Mi
+      max:
+        cpu: "4"
+        memory: 4Gi
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: database-defaults
+  namespace: database
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 500m
+        memory: 512Mi
+      defaultRequest:
+        cpu: 50m
+        memory: 128Mi

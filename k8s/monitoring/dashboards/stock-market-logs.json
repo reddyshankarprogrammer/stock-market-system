@@ -1,0 +1,185 @@
+{
+  "uid": "stock-market-logs",
+  "title": "Stock Market / Log Search",
+  "tags": [
+    "stock-market",
+    "logs"
+  ],
+  "description": "Search the service logs by business id (structured metadata extracted by Alloy).",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "version": 1,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "30s",
+  "timezone": "browser",
+  "templating": {
+    "list": [
+      {
+        "name": "app",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "label": "Service",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 2,
+        "query": {
+          "label": "app",
+          "stream": "{namespace=\"stock-market\"}",
+          "type": 1,
+          "refId": "app"
+        },
+        "definition": "label_values(app)",
+        "allValue": ".+"
+      },
+      {
+        "name": "userId",
+        "type": "textbox",
+        "label": "userId",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "name": "accountId",
+        "type": "textbox",
+        "label": "accountId",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "name": "tradeId",
+        "type": "textbox",
+        "label": "tradeId",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "name": "statementId",
+        "type": "textbox",
+        "label": "statementId",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "name": "search",
+        "type": "textbox",
+        "label": "Free text",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [
+    {
+      "title": "Stock Market",
+      "type": "dashboards",
+      "tags": [
+        "stock-market"
+      ],
+      "asDropdown": true
+    }
+  ],
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Matching lines by level",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (level) (count_over_time({namespace=\"stock-market\", app=~\"$app\"} | userId=~\"${userId:regex}.*\" | accountId=~\"${accountId:regex}.*\" | tradeId=~\"${tradeId:regex}.*\" | statementId=~\"${statementId:regex}.*\" |= \"$search\" [$__interval]))",
+          "legendFormat": "{{level}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "id": 2,
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "type": "logs",
+      "title": "Matching log lines",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{namespace=\"stock-market\", app=~\"$app\"} | userId=~\"${userId:regex}.*\" | accountId=~\"${accountId:regex}.*\" | tradeId=~\"${tradeId:regex}.*\" | statementId=~\"${statementId:regex}.*\" |= \"$search\"",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false
+      },
+      "id": 3,
+      "gridPos": {
+        "h": 18,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespaces.yaml
+  - priority-classes.yaml
+# Removing a namespace from Git must never delete it (and every workload and volume in it).
+commonAnnotations:
+  argocd.argoproj.io/sync-options: Prune=false,Delete=false

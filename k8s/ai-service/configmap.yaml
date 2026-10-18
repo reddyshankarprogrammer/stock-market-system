@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-service-config
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: ai-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: stock-market-system
+data:
+  AI_SERVICE_PORT: "8000"
+  TZ: "UTC"
+  LOG_LEVEL: "INFO"
+  PYTHONUNBUFFERED: "1"
+  # Prices come from market-data-service (ai-service/README.md); never from another service's tables.
+  MARKET_DATA_SERVICE_URL: "http://market-data-service.stock-market.svc.cluster.local:8082"
+  KAFKA_BOOTSTRAP_SERVERS: "stock-market-kafka-kafka-bootstrap.messaging.svc.cluster.local:9092"

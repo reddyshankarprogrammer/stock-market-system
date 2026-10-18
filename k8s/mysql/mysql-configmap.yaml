@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+  namespace: database
+  labels:
+    app.kubernetes.io/name: mysql
+    app.kubernetes.io/part-of: stock-market-system
+data:
+  # Mounted into /etc/mysql/conf.d (included by the image's /etc/my.cnf).
+  stock-market.cnf: |
+    [mysqld]
+    character-set-server            = utf8mb4
+    collation-server                = utf8mb4_0900_ai_ci
+    default-time-zone               = '+00:00'
+    skip-name-resolve
+    pid-file                        = /var/run/mysqld/mysqld.pid
+    socket                          = /var/run/mysqld/mysqld.sock
+
+    # 7 services x HikariCP pool (10) x up to 5 replicas, plus backup and exporter.
+    max_connections                 = 500
+    wait_timeout                    = 600
+    max_allowed_packet              = 64M
+
+    # InnoDB: sized for the 2Gi container limit.
+    innodb_buffer_pool_size         = 1G
+    innodb_log_buffer_size          = 32M
+    innodb_redo_log_capacity        = 512M
+    innodb_flush_log_at_trx_commit  = 1
+    innodb_file_per_table           = ON
+
+    # Binary log: durable commits and point-in-time recovery from the nightly dump position.
+    log_bin                         = mysql-bin
+    binlog_format                   = ROW
+    sync_binlog                     = 1
+    binlog_expire_logs_seconds      = 604800
+    server_id                       = 1
+
+    slow_query_log                  = ON
+    long_query_time                 = 1
+    slow_query_log_file             = /var/lib/mysql/slow.log
+    log_error_verbosity             = 2
+
+    [client]
+    socket                          = /var/run/mysqld/mysqld.sock
+    default-character-set           = utf8mb4
+
+  # Runs once, on the very first start with an empty data directory.
+  01-exporter-user.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    mysql --protocol=socket -uroot -p"${MYSQL_ROOT_PASSWORD}" <<SQL
+    CREATE USER IF NOT EXISTS 'exporter'@'%' IDENTIFIED BY '${MYSQL_EXPORTER_PASSWORD}' WITH MAX_USER_CONNECTIONS 3;
+    GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'exporter'@'%';
+    FLUSH PRIVILEGES;
+    SQL

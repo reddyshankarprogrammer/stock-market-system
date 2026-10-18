@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Spans namespaces (stock-market, monitoring, argocd, platform): every manifest sets its own.
+# nginx-ingress-values.yaml and cert-manager-values.yaml are Helm input for scripts/install-ingress.sh.
+resources:
+  - cluster-issuer.yaml
+  - stock-market-ingress.yaml
+  - platform-ingress.yaml

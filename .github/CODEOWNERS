@@ -1,0 +1,8 @@
+# Reviews required on pull requests to protected branches (Settings -> Branches -> require review
+# from Code Owners). Owner: Shanker Reddy.
+*                       @reddyshankarprogrammer
+# Infrastructure, deployment and pipeline changes.
+/k8s/                   @reddyshankarprogrammer
+/scripts/               @reddyshankarprogrammer
+/.github/               @reddyshankarprogrammer
+**/Dockerfile           @reddyshankarprogrammer

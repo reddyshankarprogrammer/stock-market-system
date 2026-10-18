@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: messaging
+# strimzi-values.yaml is Helm input for scripts/install-kafka.sh, not a manifest.
+resources:
+  - kafka-metrics-configmap.yaml
+  - kafka-cluster.yaml
+  - kafka-topics.yaml

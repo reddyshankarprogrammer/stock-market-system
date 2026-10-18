@@ -2,6 +2,40 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-18: Kubernetes platform, CI/CD and GitOps
+
+### Features
+
+| Feature | Where |
+|---|---|
+| K3s install, upgrade, uninstall, health check (Ubuntu 24.04) | `scripts/install-k3s.sh`, `upgrade-k3s.sh`, `uninstall-k3s.sh`, `cluster-health-check.sh` |
+| One-command platform bootstrap; secrets from `.env` | `scripts/bootstrap-platform.sh`, `create-secrets.sh` |
+| Kubernetes manifests for all 8 services (Deployment, Service, ConfigMap, Secret template, HPA, PDB, ServiceAccount) | `k8s/<service>/` |
+| MySQL 8.4 with exporter, Valkey (Redis), Strimzi Kafka (KRaft) with 15 declared topics | `k8s/mysql`, `k8s/redis`, `k8s/kafka` |
+| F5 NGINX Ingress, cert-manager (Let's Encrypt + local CA) | `k8s/ingress`, `scripts/install-ingress.sh` |
+| Argo CD app of apps (15 applications, sync waves, AppProject guard rails) | `k8s/argocd`, `scripts/install-argocd.sh` |
+| Prometheus, Alertmanager, Grafana: 12 dashboards, 20 alerts | `k8s/monitoring`, `scripts/install-monitoring.sh` |
+| Loki + Grafana Alloy; search by userId, accountId, tradeId, statementId | `k8s/logging`, `scripts/install-logging.sh` |
+| Network policies, RBAC, Pod Security Standards, quotas, image pull secret | `k8s/security`, `k8s/namespaces` |
+| Nightly compressed MySQL backups (30-day retention), restore script, optional off-site copy | `k8s/mysql/backup-cronjob.yaml`, `scripts/restore-database.sh` |
+| GitHub Actions: CI, CD with manual approval, security scans, releases | `.github/workflows/` |
+| Production Dockerfiles: Java 21, multi-stage, layered, distroless, non-root | `<service>/Dockerfile` |
+
+### Changes to existing files
+
+| File | Change |
+|---|---|
+| every service `pom.xml` | `micrometer-registry-prometheus` (runtime) for `/actuator/prometheus` |
+| `account-service/Dockerfile` | replaced by the shared production layout; statements in `/data/statements` |
+| `docker-compose.yml` | `account-statements` volume for the account-service container |
+| `README.md`, `CLAUDE.md` | Kubernetes, CI/CD and operations sections |
+
+### Notes
+
+- Replaced end-of-life components the request named: ingress-nginx (retired March 2026) by F5 NGINX Ingress Controller, Promtail (EOL 2026-03-02) by Grafana Alloy; MySQL 8.0 (EOL April 2026) by 8.4 LTS in Kubernetes; Redis by Valkey (BSD license).
+- The 9 domain topics (`account-created` ... `notification-created`) are created but have no producer or consumer yet; the services keep using their existing topics.
+- New `.env` keys for Kubernetes: `MYSQL_APP_USERNAME`, `MYSQL_APP_PASSWORD`, `MYSQL_EXPORTER_PASSWORD`, `REDIS_PASSWORD`, `GRAFANA_ADMIN_*`, `ALERT_SLACK_WEBHOOK_URL`, `GHCR_USERNAME`, `GHCR_TOKEN` (see `.env.example`).
+
 ## 2026-10-17: Postman collection
 
 - 17 more requests (102 in total): account rename and close, fund transactions, fees and taxes charged, tax rules, dividend and interest lists, and an upload of every broker sample (Groww, Binance, Exness).

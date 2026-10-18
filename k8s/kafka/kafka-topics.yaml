@@ -1,0 +1,352 @@
+# Every Kafka topic of the platform, reconciled by the Strimzi Topic Operator.
+# auto.create.topics.enable is false: a topic must be declared here before a service uses it.
+# Payloads are flat JSON maps (root CLAUDE.md rule 6). See docs/kafka-topology.md.
+#
+# Group 1 - topics the services use today (names must match the services' application.yaml).
+# Group 2 - domain-event topics reserved for the account / statement / trade / portfolio
+#           event model; no producer or consumer exists yet.
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: user.registered
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: active
+  annotations:
+    stock-market/description: "user-service -> notification-service"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: user.registered
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 2592000000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: order.executed
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: active
+  annotations:
+    stock-market/description: "order-service -> portfolio-service, notification-service"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: order.executed
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 2592000000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: order.failed
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: active
+  annotations:
+    stock-market/description: "order-service -> notification-service"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: order.failed
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 2592000000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: stock.price.updated
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: active
+  annotations:
+    stock-market/description: "market-data-service -> (no consumer yet)"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: stock.price.updated
+  partitions: 6
+  replicas: 1
+  config:
+    retention.ms: 86400000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: account.trade.executed
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: active
+  annotations:
+    stock-market/description: "account-service -> (no consumer yet)"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: account.trade.executed
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 2592000000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: account.fund.transaction
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: active
+  annotations:
+    stock-market/description: "account-service -> (no consumer yet)"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: account.fund.transaction
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 2592000000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: account-created
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: reserved
+  annotations:
+    stock-market/description: "reserved: account opened"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: account-created
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 2592000000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: account-updated
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: reserved
+  annotations:
+    stock-market/description: "reserved: account changed or closed"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: account-updated
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 2592000000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: statement-uploaded
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: reserved
+  annotations:
+    stock-market/description: "reserved: broker statement stored, awaiting processing"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: statement-uploaded
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: statement-processed
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: reserved
+  annotations:
+    stock-market/description: "reserved: statement import finished"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: statement-processed
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 2592000000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: trade-created
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: reserved
+  annotations:
+    stock-market/description: "reserved: trade recorded"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: trade-created
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 2592000000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: trade-updated
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: reserved
+  annotations:
+    stock-market/description: "reserved: trade corrected or cancelled"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: trade-updated
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 2592000000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: holding-updated
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: reserved
+  annotations:
+    stock-market/description: "reserved: holding quantity or cost changed"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: holding-updated
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 2592000000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: portfolio-updated
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: reserved
+  annotations:
+    stock-market/description: "reserved: portfolio valuation changed"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: portfolio-updated
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 2592000000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: notification-created
+  namespace: messaging
+  labels:
+    strimzi.io/cluster: stock-market-kafka
+    app.kubernetes.io/part-of: stock-market-system
+    stock-market/topic-status: reserved
+  annotations:
+    stock-market/description: "reserved: notification produced"
+    # Removing a topic from Git must not delete it and its data: delete topics deliberately.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  topicName: notification-created
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000
+    cleanup.policy: delete
+    min.insync.replicas: 1
+    compression.type: producer

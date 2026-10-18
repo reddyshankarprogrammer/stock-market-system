@@ -1,0 +1,17 @@
+# Keep the build context small and free of local artefacts and secrets.
+target/
+.idea/
+.vscode/
+*.iml
+*.log
+HELP.md
+README.md
+CLAUDE.md
+uploads/
+.env
+.env.*
+.git
+.gitignore
+.gitattributes
+Dockerfile
+.dockerignore

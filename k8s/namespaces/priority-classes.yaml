@@ -1,0 +1,23 @@
+# Under node pressure the scheduler evicts lower-priority pods first:
+# data stores (MySQL, Kafka) > trading services > everything else.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: stock-market-critical
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+value: 100000
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "Stateful data stores of the stock-market platform (MySQL, Kafka)."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: stock-market-service
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+value: 50000
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority
+description: "Stock-market application services."

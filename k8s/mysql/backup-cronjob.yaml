@@ -1,0 +1,216 @@
+# Nightly logical backup of the application database.
+#   - consistent snapshot (--single-transaction) without locking the services
+#   - gzip-compressed, integrity-checked and checksummed
+#   - binlog coordinates recorded in the dump header (--source-data=2) for point-in-time recovery
+#   - 30-day retention on the mysql-backup volume
+# Restore: scripts/restore-database.sh. Off-site copy: mysql-backup-offsite below.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mysql-backup
+  namespace: database
+  labels:
+    app.kubernetes.io/name: mysql-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: stock-market-system
+spec:
+  schedule: "0 2 * * *"
+  timeZone: "Asia/Dubai"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 7200
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: mysql-backup
+            app.kubernetes.io/part-of: stock-market-system
+        spec:
+          restartPolicy: Never
+          serviceAccountName: mysql-backup
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: backup
+              image: mysql:8.4
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: MYSQL_HOST
+                  value: mysql.database.svc.cluster.local
+                - name: RETENTION_DAYS
+                  value: "30"
+                - name: MYSQL_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      name: mysql-secret
+                      key: MYSQL_ROOT_PASSWORD
+                - name: MYSQL_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: mysql-secret
+                      key: MYSQL_DATABASE
+              command: ["/bin/bash", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+                  stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+                  target="/backups/${MYSQL_DATABASE}-${stamp}.sql.gz"
+                  partial="${target}.partial"
+
+                  echo "Backup of ${MYSQL_DATABASE} on ${MYSQL_HOST} -> ${target}"
+                  mysqldump -h "${MYSQL_HOST}" -uroot \
+                    --single-transaction --quick --routines --triggers --events \
+                    --hex-blob --source-data=2 --set-gtid-purged=OFF --no-tablespaces \
+                    --default-character-set=utf8mb4 \
+                    --databases "${MYSQL_DATABASE}" \
+                    | gzip -6 > "${partial}"
+
+                  gzip -t "${partial}"
+                  # mysqldump writes "-- Dump completed" last: guarantees the dump was not truncated.
+                  gzip -dc "${partial}" | tail -n 1 | grep -q "Dump completed"
+                  mv "${partial}" "${target}"
+                  ( cd /backups && sha256sum "$(basename "${target}")" > "$(basename "${target}").sha256" )
+                  ln -sfn "$(basename "${target}")" /backups/latest.sql.gz
+
+                  echo "Removing backups older than ${RETENTION_DAYS} days"
+                  find /backups -maxdepth 1 -type f \( -name '*.sql.gz' -o -name '*.sha256' -o -name '*.partial' \) \
+                    -mtime "+${RETENTION_DAYS}" -print -delete
+
+                  echo "Done: $(du -h "${target}" | cut -f1)  $(find /backups -maxdepth 1 -type f -name '*.sql.gz' | wc -l) backups kept"
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: mysql-backup
+            - name: tmp
+              emptyDir:
+                sizeLimit: 1Gi
+---
+# Copies the backup volume to S3-compatible object storage (MinIO, Backblaze B2, Wasabi, AWS S3, ...)
+# 30 minutes after the nightly dump. Suspended until the rclone-config Secret exists:
+#   kubectl -n database create secret generic rclone-config --from-file=rclone.conf
+# then set suspend: false below and commit (a kubectl patch would be reverted by Argo CD
+# self-heal). The rclone remote must be named "offsite".
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mysql-backup-offsite
+  namespace: database
+  labels:
+    app.kubernetes.io/name: mysql-backup-offsite
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: stock-market-system
+spec:
+  suspend: true
+  schedule: "30 2 * * *"
+  timeZone: "Asia/Dubai"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: mysql-backup-offsite
+            app.kubernetes.io/part-of: stock-market-system
+        spec:
+          restartPolicy: Never
+          serviceAccountName: mysql-backup
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: rclone
+              image: rclone/rclone:1.69.1
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: RCLONE_CONFIG
+                  value: /config/rclone.conf
+                - name: OFFSITE_PATH
+                  value: offsite:stock-market-backups/mysql
+              args:
+                - copy
+                - /backups
+                - $(OFFSITE_PATH)
+                - --include=*.sql.gz
+                - --include=*.sha256
+                - --checksum
+                - --max-age=31d
+                - --log-level=INFO
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+                  readOnly: true
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+                - name: cache
+                  mountPath: /.cache
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: mysql-backup
+            - name: config
+              secret:
+                secretName: rclone-config
+            - name: cache
+              emptyDir: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysql-backup
+  namespace: database
+  labels:
+    app.kubernetes.io/name: mysql-backup
+    app.kubernetes.io/part-of: stock-market-system
+automountServiceAccountToken: false

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OWASP Dependency-Check suppressions (security.yml). Suppress only reviewed false positives or
+  accepted risks, each with a reason, the reviewer and an expiry date (the "until" attribute
+  makes the suppression lapse so the finding is reviewed again).
+
+  Example:
+  <suppress until="2027-01-31Z">
+    <notes>False positive: CPE matches the unrelated "foo" project. Reviewed by Shanker Reddy 2026-10-18.</notes>
+    <packageUrl regex="true">^pkg:maven/com\.example/foo@.*$</packageUrl>
+    <cve>CVE-2026-00000</cve>
+  </suppress>
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+</suppressions>

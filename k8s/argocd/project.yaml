@@ -1,0 +1,58 @@
+# AppProject: the guard rails for everything Argo CD deploys from this repository.
+#   - only this Git repository
+#   - only the platform namespaces
+#   - only the cluster-scoped kinds the platform needs
+#   - never a plain Secret: credentials are created out of band (scripts/create-secrets.sh)
+#     or committed encrypted as SealedSecrets
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: stock-market
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+  # Deleting the project must not orphan running applications.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Stock Market System (owner Shanker Reddy)
+  sourceRepos:
+    - https://github.com/reddyshankarprogrammer/stock-market-system.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: stock-market
+    - server: https://kubernetes.default.svc
+      namespace: database
+    - server: https://kubernetes.default.svc
+      namespace: messaging
+    - server: https://kubernetes.default.svc
+      namespace: monitoring
+    - server: https://kubernetes.default.svc
+      namespace: logging
+    - server: https://kubernetes.default.svc
+      namespace: platform
+    - server: https://kubernetes.default.svc
+      namespace: argocd
+    # Cluster-scoped resources (Namespace, PriorityClass, ClusterIssuer, ClusterRole).
+    - server: https://kubernetes.default.svc
+      namespace: ""
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: scheduling.k8s.io
+      kind: PriorityClass
+    - group: cert-manager.io
+      kind: ClusterIssuer
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: Secret
+  orphanedResources:
+    warn: true
+  roles:
+    - name: ci-sync
+      description: Used by .github/workflows/cd.yml to trigger and wait for a sync.
+      policies:
+        - p, proj:stock-market:ci-sync, applications, get, stock-market/*, allow
+        - p, proj:stock-market:ci-sync, applications, sync, stock-market/*, allow

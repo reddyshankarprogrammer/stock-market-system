@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: order-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: stock-market-system
+    monitoring.stock-market/scrape: "true"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: order-service
+  ports:
+    - name: http
+      port: 8083
+      targetPort: http
+      protocol: TCP

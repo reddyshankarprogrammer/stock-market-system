@@ -1,0 +1,270 @@
+# Public entry point: https://api.stockmarket.local
+#
+# Every route goes to api-gateway, never directly to a service: the gateway validates the JWT
+# and is the only component allowed to set X-User-Id / X-User-Role (root CLAUDE.md rule 1).
+# Friendly prefixes are rewritten onto the gateway's canonical /api/v1 paths:
+#
+#   /auth/**          -> /api/v1/users/**          register, login, profile, wallet
+#   /accounts/**      -> /api/v1/accounts/**
+#   /portfolio/**     -> /api/v1/portfolio/**
+#   /orders/**        -> /api/v1/orders/**
+#   /market-data/**   -> /api/v1/market-data/**
+#   /notifications/** -> /api/v1/notifications/**
+#   /ai/**            -> /api/v1/ai/**             404 until ai-service and its gateway route exist
+#   /api/**           -> /api/**                   canonical paths (trades, holdings, fees, ...)
+#
+# F5 NGINX Ingress Controller "mergeable" Ingresses: the master owns host + TLS, each minion
+# owns one path and its rewrite. The certificate is issued by cert-manager (cluster-issuer.yaml);
+# *.local names cannot get a Let's Encrypt certificate, see docs/kubernetes-architecture.md.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stock-market-api
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: stock-market-ingress
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    nginx.org/mergeable-ingress-type: master
+    cert-manager.io/cluster-issuer: stockmarket-local-ca
+    cert-manager.io/private-key-algorithm: ECDSA
+    cert-manager.io/private-key-rotation-policy: Always
+    nginx.org/redirect-to-https: "true"
+    nginx.org/hsts: "true"
+    nginx.org/hsts-max-age: "31536000"
+    # Broker statements are up to 20 MB (account-service).
+    nginx.org/client-max-body-size: "25m"
+    nginx.org/proxy-connect-timeout: "10s"
+    nginx.org/proxy-read-timeout: "120s"
+    nginx.org/proxy-send-timeout: "120s"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.stockmarket.local
+      secretName: stock-market-api-tls
+  rules:
+    - host: api.stockmarket.local
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stock-market-api-auth
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: stock-market-ingress
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    nginx.org/mergeable-ingress-type: minion
+    nginx.org/rewrites: "serviceName=api-gateway rewrite=/api/v1/users/"
+    nginx.org/limit-req-rate: "50r/s"
+    nginx.org/limit-req-burst: "100"
+    nginx.org/limit-req-key: "${binary_remote_addr}"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.stockmarket.local
+      http:
+        paths:
+          - path: /auth/
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stock-market-api-accounts
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: stock-market-ingress
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    nginx.org/mergeable-ingress-type: minion
+    nginx.org/rewrites: "serviceName=api-gateway rewrite=/api/v1/accounts/"
+    nginx.org/limit-req-rate: "50r/s"
+    nginx.org/limit-req-burst: "100"
+    nginx.org/limit-req-key: "${binary_remote_addr}"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.stockmarket.local
+      http:
+        paths:
+          - path: /accounts/
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stock-market-api-portfolio
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: stock-market-ingress
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    nginx.org/mergeable-ingress-type: minion
+    nginx.org/rewrites: "serviceName=api-gateway rewrite=/api/v1/portfolio/"
+    nginx.org/limit-req-rate: "50r/s"
+    nginx.org/limit-req-burst: "100"
+    nginx.org/limit-req-key: "${binary_remote_addr}"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.stockmarket.local
+      http:
+        paths:
+          - path: /portfolio/
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stock-market-api-orders
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: stock-market-ingress
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    nginx.org/mergeable-ingress-type: minion
+    nginx.org/rewrites: "serviceName=api-gateway rewrite=/api/v1/orders/"
+    nginx.org/limit-req-rate: "50r/s"
+    nginx.org/limit-req-burst: "100"
+    nginx.org/limit-req-key: "${binary_remote_addr}"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.stockmarket.local
+      http:
+        paths:
+          - path: /orders/
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stock-market-api-market-data
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: stock-market-ingress
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    nginx.org/mergeable-ingress-type: minion
+    nginx.org/rewrites: "serviceName=api-gateway rewrite=/api/v1/market-data/"
+    nginx.org/limit-req-rate: "50r/s"
+    nginx.org/limit-req-burst: "100"
+    nginx.org/limit-req-key: "${binary_remote_addr}"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.stockmarket.local
+      http:
+        paths:
+          - path: /market-data/
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stock-market-api-notifications
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: stock-market-ingress
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    nginx.org/mergeable-ingress-type: minion
+    nginx.org/rewrites: "serviceName=api-gateway rewrite=/api/v1/notifications/"
+    nginx.org/limit-req-rate: "50r/s"
+    nginx.org/limit-req-burst: "100"
+    nginx.org/limit-req-key: "${binary_remote_addr}"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.stockmarket.local
+      http:
+        paths:
+          - path: /notifications/
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stock-market-api-ai
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: stock-market-ingress
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    nginx.org/mergeable-ingress-type: minion
+    nginx.org/rewrites: "serviceName=api-gateway rewrite=/api/v1/ai/"
+    nginx.org/limit-req-rate: "50r/s"
+    nginx.org/limit-req-burst: "100"
+    nginx.org/limit-req-key: "${binary_remote_addr}"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.stockmarket.local
+      http:
+        paths:
+          - path: /ai/
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stock-market-api-canonical
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: stock-market-ingress
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    nginx.org/mergeable-ingress-type: minion
+    nginx.org/limit-req-rate: "50r/s"
+    nginx.org/limit-req-burst: "100"
+    nginx.org/limit-req-key: "${binary_remote_addr}"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.stockmarket.local
+      http:
+        paths:
+          - path: /api/
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  name: http

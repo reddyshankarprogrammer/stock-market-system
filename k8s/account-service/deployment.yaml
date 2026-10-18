@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: account-service
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: account-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    stock-market/description: "Investment accounts, ledger, statement import, holdings, performance (Flyway schema)."
+spec:
+  # replicas is owned by the HorizontalPodAutoscaler (hpa.yaml); Argo CD ignores the field.
+  # Single replica: Uploaded statements live on a ReadWriteOnce volume; scale out only with ReadWriteMany storage.
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: account-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: account-service
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: stock-market-system
+      annotations:
+        kubectl.kubernetes.io/default-container: account-service
+    spec:
+      serviceAccountName: account-service
+      automountServiceAccountToken: false
+      # Service links would inject e.g. USER_SERVICE_PORT=tcp://10.43.x.x:8081, which collides
+      # with the services' own ${USER_SERVICE_PORT} settings.
+      enableServiceLinks: false
+      priorityClassName: stock-market-service
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: account-service
+      containers:
+        - name: account-service
+          image: ghcr.io/reddyshankarprogrammer/account-service:main
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8086
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: account-service-config
+            - secretRef:
+                name: account-service-secret
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          resources:
+            requests:
+              cpu: 150m
+              memory: 768Mi
+            limits:
+              cpu: "1500m"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop: ["ALL"]
+          # Spring Boot startup (Hibernate, Flyway, Kafka) may take a while: up to 3 minutes.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 36
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            # Let the Service endpoints and ingress drop the pod before Tomcat stops accepting.
+            preStop:
+              sleep:
+                seconds: 10
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: statements
+              mountPath: /data/statements
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: statements
+          persistentVolumeClaim:
+            claimName: account-service-statements

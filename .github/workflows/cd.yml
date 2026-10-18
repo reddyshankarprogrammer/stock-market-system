@@ -1,0 +1,281 @@
+# Continuous deployment to production (K3s, GitOps with Argo CD), with a mandatory manual approval.
+#
+#   CI green on main
+#     -> verify every image exists in GHCR for the commit
+#     -> update the image tags in k8s/<service>/kustomization.yaml on a deploy branch
+#     -> open a pull request "Deploy <tag> to production"
+#     -> MANUAL APPROVAL: the "production" GitHub Environment requires a repository administrator
+#     -> merge the pull request into main
+#     -> Argo CD syncs main to the cluster (explicit sync + wait when ARGOCD_* secrets are set,
+#        otherwise Argo CD's automated sync picks the commit up within 3 minutes)
+#
+# Nothing reaches the cluster without the approval: Argo CD only deploys main, main is protected,
+# and the tag change is merged by the job that waits on the environment.
+# Rollback: run this workflow manually with an earlier image_tag (sha-xxxxxxx or vX.Y.Z).
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy (sha-<7 chars> or vX.Y.Z)"
+        required: true
+        type: string
+      reason:
+        description: "Why (shown in the pull request)"
+        required: false
+        default: "manual deployment"
+        type: string
+
+permissions:
+  contents: read
+
+# One production deployment at a time, never cancelled half-way.
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+env:
+  SERVICES: "api-gateway user-service market-data-service order-service portfolio-service notification-service account-service ai-service"
+
+jobs:
+  # --------------------------------------------------------------------------------------------
+  prepare:
+    name: Resolve and verify images
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      services: ${{ steps.verify.outputs.services }}
+      registry: ${{ steps.tag.outputs.registry }}
+    steps:
+      - name: Resolve tag
+        id: tag
+        env:
+          INPUT_TAG: ${{ inputs.image_tag }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [[ -n "${INPUT_TAG}" ]]; then
+            tag="${INPUT_TAG}"
+          else
+            tag="sha-${HEAD_SHA::7}"
+          fi
+          [[ "${tag}" =~ ^(sha-[0-9a-f]{7}|v[0-9]+\.[0-9]+\.[0-9]+)$ ]] || { echo "::error::Invalid image tag ${tag}"; exit 1; }
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "registry=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}" >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify images exist
+        id: verify
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          REGISTRY: ${{ steps.tag.outputs.registry }}
+        run: |
+          found=()
+          for svc in ${SERVICES}; do
+            if docker buildx imagetools inspect "${REGISTRY}/${svc}:${TAG}" >/dev/null 2>&1; then
+              found+=("${svc}")
+            elif [[ "${svc}" == "ai-service" ]]; then
+              echo "::notice::ai-service has no image ${TAG} (not implemented yet): skipped"
+            else
+              echo "::error::Image ${REGISTRY}/${svc}:${TAG} not found. Did CI push it?"
+              exit 1
+            fi
+          done
+          echo "services=${found[*]}" >> "${GITHUB_OUTPUT}"
+
+  # --------------------------------------------------------------------------------------------
+  open-pr:
+    name: Update manifests and open pull request
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+      pr: ${{ steps.pr.outputs.number }}
+      pr_url: ${{ steps.pr.outputs.url }}
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
+      DEPLOY_SERVICES: ${{ needs.prepare.outputs.services }}
+      REGISTRY: ${{ needs.prepare.outputs.registry }}
+      # A PAT / GitHub App token lets the pull request trigger checks and lets the deploy job merge
+      # into the protected main branch; GITHUB_TOKEN works when branch protection allows it.
+      GH_TOKEN: ${{ secrets.GITOPS_TOKEN || secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          token: ${{ secrets.GITOPS_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Update image tags
+        run: |
+          for svc in ${DEPLOY_SERVICES}; do
+            file="k8s/${svc}/kustomization.yaml"
+            image="${REGISTRY}/${svc}" yq -i \
+              '(.images[] | select(.name == strenv(image))).newTag = strenv(TAG)' "${file}"
+            grep -q "newTag: ${TAG}" "${file}" || { echo "::error::${file} has no image entry ${REGISTRY}/${svc}"; exit 1; }
+          done
+          git --no-pager diff --stat
+
+      - name: Commit to deploy branch
+        id: commit
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+            echo "::notice::${TAG} is already the deployed version: nothing to do"
+            exit 0
+          fi
+          branch="deploy/production/${TAG}-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "${branch}"
+          git commit -am "deploy(production): ${TAG}"
+          git push origin "${branch}"
+          echo "branch=${branch}" >> "${GITHUB_OUTPUT}"
+          echo "changed=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Open pull request
+        id: pr
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          BRANCH: ${{ steps.commit.outputs.branch }}
+          REASON: ${{ inputs.reason || 'CI passed on main' }}
+          SOURCE_RUN: ${{ github.event.workflow_run.html_url || '' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create deployment --color 0E8A16 --description "Production deployment" --force >/dev/null 2>&1 || true
+          {
+            echo "## Production deployment \`${TAG}\`"
+            echo
+            echo "Reason: ${REASON}"
+            [[ -n "${SOURCE_RUN}" ]] && echo "CI run: ${SOURCE_RUN}"
+            echo
+            echo "| Service | Image |"
+            echo "|---|---|"
+            for svc in ${DEPLOY_SERVICES}; do echo "| ${svc} | \`${REGISTRY}/${svc}:${TAG}\` |"; done
+            echo
+            echo "**Do not merge by hand.** A repository administrator approves the \`production\` environment in"
+            echo "${RUN_URL}; the workflow then merges this pull request and Argo CD deploys it."
+          } > body.md
+          url="$(gh pr create --base main --head "${BRANCH}" --title "Deploy ${TAG} to production" \
+            --label deployment --body-file body.md)"
+          echo "url=${url}" >> "${GITHUB_OUTPUT}"
+          echo "number=${url##*/}" >> "${GITHUB_OUTPUT}"
+          echo "Pull request: ${url}" >> "${GITHUB_STEP_SUMMARY}"
+
+  # --------------------------------------------------------------------------------------------
+  deploy:
+    name: Deploy to production (approval required)
+    needs: [prepare, open-pr]
+    if: needs.open-pr.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Settings -> Environments -> production: required reviewers = repository administrators,
+    # "prevent self-review", deployment branches = main only (docs/github-actions-guide.md).
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL || 'https://api.stockmarket.local' }}
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      TAG: ${{ needs.prepare.outputs.tag }}
+      PR: ${{ needs.open-pr.outputs.pr }}
+      GH_TOKEN: ${{ secrets.GITOPS_TOKEN || secrets.GITHUB_TOKEN }}
+      ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+      ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+    steps:
+      - name: Merge deployment pull request
+        run: |
+          # --admin: the approval of this environment is the review; the token owner must be an
+          # administrator allowed to bypass the branch protection of main.
+          gh pr merge "${PR}" --repo "${GITHUB_REPOSITORY}" --squash --delete-branch --admin \
+            --subject "deploy(production): ${TAG} (#${PR})"
+          for _ in $(seq 1 30); do
+            state="$(gh pr view "${PR}" --repo "${GITHUB_REPOSITORY}" --json state -q .state)"
+            [[ "${state}" == "MERGED" ]] && break
+            sleep 5
+          done
+          [[ "${state}" == "MERGED" ]] || { echo "::error::Pull request #${PR} was not merged"; exit 1; }
+          sha="$(gh pr view "${PR}" --repo "${GITHUB_REPOSITORY}" --json mergeCommit -q .mergeCommit.oid)"
+          echo "MERGE_SHA=${sha}" >> "${GITHUB_ENV}"
+          echo "Merged #${PR} as ${sha}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Argo CD sync and wait
+        if: env.ARGOCD_SERVER != '' && env.ARGOCD_AUTH_TOKEN != ''
+        run: |
+          opts=(--server "${ARGOCD_SERVER}" --auth-token "${ARGOCD_AUTH_TOKEN}" --grpc-web)
+          curl_opts=(-fsSL)
+          # Self-signed / private-CA certificate on the Argo CD server.
+          if [[ "${{ vars.ARGOCD_INSECURE }}" == "true" ]]; then opts+=(--insecure); curl_opts+=(-k); fi
+          # The server ships the CLI matching its own version.
+          curl "${curl_opts[@]}" -o argocd "https://${ARGOCD_SERVER}/download/argocd-linux-amd64"
+          chmod +x argocd
+          ./argocd app list "${opts[@]}" -l stock-market/layer=service -o name | while read -r app; do
+            ./argocd app get "${app}" "${opts[@]}" --hard-refresh >/dev/null
+          done
+          ./argocd app sync -l stock-market/layer=service "${opts[@]}" --prune --timeout 600
+          ./argocd app wait -l stock-market/layer=service "${opts[@]}" --sync --health --timeout 900
+          ./argocd app list "${opts[@]}" -l stock-market/layer=service
+
+      - name: Argo CD automated sync
+        if: env.ARGOCD_SERVER == '' || env.ARGOCD_AUTH_TOKEN == ''
+        run: |
+          echo "::notice title=Argo CD::ARGOCD_SERVER / ARGOCD_AUTH_TOKEN not configured. Argo CD's automated sync deploys ${MERGE_SHA::7} within its 3-minute polling interval (or immediately with the GitHub webhook)."
+
+      - name: Smoke test
+        if: vars.PRODUCTION_URL != ''
+        env:
+          URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          # Public endpoint through ingress -> gateway -> market-data-service.
+          for _ in $(seq 1 30); do
+            code="$(curl -ks -o /dev/null -w '%{http_code}' "${URL}/api/v1/market-data/stocks" || true)"
+            [[ "${code}" == "200" ]] && { echo "Smoke test passed"; exit 0; }
+            sleep 10
+          done
+          echo "::error::Smoke test failed: ${URL}/api/v1/market-data/stocks returned ${code}"
+          exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Production deployment ${TAG}: ${{ job.status }}"
+            echo "Pull request: ${{ needs.open-pr.outputs.pr_url }}"
+            echo "Rollback: Actions -> CD -> Run workflow -> image_tag = previous tag"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Notify
+        if: always()
+        env:
+          WEBHOOK: ${{ secrets.NOTIFY_WEBHOOK_URL }}
+          STATUS: ${{ job.status }}
+          PR_URL: ${{ needs.open-pr.outputs.pr_url }}
+        run: |
+          [[ -n "${WEBHOOK}" ]] || exit 0
+          icon=$([[ "${STATUS}" == success ]] && echo "🚀" || echo "❌")
+          text="$(printf '%s *Production deployment %s*: %s\n%s' "${icon}" "${TAG}" "${STATUS}" "${PR_URL}")"
+          curl -fsS -X POST -H 'Content-Type: application/json' \
+            --data "$(jq -n --arg t "${text}" '{text: $t}')" "${WEBHOOK}" >/dev/null \
+            || echo "::warning::notification webhook failed"

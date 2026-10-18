@@ -1,0 +1,18 @@
+# Uploaded broker statements (ACCOUNT_STATEMENTS_DIR=/data/statements).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: account-service-statements
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: account-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    argocd.argoproj.io/sync-options: Delete=false,Prune=false
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi

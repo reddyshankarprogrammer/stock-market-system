@@ -1,0 +1,22 @@
+# Helm values for the Strimzi Cluster Operator (installed by scripts/install-kafka.sh).
+# The operator only watches the messaging namespace, where the Kafka cluster and topics live.
+watchNamespaces: []
+watchAnyNamespace: false
+
+replicas: 1
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 384Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+# Generated Kafka, entity-operator and exporter pods satisfy the "restricted" Pod Security Standard.
+extraEnvs:
+  - name: STRIMZI_POD_SECURITY_PROVIDER_CLASS
+    value: restricted
+
+logLevel: INFO
+fullReconciliationIntervalMs: 120000

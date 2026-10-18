@@ -1,0 +1,11 @@
+# gitleaks configuration (security.yml): the default rule set plus reviewed false positives.
+# Never allowlist a real credential: rotate it instead (docs/operations-runbook.md).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test-only signing keys and truncated example tokens in documentation"
+paths = [
+  '''(^|/)src/test/''',
+  '''^docs/.*\.md$''',
+]

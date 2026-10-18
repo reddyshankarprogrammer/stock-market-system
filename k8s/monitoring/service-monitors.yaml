@@ -1,0 +1,99 @@
+# Scrape targets of the stock-market platform (Prometheus selects every monitor in the cluster).
+#
+# Spring Boot services: Services labelled monitoring.stock-market/scrape=true expose
+# /actuator/prometheus on their "http" port (micrometer-registry-prometheus). Every series
+# carries the labels namespace, service, pod and container.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stock-market-services
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+    release: kube-prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames: ["stock-market"]
+  selector:
+    matchLabels:
+      monitoring.stock-market/scrape: "true"
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+      scrapeTimeout: 10s
+      honorLabels: false
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: node
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mysql
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+    release: kube-prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames: ["database"]
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mysql
+  endpoints:
+    - port: metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+# Strimzi Kafka brokers/controllers (JMX exporter) and the Kafka Exporter (consumer lag).
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: kafka
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+    release: kube-prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames: ["messaging"]
+  selector:
+    matchExpressions:
+      - key: strimzi.io/kind
+        operator: In
+        values: ["Kafka"]
+      - key: strimzi.io/name
+        operator: In
+        values: ["stock-market-kafka-kafka", "stock-market-kafka-kafka-exporter"]
+  podMetricsEndpoints:
+    - port: tcp-prometheus
+      path: /metrics
+      interval: 30s
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_label_strimzi_io_name]
+          targetLabel: strimzi_io_name
+        - sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: node
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: strimzi-operators
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: stock-market-system
+    release: kube-prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames: ["messaging"]
+  selector:
+    matchExpressions:
+      - key: strimzi.io/kind
+        operator: In
+        values: ["cluster-operator"]
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: 60s
+# Argo CD metrics are scraped through the ServiceMonitors of the Argo CD chart (k8s/argocd/argocd-values.yaml).

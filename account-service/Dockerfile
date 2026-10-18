@@ -1,33 +1,52 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.7
+# account-service: production image (Java 21, multi-stage, layered, non-root, distroless runtime).
+#
+#   docker build -t account-service account-service
+#   docker run --rm -p 8086:8086 --env-file .env account-service
+#
+# Build arguments: BUILD_VERSION / BUILD_REVISION / BUILD_DATE end up as OCI labels (set by CI).
 
-# ---- Build stage: compile and package with the Maven wrapper ----
-FROM eclipse-temurin:21-jdk AS build
+# ---- 1. Build: compile and package with the Maven wrapper ----------------------------------
+FROM eclipse-temurin:21-jdk-noble AS build
 WORKDIR /workspace
 
-# Resolve dependencies first so they are cached until pom.xml changes.
+# Dependencies first: this layer is cached until pom.xml changes.
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
-RUN chmod +x mvnw && ./mvnw -q -B dependency:go-offline
+RUN --mount=type=cache,target=/root/.m2     chmod +x mvnw && ./mvnw -B -q -ntp dependency:go-offline
 
 COPY src/ src/
-RUN ./mvnw -q -B package -DskipTests \
-    && cp target/account-service-*.jar /workspace/app.jar
+RUN --mount=type=cache,target=/root/.m2     ./mvnw -B -q -ntp package -DskipTests     && find target -maxdepth 1 -name '*.jar' ! -name '*-plain.jar' -exec cp {} /workspace/application.jar \;
 
-# ---- Runtime stage: JRE only, non-root user ----
-FROM eclipse-temurin:21-jre
-WORKDIR /app
+# ---- 2. Extract Spring Boot layers: dependencies change rarely, application code often -------
+FROM eclipse-temurin:21-jdk-noble AS extract
+WORKDIR /extract
+COPY --from=build /workspace/application.jar application.jar
+RUN java -Djarmode=tools -jar application.jar extract --layers --destination layers     && mkdir -p /extract/data/statements
 
-RUN groupadd --system app && useradd --system --gid app --no-create-home app
-COPY --from=build /workspace/app.jar app.jar
-USER app
+# ---- 3. Runtime: distroless Java 21 (no shell, no package manager), uid 65532 -----------------
+FROM gcr.io/distroless/java21-debian12:nonroot AS runtime
+ARG BUILD_VERSION=dev
+ARG BUILD_REVISION=unknown
+ARG BUILD_DATE=unknown
+LABEL org.opencontainers.image.title="account-service"       org.opencontainers.image.description="Stock Market System - account-service"       org.opencontainers.image.source="https://github.com/reddyshankarprogrammer/stock-market-system"       org.opencontainers.image.vendor="Sesami"       org.opencontainers.image.authors="Shanker Reddy"       org.opencontainers.image.version="${BUILD_VERSION}"       org.opencontainers.image.revision="${BUILD_REVISION}"       org.opencontainers.image.created="${BUILD_DATE}"
 
-# Inside docker-compose the docker profile switches hosts to the container names.
-ENV SPRING_PROFILES_ACTIVE=docker \
-    JAVA_OPTS="-XX:MaxRAMPercentage=75"
+WORKDIR /application
+COPY --from=extract --chown=65532:65532 /extract/layers/dependencies/ ./
+COPY --from=extract --chown=65532:65532 /extract/layers/spring-boot-loader/ ./
+COPY --from=extract --chown=65532:65532 /extract/layers/snapshot-dependencies/ ./
+COPY --from=extract --chown=65532:65532 /extract/layers/application/ ./
+# Uploaded broker statements (a volume in docker compose and Kubernetes).
+COPY --from=extract --chown=65532:65532 /extract/data/ /data/
+
+USER 65532:65532
+
+# The docker profile switches hosts to the container / Kubernetes service names; in Kubernetes
+# the ConfigMap overrides the remaining hosts. Container-aware heap sizing.
+ENV SPRING_PROFILES_ACTIVE=docker     ACCOUNT_STATEMENTS_DIR=/data/statements     JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:InitialRAMPercentage=50 -XX:+ExitOnOutOfMemoryError -XX:+UseG1GC"
 
 EXPOSE 8086
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD wget -qO- http://localhost:8086/actuator/health > /dev/null || exit 1
-
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
+# Liveness/readiness come from Kubernetes probes (/actuator/health/liveness|readiness):
+# the distroless image has no shell or curl for a Docker HEALTHCHECK.
+ENTRYPOINT ["java", "-jar", "/application/application.jar"]

@@ -27,3 +27,8 @@ application-local.yml
 
 # Maven
 .mvn/wrapper/maven-wrapper.jar
+
+# CI scan output
+rendered/
+trivy/
+*.sarif

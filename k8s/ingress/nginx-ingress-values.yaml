@@ -1,0 +1,65 @@
+# Helm values for the F5 NGINX Ingress Controller (OSS edition, chart oci://ghcr.io/nginx/charts/nginx-ingress).
+# Installed by scripts/install-ingress.sh into the platform namespace.
+controller:
+  kind: deployment
+  replicaCount: 2
+  nginxplus: false
+
+  ingressClass:
+    name: nginx
+    create: true
+    setAsDefaultIngress: true
+
+  # Required for the master/minion Ingresses in k8s/ingress/stock-market-ingress.yaml.
+  enableSnippets: false
+  enableCustomResources: true
+  enableTLSPassthrough: false
+
+  config:
+    entries:
+      server-tokens: "False"
+      ssl-protocols: "TLSv1.2 TLSv1.3"
+      http2: "True"
+      hsts: "True"
+      hsts-max-age: "31536000"
+      client-max-body-size: "25m"
+      proxy-protocol: "False"
+      # JSON access log: parsed by Alloy into Loki (status, latency, upstream).
+      log-format-escaping: json
+      log-format: >-
+        {"time":"$time_iso8601","remote_addr":"$remote_addr","request_id":"$request_id",
+        "method":"$request_method","host":"$host","uri":"$request_uri","status":$status,
+        "bytes_sent":$bytes_sent,"request_time":$request_time,"upstream":"$upstream_addr",
+        "upstream_status":"$upstream_status","upstream_time":"$upstream_response_time",
+        "user_agent":"$http_user_agent"}
+
+  service:
+    # K3s ServiceLB (Klipper) binds 80/443 on the node for a LoadBalancer Service.
+    type: LoadBalancer
+    externalTrafficPolicy: Local
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 1
+
+  healthStatus: true
+  readyStatus:
+    enable: true
+
+prometheus:
+  create: true
+  port: 9113
+  scheme: http
+  # Switched on by scripts/install-ingress.sh once the Prometheus Operator CRDs exist.
+  serviceMonitor:
+    create: false
+    labels:
+      release: kube-prometheus-stack

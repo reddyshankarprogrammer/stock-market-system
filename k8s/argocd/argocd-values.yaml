@@ -1,0 +1,127 @@
+# Helm values for Argo CD (chart argo/argo-cd), installed into the argocd namespace by
+# scripts/install-argocd.sh. Argo CD then manages everything under k8s/ (argocd-applications.yaml).
+global:
+  domain: argocd.stockmarket.local
+  networkPolicy:
+    create: true
+    defaultDenyIngress: false
+
+configs:
+  params:
+    # TLS terminates at the NGINX Ingress Controller (k8s/ingress/platform-ingress.yaml).
+    server.insecure: true
+    # Parallelism suited to a single node.
+    controller.status.processors: 10
+    controller.operation.processors: 5
+    reposerver.parallelism.limit: 2
+
+  cm:
+    # Poll Git every 3 minutes; a GitHub webhook (docs/argocd-guide.md) makes syncs immediate.
+    timeout.reconciliation: 180s
+    admin.enabled: true
+    exec.enabled: false
+    statusbadge.enabled: true
+    # Applications are healthy only when their resources are: lets the app-of-apps honour
+    # sync waves (namespaces -> security -> data stores -> platform -> services).
+    resource.customizations.health.argoproj.io_Application: |
+      hs = {}
+      hs.status = "Progressing"
+      hs.message = ""
+      if obj.status ~= nil then
+        if obj.status.health ~= nil then
+          hs.status = obj.status.health.status
+          if obj.status.health.message ~= nil then
+            hs.message = obj.status.health.message
+          end
+        end
+      end
+      return hs
+    # Strimzi and cert-manager write status fields that are not drift.
+    resource.compareoptions: |
+      ignoreAggregatedRoles: true
+      ignoreResourceStatusField: all
+
+  rbac:
+    # Everyone who logs in can read; changes happen through Git, not the UI.
+    policy.default: role:readonly
+    policy.csv: |
+      p, role:deployer, applications, sync, stock-market/*, allow
+      p, role:deployer, applications, get, stock-market/*, allow
+      g, stock-market:operators, role:deployer
+      g, stock-market:admins, role:admin
+    scopes: "[groups]"
+
+  repositories: {}
+
+server:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false   # switched on by install-argocd.sh when the Prometheus CRDs exist
+      additionalLabels:
+        release: kube-prometheus-stack
+
+controller:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 1536Mi
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false
+      additionalLabels:
+        release: kube-prometheus-stack
+
+repoServer:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false
+      additionalLabels:
+        release: kube-prometheus-stack
+
+applicationSet:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+redis:
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+dex:
+  enabled: false
+
+notifications:
+  enabled: true

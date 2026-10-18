@@ -1,0 +1,12 @@
+# Shell scripts, manifests and workflows run on Linux (K3s nodes, GitHub runners): always LF,
+# even when checked out on Windows with core.autocrlf=true.
+*.sh        text eol=lf
+*.env       text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.json      text eol=lf
+*.py        text eol=lf
+Dockerfile  text eol=lf
+.dockerignore text eol=lf
+*.ps1       text eol=crlf
+*.cmd       text eol=crlf
