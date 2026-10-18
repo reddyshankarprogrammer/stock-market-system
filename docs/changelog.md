@@ -12,6 +12,12 @@ All notable changes to the Stock Market System. Dates are when the change was ma
 | `mysql` application stuck in Progressing: PVC `mysql-backup` stays Pending until the 02:00 CronJob (local-path binds on first consumer), blocking every later wave | Argo CD health check treats a Pending PVC as Healthy (Lost stays Degraded) | `k8s/argocd/argocd-values.yaml` (re-run `scripts/install-argocd.sh` to apply) |
 | `monitoring` application permanently OutOfSync and re-synced every 5 minutes: the Prometheus Operator defaults `action: replace` on relabelings that omit it | Relabelings of the ServiceMonitor `stock-market-services` and PodMonitor `kafka` set `action: replace` explicitly | `k8s/monitoring/service-monitors.yaml` |
 
+## 2026-10-18: Whole system in Docker Compose
+
+| File | Change |
+|---|---|
+| `docker-compose.yml` | user, market-data, order, portfolio, notification services and api-gateway added to the opt-in `app` profile: `docker compose --profile app up -d --build` runs the complete system on one machine (only the gateway port 8080 is published) |
+
 ## 2026-10-18: Kubernetes platform, CI/CD and GitOps
 
 ### Features
