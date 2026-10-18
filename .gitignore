@@ -9,8 +9,10 @@ build/
 logs/
 *.log
 
-# Environment
+# Environment (and editor backups such as .env.save); only the template is committed
 .env
+.env.*
+!.env.example
 
 # OS
 .DS_Store
