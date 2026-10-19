@@ -93,12 +93,12 @@ jobs:
         working-directory: ${{ matrix.service }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0   # full history for SonarQube blame information
 
       - name: Set up Java ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -141,7 +141,7 @@ jobs:
 
       - name: Upload test and coverage reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reports-${{ matrix.service }}
           path: |
@@ -181,7 +181,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Install kubeconform
         run: |
@@ -254,7 +254,7 @@ jobs:
       SERVICE: ${{ matrix.service }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Check buildable
         id: check
@@ -271,12 +271,12 @@ jobs:
 
       - name: Set up Docker Buildx
         if: steps.check.outputs.build == 'true'
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Image metadata
         if: steps.check.outputs.build == 'true'
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ steps.check.outputs.image }}
           tags: |
@@ -287,7 +287,7 @@ jobs:
 
       - name: Build image
         if: steps.check.outputs.build == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.service }}
           load: true
@@ -319,14 +319,14 @@ jobs:
       - name: Upload Trivy results to code scanning
         if: always() && steps.check.outputs.build == 'true' && hashFiles('trivy/image.sarif') != ''
         continue-on-error: true   # code scanning needs a public repo or GitHub Advanced Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy/image.sarif
           category: trivy-image-${{ matrix.service }}
 
       - name: Log in to GHCR
         if: steps.check.outputs.build == 'true' && env.PUBLISH == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -335,7 +335,7 @@ jobs:
       - name: Push image
         if: steps.check.outputs.build == 'true' && env.PUBLISH == 'true'
         id: push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.service }}
           push: true
