@@ -7,14 +7,14 @@
 #   - the service listens on port 8000
 
 # ---- 1. Build wheels for every dependency ---------------------------------------------------
-FROM python:3.12-slim-bookworm AS build
+FROM python:3.14-slim-bookworm AS build
 WORKDIR /build
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip wheel --wheel-dir /wheels -r requirements.txt
 
 # ---- 2. Runtime ------------------------------------------------------------------------------
-FROM python:3.12-slim-bookworm AS runtime
+FROM python:3.14-slim-bookworm AS runtime
 ARG BUILD_VERSION=dev
 ARG BUILD_REVISION=unknown
 ARG BUILD_DATE=unknown
