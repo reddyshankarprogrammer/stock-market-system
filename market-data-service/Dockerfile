@@ -7,7 +7,7 @@
 # Build arguments: BUILD_VERSION / BUILD_REVISION / BUILD_DATE end up as OCI labels (set by CI).
 
 # ---- 1. Build: compile and package with the Maven wrapper ----------------------------------
-FROM eclipse-temurin:21-jdk-noble AS build
+FROM eclipse-temurin:24-jdk-noble AS build
 WORKDIR /workspace
 
 # Dependencies first: this layer is cached until pom.xml changes.
@@ -19,7 +19,7 @@ COPY src/ src/
 RUN --mount=type=cache,target=/root/.m2     ./mvnw -B -q -ntp package -DskipTests     && find target -maxdepth 1 -name '*.jar' ! -name '*-plain.jar' -exec cp {} /workspace/application.jar \;
 
 # ---- 2. Extract Spring Boot layers: dependencies change rarely, application code often -------
-FROM eclipse-temurin:21-jdk-noble AS extract
+FROM eclipse-temurin:24-jdk-noble AS extract
 WORKDIR /extract
 COPY --from=build /workspace/application.jar application.jar
 RUN java -Djarmode=tools -jar application.jar extract --layers --destination layers
