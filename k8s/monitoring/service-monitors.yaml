@@ -24,7 +24,8 @@ spec:
       scrapeTimeout: 10s
       honorLabels: false
       relabelings:
-        - sourceLabels: [__meta_kubernetes_pod_node_name]
+        - action: replace
+          sourceLabels: [__meta_kubernetes_pod_node_name]
           targetLabel: node
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -71,9 +72,11 @@ spec:
       path: /metrics
       interval: 30s
       relabelings:
-        - sourceLabels: [__meta_kubernetes_pod_label_strimzi_io_name]
+        - action: replace
+          sourceLabels: [__meta_kubernetes_pod_label_strimzi_io_name]
           targetLabel: strimzi_io_name
-        - sourceLabels: [__meta_kubernetes_pod_node_name]
+        - action: replace
+          sourceLabels: [__meta_kubernetes_pod_node_name]
           targetLabel: node
 ---
 apiVersion: monitoring.coreos.com/v1
