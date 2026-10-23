@@ -21,6 +21,7 @@ export function startMockGateway(port = 8099) {
   const users = new Map(); // email -> {firstName, lastName}, so /me returns what was registered
   let lastRegister = null; // the last register body, so the test can check exactly what the web app forwarded
   let refreshCalls = 0;
+  const accounts = new Map(); // email -> accounts
   // Onboarding answers per email. Users who logged in without registering count as already onboarded (so older tests
   // still reach the dashboard); a registered user starts blank, like a real new account.
   const onboarding = new Map();
@@ -110,6 +111,25 @@ export function startMockGateway(port = 8099) {
       if (!c || c.tokenType !== "ACCESS" || c.exp < now()) return send(401, { status: 401, message: "Unauthorized" });
       const who = users.get(c.email) ?? { firstName: "Test", lastName: "User" };
       return send(200, { id: c.sub, email: c.email, firstName: who.firstName, lastName: who.lastName, walletBalance: 10000, status: "ACTIVE", createdAt: "2026-10-24T00:00:00", role: c.role, onboardingCompletedAt: onboardState(c.email).completedAt });
+    }
+    // account-service, as the gateway routes it (/api/v1/accounts/**). The mock user id is always u-1; a user whose
+    // email starts with noaccounts@ has none, accounts-down@ gets a 500, anyone else starts with two accounts.
+    if (req.url.startsWith("/api/v1/accounts")) {
+      const c = claimsOf((req.headers.authorization ?? "").replace("Bearer ", ""));
+      if (!c || c.tokenType !== "ACCESS" || c.exp < now()) return send(401, { status: 401, message: "Unauthorized" });
+      if (c.email.startsWith("accounts-down@")) return send(500, { status: 500, message: "boom" });
+      if (!accounts.has(c.email)) accounts.set(c.email, c.email.startsWith("noaccounts@") ? [] : [
+        { id: "a-1", userId: "u-1", accountName: "Long-term growth", accountType: "INDIVIDUAL", brokerName: "PLATFORM", currency: "USD", balance: 12500.5, status: "ACTIVE" },
+        { id: "a-2", userId: "u-1", accountName: "Zerodha equity", accountType: "EQUITY", brokerName: "ZERODHA", currency: "INR", balance: 0, status: "ACTIVE" },
+      ]);
+      const mine = accounts.get(c.email);
+      const m = req.url.match(/^\/api\/v1\/accounts\/user\/([^/?]+)$/);
+      if (req.method === "GET" && m) return m[1] === "u-1" ? send(200, mine) : send(403, { status: 403, error: "Forbidden", message: "You can only view your own accounts" });
+      if (req.method === "POST" && req.url === "/api/v1/accounts") {
+        const created = { id: `a-${mine.length + 1}`, userId: "u-1", status: "ACTIVE", balance: 0, ...body };
+        mine.push(created);
+        return send(201, created);
+      }
     }
     if (req.method === "GET" && req.url === "/__last-register") return send(200, lastRegister ?? {});
     if (req.method === "GET" && req.url === "/__stats") return send(200, { refreshCalls, forgotRequests, passwords: Object.fromEntries(passwords) });

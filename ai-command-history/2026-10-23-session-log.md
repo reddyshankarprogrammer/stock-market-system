@@ -227,6 +227,18 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 - **Not done:** not run in a real cluster (kubeconform and the Argo CD sync happen there); the workflow YAML was edited but not executed locally; no public address; OWASP Dependency-Check does not cover npm (Trivy and Dependabot do); nothing pushed.
 - **Docs:** root CLAUDE.md, kubernetes-architecture, cicd-pipeline, github-actions-guide, web-app README, changelog, [plan 05](../research-doc/05-daily-implementation-plan.md) (total 15 to 13).
 
+## 25. App shell and typed API client (24 October)
+
+- **Request:** "start item 7" (plan item 7: app shell and typed API client, original units 31–32).
+- **Branch:** `feature/app-shell` (cut from `feature/web-app-deployment`).
+- **Shell:** route group `app/(app)/`, sidebar from 1024 px, top bar and bottom navigation below, five nav items from one list, skeleton pages for Trades, Portfolio and Settings, `proxy.ts` protects the new paths.
+- **Typed client:** started account-service locally, saved its OpenAPI document (37 paths, 37 schemas) as `web-app/openapi/account-service.json`, generated `lib/api/account-service.d.ts` (openapi-typescript 7), wrapped it with openapi-fetch and TanStack hooks; `/api/gw/[...path]` BFF with a path allow-list; Accounts page; CI step that fails when the generated types are out of date.
+- **Verified:** ESLint, `tsc`, build; 56 of 56 browser checks on the mock (10 new: redirects, breakpoints 360 to 2560 px, 44 px targets, current item, accounts list, empty, 500 error, BFF path rules, renewal, ended session); `e2e:accounts:real` 8 of 8 on the real stack (real gateway, user-service, account-service, MySQL); account-service 44 tests pass.
+- **Bugs found, fixed:** (1) the spec documented only a 403 for the account list, so the generated type for the success answer was wrong (`@ApiResponse(200)` added); (2) `zod` 3 has a high `npm audit` finding with no 3.x fix, which the CI Trivy gate would have failed on: migrated to zod 4 (four `errorMap` to `error` changes); (3) my first traversal test expected 400 for `%2e%2e`, but the URL parser normalises it to a path outside the allow-list (404, safe): the test now checks both forms.
+- **Cleanup:** the real-stack run created 4 users and 4 accounts; deleted by e-mail pattern `e2e-acc-%@example.com` after counting (4 users, 4 accounts, child tables cleared first), 19 users remain including the owner's own account.
+- **Not done:** springdoc for the other services (user-service Boot 3 and five Boot 4 services) and their typed clients; statement upload through the BFF (multipart); creating accounts in the UI; nothing pushed; the real stack still runs (account-service on 8086 was started for this step and left running).
+- **Docs:** web-app README, changelog, cicd-pipeline, [plan 05](../research-doc/05-daily-implementation-plan.md) (total 13 to 11).
+
 ## Open items after this session
 
 | Item | Where |

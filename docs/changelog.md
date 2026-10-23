@@ -2,6 +2,25 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: app shell and typed API client
+
+### Features
+
+| Feature | Where |
+|---|---|
+| App shell: sidebar from 1024 px, top bar and bottom navigation below; skeleton pages for Trades, Portfolio and Settings; `proxy.ts` protects them | `web-app/app/(app)/`, `web-app/components/shell/` |
+| Typed API client: account-service OpenAPI saved as `openapi/account-service.json`, TypeScript types generated with openapi-typescript, openapi-fetch client and TanStack hooks, `npm run api:spec:account` and `api:types`, CI check that the types are current | `web-app/lib/api/`, `web-app/scripts/fetch-openapi.mjs` |
+| `/api/gw/[...path]` BFF pass-through with a path allow-list, token renewal and same-origin writes | `web-app/app/api/gw/` |
+| Accounts page on the typed client | `web-app/components/accounts/` |
+| 10 new browser checks on the mock (56 in total) and `e2e:accounts:real` (8 checks on the real stack) | `web-app/e2e/` |
+
+### Bugs found and fixed
+
+| Bug | Fix |
+|---|---|
+| `GET /api/v1/accounts/user/{userId}` documented only a 403 response, so the generated types put the account list under the error status | `@ApiResponse(200)` added in account-service `AccountController`; the other 39 operations were already correct (44 account-service tests pass) |
+| `zod` 3.25.76 is flagged high by `npm audit` (memory exhaustion on oversized collections) and **no 3.x release fixes it**; the Trivy filesystem scan in CI would have failed on it | Moved to zod 4.6.7 (`errorMap` became `error` in four enum schemas); `npm audit` shows 0 vulnerabilities; all 56 browser checks pass; the Dependabot ignore for zod and resolvers majors was removed |
+
 ## 2026-10-24: web app deployment (Docker, Kubernetes, Argo CD, CI)
 
 ### Features

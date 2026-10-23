@@ -207,6 +207,11 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: API types are up to date with openapi/*.json
+        run: |
+          npm run api:types
+          git diff --exit-code -- lib/api             || { echo "::error::Run npm run api:types in web-app and commit the result"; exit 1; }
+
       - name: Build
         run: npm run build
 

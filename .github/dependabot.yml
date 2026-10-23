@@ -36,12 +36,6 @@ updates:
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
-    ignore:
-      # @hookform/resolvers 6 failed to resolve with the current zod 3 (ERESOLVE); move both majors together, deliberately.
-      - dependency-name: "zod"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@hookform/resolvers"
-        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directories:

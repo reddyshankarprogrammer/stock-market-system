@@ -30,9 +30,9 @@ const planCodeList = plans.map((p) => p.code) as [string, ...string[]];
 
 export const onboardingSchema = z
   .object({
-    tradingExperience: z.enum(experienceCodes, { errorMap: () => ({ message: "Choose your trading experience" }) }).optional(),
+    tradingExperience: z.enum(experienceCodes, { error: "Choose your trading experience" }).optional(),
     brokerPreferences: z.array(z.enum(brokerCodes)).min(1, "Choose at least one broker, or say you do not use one yet").max(6).optional(),
-    plan: z.enum(planCodeList, { errorMap: () => ({ message: "Choose a plan" }) }).optional(),
+    plan: z.enum(planCodeList, { error: "Choose a plan" }).optional(),
   })
   .refine((v) => !(v.brokerPreferences?.includes("NONE") && v.brokerPreferences.length > 1), {
     path: ["brokerPreferences"],

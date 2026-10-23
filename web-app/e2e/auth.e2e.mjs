@@ -465,6 +465,50 @@ await test("shell: page skeletons say plainly that the screen is not built yet",
   await p.goto(`${BASE}/trades`); await p.getByRole("heading", { name: "Trades" }).waitFor(); await p.getByText(/planned/).waitFor(); await c.close();
 });
 
+// ---- typed account API (BFF /api/gw) and the Accounts page ----
+const gw = (ctx, path) => ctx.request.get(`${BASE}/api/gw${path}`);
+await test("accounts: the page lists accounts from the typed client with money formatting and the tracking note", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/accounts`);
+  await p.getByRole("heading", { name: "Long-term growth", level: 2 }).waitFor(); await p.getByRole("heading", { name: "Zerodha equity", level: 2 }).waitFor();
+  await p.getByText("$12,500.50").waitFor(); await p.getByText("₹0.00").waitFor();
+  ok((await p.getByText("Tracking only: no cash moves here").count()) === 1 && (await p.getByText("Cash balance").count()) === 1, "notes");
+  await c.close();
+});
+await test("accounts: no accounts shows an explanation, not an error", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "noaccounts@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/accounts`); await p.getByText("No accounts yet").waitFor(); await c.close();
+});
+await test("accounts: a failing service shows a clear error with Try again; the session is kept", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "accounts-down@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/accounts`);
+  await p.getByText("We could not load your accounts").waitFor({ timeout: 15000 }); await p.getByRole("button", { name: "Try again" }).waitFor();
+  ok(!!(await cookieNamed(c, "qv_refresh")), "the session was dropped"); await c.close();
+});
+await test("accounts: the BFF reaches only account paths, blocks other origins, and refuses signed-out calls", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p); await p.waitForURL(/\/dashboard/);
+  ok((await gw(c, "/api/v1/users/me")).status() === 404, "users path");
+  ok((await gw(c, "/api/v1/accounts/%2e%2e/users/me")).status() === 404, "dot-dot");
+  ok((await gw(c, "/api/v1/accounts/%2e%2e%2fusers/me")).status() === 400, "encoded slash");
+  const evil = await c.request.post(`${BASE}/api/gw/api/v1/accounts`, { headers: { "Content-Type": "application/json", Origin: "https://evil.example" }, data: {} });
+  ok(evil.status() === 403, `cross-origin ${evil.status()}`);
+  const made = await c.request.post(`${BASE}/api/gw/api/v1/accounts`, { headers: { "Content-Type": "application/json", Origin: BASE }, data: { accountName: "Made", accountType: "INDIVIDUAL", brokerName: "PAPER", currency: "USD" } });
+  ok(made.status() === 201 && (await made.json()).accountName === "Made", `post ${made.status()}`);
+  const other = await gw(c, "/api/v1/accounts/user/someone-else");
+  ok(other.status() === 403, `foreign id ${other.status()}`);
+  const anon = await newCtx(); ok((await gw(anon, "/api/v1/accounts/user/u-1")).status() === 401, "signed out"); await anon.close(); await c.close();
+});
+await test("accounts: an expired access cookie is renewed behind the scenes", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p); await p.waitForURL(/\/dashboard/);
+  await c.clearCookies({ name: "qv_access" });
+  const r = await gw(c, "/api/v1/accounts/user/u-1"); ok(r.status() === 200 && (await r.json()).length >= 2, `renewed ${r.status()}`);
+  ok(!!(await cookieNamed(c, "qv_access")), "no new access cookie"); await c.close();
+});
+await test("accounts: a really ended session sends the page to /login", async () => {
+  const c = await newCtx(); await c.addCookies([{ name: "qv_refresh", value: "garbage.value.here", url: BASE, httpOnly: true }]);
+  const p = await c.newPage(); await p.goto(`${BASE}/accounts`); await p.waitForURL("**/login**"); await c.close();
+});
+
 await browser.close();
 mock.close();
 const failed = results.filter(([p]) => !p);

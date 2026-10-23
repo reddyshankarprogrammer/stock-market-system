@@ -1,0 +1,3170 @@
+{
+  "components": {
+    "schemas": {
+      "AccountChargeResponse": {
+        "description": "A charge recorded from a statement or manual trade",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "chargeDate": {
+            "format": "date",
+            "type": "string"
+          },
+          "chargeType": {
+            "enum": [
+              "BROKERAGE",
+              "EXCHANGE_FEE",
+              "STT",
+              "GST",
+              "DP_CHARGE",
+              "NETWORK_FEE",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "PLATFORM",
+              "MANUAL",
+              "IMPORT"
+            ],
+            "type": "string"
+          },
+          "statementId": {
+            "type": "string"
+          },
+          "tradeId": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AccountFeeResponse": {
+        "description": "A fee charged to an account",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "baseAmount": {
+            "type": "number"
+          },
+          "chargedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "feeAmount": {
+            "type": "number"
+          },
+          "feeCode": {
+            "type": "string"
+          },
+          "feeType": {
+            "enum": [
+              "BROKERAGE",
+              "PLATFORM",
+              "EXCHANGE",
+              "WITHDRAWAL"
+            ],
+            "type": "string"
+          },
+          "fundTransactionId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "tradeId": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AccountResponse": {
+        "description": "An investment account",
+        "properties": {
+          "accountName": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "accountType": {
+            "enum": [
+              "INDIVIDUAL",
+              "JOINT",
+              "CORPORATE",
+              "EQUITY",
+              "DERIVATIVES",
+              "CRYPTO",
+              "FOREX"
+            ],
+            "type": "string"
+          },
+          "balance": {
+            "type": "number"
+          },
+          "brokerName": {
+            "enum": [
+              "PLATFORM",
+              "PAPER",
+              "GROWW",
+              "ZERODHA",
+              "BINANCE",
+              "EXNESS",
+              "MANUAL"
+            ],
+            "type": "string"
+          },
+          "closedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "remarks": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED",
+              "CLOSED"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AccountStatementResponse": {
+        "description": "An uploaded broker statement with its latest import result",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "brokerName": {
+            "enum": [
+              "PLATFORM",
+              "PAPER",
+              "GROWW",
+              "ZERODHA",
+              "BINANCE",
+              "EXNESS",
+              "MANUAL"
+            ],
+            "type": "string"
+          },
+          "checksumSha256": {
+            "type": "string"
+          },
+          "fileFormat": {
+            "enum": [
+              "CSV",
+              "XLS",
+              "XLSX"
+            ],
+            "type": "string"
+          },
+          "fileSize": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "latestImport": {
+            "$ref": "#/components/schemas/StatementImportHistoryResponse"
+          },
+          "originalFileName": {
+            "type": "string"
+          },
+          "periodFrom": {
+            "format": "date",
+            "type": "string"
+          },
+          "periodTo": {
+            "format": "date",
+            "type": "string"
+          },
+          "processedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "UPLOADED",
+              "PROCESSING",
+              "PROCESSED",
+              "PARTIALLY_PROCESSED",
+              "FAILED"
+            ],
+            "type": "string"
+          },
+          "uploadedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AccountSummaryResponse": {
+        "description": "Financial overview of an account",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "cashBalance": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "investedAmount": {
+            "type": "number"
+          },
+          "marketValue": {
+            "type": "number"
+          },
+          "openPositions": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "pricesLive": {
+            "type": "boolean"
+          },
+          "realizedProfit": {
+            "type": "number"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "SUSPENDED",
+              "CLOSED"
+            ],
+            "type": "string"
+          },
+          "totalDeposits": {
+            "type": "number"
+          },
+          "totalDividends": {
+            "type": "number"
+          },
+          "totalEquity": {
+            "type": "number"
+          },
+          "totalFees": {
+            "type": "number"
+          },
+          "totalInterest": {
+            "type": "number"
+          },
+          "totalTaxes": {
+            "type": "number"
+          },
+          "totalWithdrawals": {
+            "type": "number"
+          },
+          "unrealizedProfit": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "AccountTaxResponse": {
+        "description": "A tax charged to an account",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "chargedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "dividendId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "PLATFORM",
+              "MANUAL",
+              "IMPORT"
+            ],
+            "type": "string"
+          },
+          "statementId": {
+            "type": "string"
+          },
+          "taxAmount": {
+            "type": "number"
+          },
+          "taxCode": {
+            "type": "string"
+          },
+          "taxType": {
+            "enum": [
+              "TRADE_TAX",
+              "CAPITAL_GAINS_TAX",
+              "DIVIDEND_TAX",
+              "GST",
+              "VAT",
+              "TDS"
+            ],
+            "type": "string"
+          },
+          "taxableAmount": {
+            "type": "number"
+          },
+          "tradeId": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AdjustmentRequest": {
+        "description": "Adjusts the cash balance to reconcile with a broker statement. Positive adds cash, negative removes it",
+        "properties": {
+          "amount": {
+            "example": -125.4,
+            "type": "number"
+          },
+          "description": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "statementId": {
+            "maxLength": 36,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "description"
+        ],
+        "type": "object"
+      },
+      "AuditLogResponse": {
+        "description": "One audit trail entry",
+        "properties": {
+          "action": {
+            "enum": [
+              "CREATE",
+              "UPDATE",
+              "CLOSE",
+              "DEPOSIT",
+              "WITHDRAW",
+              "BUY",
+              "SELL",
+              "DIVIDEND",
+              "INTEREST",
+              "STATEMENT_UPLOAD",
+              "STATEMENT_PROCESS",
+              "STATEMENT_DELETE",
+              "TRADE_CREATE",
+              "HOLDING_UPDATE",
+              "FEE_CALCULATION",
+              "TAX_CALCULATION",
+              "ADJUSTMENT"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "performedBy": {
+            "type": "string"
+          },
+          "requestJson": {
+            "type": "string"
+          },
+          "responseJson": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "BuyTradeRequest": {
+        "description": "Buys shares at the current market price",
+        "properties": {
+          "accountId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "quantity": {
+            "example": 10,
+            "format": "int32",
+            "maximum": 1000000,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "symbol": {
+            "example": "AAPL",
+            "minLength": 1,
+            "pattern": "[A-Za-z.]{1,20}",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountId",
+          "quantity",
+          "symbol"
+        ],
+        "type": "object"
+      },
+      "ChargeLineResponse": {
+        "description": "One line of a fee or tax breakdown",
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "baseAmount": {
+            "type": "number"
+          },
+          "code": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ChargeSummaryResponse": {
+        "description": "Charges of an account for a year: imported/manual charges and platform fee-engine fees,",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "byType": {
+            "items": {
+              "$ref": "#/components/schemas/TypeAmountResponse"
+            },
+            "type": "array"
+          },
+          "totalCharges": {
+            "type": "number"
+          },
+          "year": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "CreateAccountRequest": {
+        "description": "Opens a new investment account for the authenticated user",
+        "properties": {
+          "accountName": {
+            "example": "Long-term growth",
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "accountType": {
+            "enum": [
+              "INDIVIDUAL",
+              "JOINT",
+              "CORPORATE",
+              "EQUITY",
+              "DERIVATIVES",
+              "CRYPTO",
+              "FOREX"
+            ],
+            "type": "string"
+          },
+          "brokerName": {
+            "default": "PLATFORM",
+            "enum": [
+              "PLATFORM",
+              "PAPER",
+              "GROWW",
+              "ZERODHA",
+              "BINANCE",
+              "EXNESS",
+              "MANUAL"
+            ],
+            "example": "ZERODHA",
+            "type": "string"
+          },
+          "currency": {
+            "default": "USD",
+            "example": "USD",
+            "pattern": "[A-Z]{3}",
+            "type": "string"
+          },
+          "remarks": {
+            "example": "Zerodha Equity - long term",
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountName",
+          "accountType"
+        ],
+        "type": "object"
+      },
+      "DepositRequest": {
+        "description": "Pays cash into an account",
+        "properties": {
+          "amount": {
+            "example": 5000,
+            "minimum": 0.01,
+            "type": "number"
+          },
+          "reference": {
+            "example": "BANK-TRF-0001",
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount"
+        ],
+        "type": "object"
+      },
+      "DividendRequest": {
+        "description": "Posts a cash dividend for a symbol held in the account (internal, service-to-service)",
+        "properties": {
+          "dividendPerShare": {
+            "example": 0.25,
+            "minimum": 0.0001,
+            "type": "number"
+          },
+          "paymentDate": {
+            "format": "date",
+            "type": "string"
+          },
+          "symbol": {
+            "example": "AAPL",
+            "minLength": 1,
+            "pattern": "[A-Za-z.]{1,20}",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dividendPerShare",
+          "paymentDate",
+          "symbol"
+        ],
+        "type": "object"
+      },
+      "DividendResponse": {
+        "description": "A dividend paid into an account",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "dividendPerShare": {
+            "type": "number"
+          },
+          "grossAmount": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "netAmount": {
+            "type": "number"
+          },
+          "paymentDate": {
+            "format": "date",
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "taxAmount": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "FeeBreakdownResponse": {
+        "description": "Fee preview from the fee engine",
+        "properties": {
+          "baseAmount": {
+            "type": "number"
+          },
+          "fees": {
+            "items": {
+              "$ref": "#/components/schemas/ChargeLineResponse"
+            },
+            "type": "array"
+          },
+          "totalFees": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "FeeMasterResponse": {
+        "description": "An entry of the fee schedule",
+        "properties": {
+          "calculationType": {
+            "enum": [
+              "FIXED",
+              "PERCENTAGE"
+            ],
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "feeType": {
+            "enum": [
+              "BROKERAGE",
+              "PLATFORM",
+              "EXCHANGE",
+              "WITHDRAWAL"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "maxAmount": {
+            "type": "number"
+          },
+          "minAmount": {
+            "type": "number"
+          },
+          "value": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "FeeRequest": {
+        "description": "Asks the fee engine for a fee preview without charging anything",
+        "properties": {
+          "amount": {
+            "example": 1953,
+            "minimum": 0.01,
+            "type": "number"
+          },
+          "kind": {
+            "enum": [
+              "TRADE",
+              "WITHDRAWAL"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "kind"
+        ],
+        "type": "object"
+      },
+      "FundTransactionResponse": {
+        "description": "A deposit or withdrawal",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "balanceAfter": {
+            "type": "number"
+          },
+          "feeAmount": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "COMPLETED",
+              "FAILED"
+            ],
+            "type": "string"
+          },
+          "transactionDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "transactionType": {
+            "enum": [
+              "DEPOSIT",
+              "WITHDRAWAL",
+              "ADJUSTMENT_IN",
+              "ADJUSTMENT_OUT"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "HoldingResponse": {
+        "description": "Shares of one symbol held in an account, with live valuation",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "averagePrice": {
+            "type": "number"
+          },
+          "currentPrice": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "investedAmount": {
+            "type": "number"
+          },
+          "marketValue": {
+            "type": "number"
+          },
+          "priceUpdatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "realizedProfit": {
+            "type": "number"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "totalCost": {
+            "type": "number"
+          },
+          "unrealizedProfit": {
+            "type": "number"
+          },
+          "unrealizedProfitPercent": {
+            "type": "number"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "InterestRequest": {
+        "description": "Posts interest on the cash balance for a period (internal, service-to-service)",
+        "properties": {
+          "annualRate": {
+            "example": 4.5,
+            "maximum": 100,
+            "minimum": 0,
+            "type": "number"
+          },
+          "periodEnd": {
+            "format": "date",
+            "type": "string"
+          },
+          "periodStart": {
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "annualRate",
+          "periodEnd",
+          "periodStart"
+        ],
+        "type": "object"
+      },
+      "InterestResponse": {
+        "description": "Interest posted to an account",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "annualRate": {
+            "type": "number"
+          },
+          "days": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "interestAmount": {
+            "type": "number"
+          },
+          "periodEnd": {
+            "format": "date",
+            "type": "string"
+          },
+          "periodStart": {
+            "format": "date",
+            "type": "string"
+          },
+          "postedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "principalAmount": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "LedgerResponse": {
+        "description": "One ledger entry with its running balance",
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "balanceAfter": {
+            "type": "number"
+          },
+          "category": {
+            "enum": [
+              "DEPOSIT",
+              "WITHDRAWAL",
+              "TRADE_BUY",
+              "TRADE_SELL",
+              "FEE",
+              "TAX",
+              "DIVIDEND",
+              "INTEREST",
+              "STATEMENT_ADJUSTMENT"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "entryNumber": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "entryType": {
+            "enum": [
+              "DEBIT",
+              "CREDIT"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "referenceId": {
+            "type": "string"
+          },
+          "referenceType": {
+            "enum": [
+              "FUND_TRANSACTION",
+              "TRADE",
+              "DIVIDEND",
+              "INTEREST"
+            ],
+            "type": "string"
+          },
+          "transactionDate": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ManualTradeRequest": {
+        "description": "Records a trade done at an external broker on a tracking account. Never moves cash",
+        "properties": {
+          "accountId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "brokerage": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "buyPrice": {
+            "example": 2450.5,
+            "minimum": 1e-8,
+            "type": "number"
+          },
+          "exchange": {
+            "example": "NSE",
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "externalTradeId": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "fee": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "notes": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          },
+          "quantity": {
+            "example": 10,
+            "minimum": 1e-8,
+            "type": "number"
+          },
+          "sellPrice": {
+            "minimum": 1e-8,
+            "type": "number"
+          },
+          "side": {
+            "enum": [
+              "BUY",
+              "SELL"
+            ],
+            "type": "string"
+          },
+          "symbol": {
+            "example": "AAPL",
+            "minLength": 1,
+            "pattern": "[A-Za-z.]{1,20}",
+            "type": "string"
+          },
+          "tax": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "tradeDate": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountId",
+          "quantity",
+          "side",
+          "symbol",
+          "tradeDate"
+        ],
+        "type": "object"
+      },
+      "MonthAmountResponse": {
+        "description": "A total for one calendar month",
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "month": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "PerformanceResponse": {
+        "description": "Account performance",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "brokerName": {
+            "enum": [
+              "PLATFORM",
+              "PAPER",
+              "GROWW",
+              "ZERODHA",
+              "BINANCE",
+              "EXNESS",
+              "MANUAL"
+            ],
+            "type": "string"
+          },
+          "calculatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "grossProfit": {
+            "type": "number"
+          },
+          "netProfit": {
+            "type": "number"
+          },
+          "pricesLive": {
+            "type": "boolean"
+          },
+          "realizedProfit": {
+            "type": "number"
+          },
+          "totalCharges": {
+            "type": "number"
+          },
+          "totalTaxes": {
+            "type": "number"
+          },
+          "unrealizedProfit": {
+            "type": "number"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SellTradeRequest": {
+        "description": "Sells held shares at the current market price",
+        "properties": {
+          "accountId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "quantity": {
+            "example": 10,
+            "format": "int32",
+            "maximum": 1000000,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "symbol": {
+            "example": "AAPL",
+            "minLength": 1,
+            "pattern": "[A-Za-z.]{1,20}",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountId",
+          "quantity",
+          "symbol"
+        ],
+        "type": "object"
+      },
+      "StatementImportHistoryResponse": {
+        "description": "Result of one import attempt",
+        "properties": {
+          "attemptNumber": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "chargesImported": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "duplicateTrades": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "errorMessage": {
+            "type": "string"
+          },
+          "finishedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "parserName": {
+            "type": "string"
+          },
+          "reportedCharges": {
+            "type": "number"
+          },
+          "reportedNetPnl": {
+            "type": "number"
+          },
+          "reportedRealizedPnl": {
+            "type": "number"
+          },
+          "reportedTaxes": {
+            "type": "number"
+          },
+          "reportedUnrealizedPnl": {
+            "type": "number"
+          },
+          "rowsRead": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "rowsSkipped": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "statementId": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "SUCCESS",
+              "PARTIAL",
+              "FAILED"
+            ],
+            "type": "string"
+          },
+          "taxesImported": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "tradesImported": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "StatementResponse": {
+        "description": "Account statement for a period",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AccountResponse"
+          },
+          "closingBalance": {
+            "type": "number"
+          },
+          "dividends": {
+            "items": {
+              "$ref": "#/components/schemas/DividendResponse"
+            },
+            "type": "array"
+          },
+          "from": {
+            "format": "date",
+            "type": "string"
+          },
+          "fundTransactions": {
+            "items": {
+              "$ref": "#/components/schemas/FundTransactionResponse"
+            },
+            "type": "array"
+          },
+          "interest": {
+            "items": {
+              "$ref": "#/components/schemas/InterestResponse"
+            },
+            "type": "array"
+          },
+          "ledgerEntries": {
+            "items": {
+              "$ref": "#/components/schemas/LedgerResponse"
+            },
+            "type": "array"
+          },
+          "openingBalance": {
+            "type": "number"
+          },
+          "to": {
+            "format": "date",
+            "type": "string"
+          },
+          "totalCredits": {
+            "type": "number"
+          },
+          "totalDebits": {
+            "type": "number"
+          },
+          "totalFees": {
+            "type": "number"
+          },
+          "totalTaxes": {
+            "type": "number"
+          },
+          "trades": {
+            "items": {
+              "$ref": "#/components/schemas/TradeResponse"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "TaxBreakdownResponse": {
+        "description": "Tax preview from the tax engine",
+        "properties": {
+          "taxes": {
+            "items": {
+              "$ref": "#/components/schemas/ChargeLineResponse"
+            },
+            "type": "array"
+          },
+          "totalTax": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "TaxMasterResponse": {
+        "description": "A tax rule",
+        "properties": {
+          "appliesToSide": {
+            "enum": [
+              "BUY",
+              "SELL"
+            ],
+            "type": "string"
+          },
+          "calculationType": {
+            "enum": [
+              "FIXED",
+              "PERCENTAGE"
+            ],
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "rate": {
+            "type": "number"
+          },
+          "taxType": {
+            "enum": [
+              "TRADE_TAX",
+              "CAPITAL_GAINS_TAX",
+              "DIVIDEND_TAX",
+              "GST",
+              "VAT",
+              "TDS"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "TaxRequest": {
+        "description": "Asks the tax engine for a tax preview without charging anything",
+        "properties": {
+          "realizedProfit": {
+            "example": 120.5,
+            "type": "number"
+          },
+          "side": {
+            "enum": [
+              "BUY",
+              "SELL"
+            ],
+            "type": "string"
+          },
+          "tradeValue": {
+            "example": 1953,
+            "minimum": 0.01,
+            "type": "number"
+          }
+        },
+        "required": [
+          "side",
+          "tradeValue"
+        ],
+        "type": "object"
+      },
+      "TaxSummaryResponse": {
+        "description": "Taxes of an account for a year",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "byMonth": {
+            "items": {
+              "$ref": "#/components/schemas/MonthAmountResponse"
+            },
+            "type": "array"
+          },
+          "byType": {
+            "items": {
+              "$ref": "#/components/schemas/TypeAmountResponse"
+            },
+            "type": "array"
+          },
+          "totalTaxes": {
+            "type": "number"
+          },
+          "year": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "TradeResponse": {
+        "description": "A trade: executed here, entered manually, or imported from a statement",
+        "properties": {
+          "accountId": {
+            "type": "string"
+          },
+          "averageCostAtTrade": {
+            "type": "number"
+          },
+          "balanceAfter": {
+            "type": "number"
+          },
+          "brokerage": {
+            "type": "number"
+          },
+          "buyPrice": {
+            "type": "number"
+          },
+          "exchange": {
+            "type": "string"
+          },
+          "externalTradeId": {
+            "type": "string"
+          },
+          "feeAmount": {
+            "type": "number"
+          },
+          "grossAmount": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "netAmount": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "otherFee": {
+            "type": "number"
+          },
+          "price": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "realizedProfit": {
+            "type": "number"
+          },
+          "sellPrice": {
+            "type": "number"
+          },
+          "side": {
+            "enum": [
+              "BUY",
+              "SELL"
+            ],
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "PLATFORM",
+              "MANUAL",
+              "IMPORT"
+            ],
+            "type": "string"
+          },
+          "statementId": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "taxAmount": {
+            "type": "number"
+          },
+          "tradeDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "tradeKind": {
+            "enum": [
+              "EXECUTION",
+              "CLOSED_POSITION"
+            ],
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "TypeAmountResponse": {
+        "description": "A total for one type",
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateAccountRequest": {
+        "description": "Changes the editable details of an account",
+        "properties": {
+          "accountName": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "remarks": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountName"
+        ],
+        "type": "object"
+      },
+      "WithdrawRequest": {
+        "description": "Pays cash out of an account. The withdrawal fee is charged on top of the amount",
+        "properties": {
+          "amount": {
+            "example": 250,
+            "minimum": 0.01,
+            "type": "number"
+          },
+          "reference": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Investment accounts, cash ledger, trades, holdings, fees, taxes,\ndividends and statements.\n\nEvery endpoint except the fee/tax schedules requires the X-User-Id\nheader, which the api-gateway sets from the validated JWT.\nDividend and interest posting are internal endpoints that the\ngateway blocks.",
+    "title": "Account Service API",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/accounts": {
+      "post": {
+        "description": "Creates an ACTIVE account with a zero balance.",
+        "operationId": "createAccount",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "Account created"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "Invalid request"
+          }
+        },
+        "summary": "Open an account",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/api/v1/accounts/user/{userId}": {
+      "get": {
+        "description": "The caller's own accounts; an ADMIN may list any existing user's accounts.",
+        "operationId": "getUserAccounts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "The accounts, newest first"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "userId is not the caller and the caller is not ADMIN"
+          }
+        },
+        "summary": "List a user's accounts",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/api/v1/accounts/{accountId}/statements": {
+      "get": {
+        "description": "Newest first, each with its latest import result.",
+        "operationId": "getStatements",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountStatementResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Statements of an account",
+        "tags": [
+          "Statements (import)"
+        ]
+      }
+    },
+    "/api/v1/accounts/{accountId}/statements/upload": {
+      "post": {
+        "description": "Multipart field 'file': xlsx, xls or csv, at most 20 MB. The account must be an ACTIVE GROWW, ZERODHA, BINANCE or EXNESS account of the caller. The file is stored and imported right away; the response includes the import result.",
+        "operationId": "upload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatementResponse"
+                }
+              }
+            },
+            "description": "Stored and imported (check latestImport.status)"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatementResponse"
+                }
+              }
+            },
+            "description": "Wrong file type, content, size or account"
+          },
+          "409": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatementResponse"
+                }
+              }
+            },
+            "description": "Same file already uploaded to this account"
+          }
+        },
+        "summary": "Upload a broker statement",
+        "tags": [
+          "Statements (import)"
+        ]
+      }
+    },
+    "/api/v1/accounts/{id}": {
+      "delete": {
+        "description": "Soft delete: the balance must be zero and no shares held. History stays readable.",
+        "operationId": "deleteAccount",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "Account closed"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "Balance not zero, shares still held, or account not active"
+          }
+        },
+        "summary": "Close an account",
+        "tags": [
+          "Accounts"
+        ]
+      },
+      "get": {
+        "operationId": "getAccount",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "The account"
+          },
+          "403": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "Account belongs to another user"
+          },
+          "404": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "Account not found"
+          }
+        },
+        "summary": "Get an account",
+        "tags": [
+          "Accounts"
+        ]
+      },
+      "put": {
+        "operationId": "updateAccount",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Rename an account",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/api/v1/accounts/{id}/adjustments": {
+      "post": {
+        "description": "Positive amount adds cash, negative removes it; posted as a STATEMENT_ADJUSTMENT ledger entry.",
+        "operationId": "adjust",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdjustmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundTransactionResponse"
+                }
+              }
+            },
+            "description": "Adjustment posted"
+          },
+          "422": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundTransactionResponse"
+                }
+              }
+            },
+            "description": "A negative adjustment larger than the balance"
+          }
+        },
+        "summary": "Adjust cash (statement reconciliation)",
+        "tags": [
+          "Funds"
+        ]
+      }
+    },
+    "/api/v1/accounts/{id}/audit": {
+      "get": {
+        "description": "Every action on the account with request/response JSON, newest first.",
+        "operationId": "getAuditTrail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuditLogResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Audit trail",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/api/v1/accounts/{id}/deposit": {
+      "post": {
+        "operationId": "deposit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepositRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundTransactionResponse"
+                }
+              }
+            },
+            "description": "Deposit posted"
+          }
+        },
+        "summary": "Deposit cash",
+        "tags": [
+          "Funds"
+        ]
+      }
+    },
+    "/api/v1/accounts/{id}/dividends": {
+      "post": {
+        "description": "Pays dividendPerShare on the shares currently held, minus withholding tax. Requires X-User-Role ADMIN; the api-gateway only lets ADMIN tokens through.",
+        "operationId": "postDividend",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DividendRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DividendResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Post a dividend (ADMIN)",
+        "tags": [
+          "Dividends"
+        ]
+      }
+    },
+    "/api/v1/accounts/{id}/fund-transactions": {
+      "get": {
+        "description": "Newest first.",
+        "operationId": "getFundTransactions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FundTransactionResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "List deposits, withdrawals and adjustments",
+        "tags": [
+          "Funds"
+        ]
+      }
+    },
+    "/api/v1/accounts/{id}/interest": {
+      "post": {
+        "description": "Simple interest on the current balance for the period. Requires X-User-Role ADMIN; the api-gateway only lets ADMIN tokens through.",
+        "operationId": "postInterest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InterestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterestResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Post interest (ADMIN)",
+        "tags": [
+          "Interest"
+        ]
+      }
+    },
+    "/api/v1/accounts/{id}/ledger": {
+      "get": {
+        "description": "Inclusive date range, in ledger order.",
+        "operationId": "getLedger",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LedgerResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Ledger with running balance",
+        "tags": [
+          "Statements"
+        ]
+      }
+    },
+    "/api/v1/accounts/{id}/performance": {
+      "get": {
+        "description": "Recalculates and returns gross profit, realized/unrealized profit, charges, taxes and net profit (netProfit = grossProfit - totalCharges - totalTaxes).",
+        "operationId": "getPerformance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerformanceResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Account performance",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/api/v1/accounts/{id}/statement": {
+      "get": {
+        "description": "Opening/closing balance, ledger with running balance, trades, deposits/withdrawals, dividends, interest and fee/tax totals for an inclusive date range (max 366 days).",
+        "operationId": "getStatement_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "example": "2026-10-01",
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "example": "2026-10-31",
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Account statement",
+        "tags": [
+          "Statements"
+        ]
+      }
+    },
+    "/api/v1/accounts/{id}/summary": {
+      "get": {
+        "description": "Cash, live value of holdings, realized/unrealized profit and lifetime totals.",
+        "operationId": "getSummary",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountSummaryResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Account summary",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/api/v1/accounts/{id}/withdraw": {
+      "post": {
+        "description": "The withdrawal fee is charged on top of the amount.",
+        "operationId": "withdraw",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundTransactionResponse"
+                }
+              }
+            },
+            "description": "Withdrawal posted"
+          },
+          "422": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundTransactionResponse"
+                }
+              }
+            },
+            "description": "Balance does not cover amount + fee"
+          }
+        },
+        "summary": "Withdraw cash",
+        "tags": [
+          "Funds"
+        ]
+      }
+    },
+    "/api/v1/charges/account/{accountId}": {
+      "get": {
+        "description": "Imported and manual charges, newest first.",
+        "operationId": "getCharges",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountChargeResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Charges of an account",
+        "tags": [
+          "Charges"
+        ]
+      }
+    },
+    "/api/v1/charges/account/{accountId}/summary": {
+      "get": {
+        "description": "Totals per charge type for a calendar year (default: current year), including the platform fee engine's fees.",
+        "operationId": "getChargeSummary",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2100,
+              "minimum": 2000,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChargeSummaryResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Yearly charge summary",
+        "tags": [
+          "Charges"
+        ]
+      }
+    },
+    "/api/v1/dividends/account/{accountId}": {
+      "get": {
+        "description": "Newest first.",
+        "operationId": "getDividends",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DividendResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Dividends of an account",
+        "tags": [
+          "Dividends"
+        ]
+      }
+    },
+    "/api/v1/fees": {
+      "get": {
+        "operationId": "getFeeSchedule",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FeeMasterResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Active fee schedule",
+        "tags": [
+          "Fees"
+        ]
+      }
+    },
+    "/api/v1/fees/account/{accountId}": {
+      "get": {
+        "description": "Newest first.",
+        "operationId": "getAccountFees",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountFeeResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Fees charged to an account",
+        "tags": [
+          "Fees"
+        ]
+      }
+    },
+    "/api/v1/fees/calculate": {
+      "post": {
+        "description": "What a trade or withdrawal of this amount would cost. Nothing is charged.",
+        "operationId": "previewFees",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeeBreakdownResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Preview fees",
+        "tags": [
+          "Fees"
+        ]
+      }
+    },
+    "/api/v1/holdings/account/{accountId}": {
+      "get": {
+        "description": "Live price fields are null when market-data-service is unavailable.",
+        "operationId": "getHoldings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HoldingResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "List an account's open positions",
+        "tags": [
+          "Holdings"
+        ]
+      }
+    },
+    "/api/v1/interest/account/{accountId}": {
+      "get": {
+        "description": "Newest first.",
+        "operationId": "getInterest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InterestResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Interest paid to an account",
+        "tags": [
+          "Interest"
+        ]
+      }
+    },
+    "/api/v1/statements/{statementId}": {
+      "delete": {
+        "description": "Deletes the file, the statement and every trade, charge and tax imported from it; holdings are rebuilt.",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statementId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          }
+        },
+        "summary": "Delete a statement",
+        "tags": [
+          "Statements (import)"
+        ]
+      },
+      "get": {
+        "operationId": "getStatement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statementId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatementResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get a statement",
+        "tags": [
+          "Statements (import)"
+        ]
+      }
+    },
+    "/api/v1/statements/{statementId}/download": {
+      "get": {
+        "operationId": "download",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statementId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Download the original file",
+        "tags": [
+          "Statements (import)"
+        ]
+      }
+    },
+    "/api/v1/statements/{statementId}/imports": {
+      "get": {
+        "description": "Every import attempt of the statement, newest first.",
+        "operationId": "getImportHistory",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statementId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StatementImportHistoryResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Import history",
+        "tags": [
+          "Statements (import)"
+        ]
+      }
+    },
+    "/api/v1/statements/{statementId}/reprocess": {
+      "post": {
+        "description": "Imports the stored file again (for example after a column mapping change). What it imported before is replaced, never duplicated.",
+        "operationId": "reprocess",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "statementId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountStatementResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Reprocess a statement",
+        "tags": [
+          "Statements (import)"
+        ]
+      }
+    },
+    "/api/v1/taxes": {
+      "get": {
+        "operationId": "getTaxRules",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TaxMasterResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Active tax rules",
+        "tags": [
+          "Taxes"
+        ]
+      }
+    },
+    "/api/v1/taxes/account/{accountId}": {
+      "get": {
+        "description": "Newest first.",
+        "operationId": "getAccountTaxes",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountTaxResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Taxes charged to an account",
+        "tags": [
+          "Taxes"
+        ]
+      }
+    },
+    "/api/v1/taxes/account/{accountId}/summary": {
+      "get": {
+        "description": "Taxes of all sources for a calendar year (default: current year), per type and per month.",
+        "operationId": "getYearlyTaxSummary",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 2100,
+              "minimum": 2000,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxSummaryResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Yearly tax summary",
+        "tags": [
+          "Taxes"
+        ]
+      }
+    },
+    "/api/v1/taxes/calculate": {
+      "post": {
+        "description": "Trade tax, plus capital gains tax for a SELL with a positive realizedProfit. Nothing is charged.",
+        "operationId": "previewTax",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxBreakdownResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Preview taxes",
+        "tags": [
+          "Taxes"
+        ]
+      }
+    },
+    "/api/v1/trades": {
+      "post": {
+        "description": "Records a trade done at an external broker on a GROWW, ZERODHA, BINANCE, EXNESS or MANUAL account. Give buyPrice for a BUY, sellPrice for a SELL, or both for a closed position. Never moves cash; holdings are rebuilt.",
+        "operationId": "createManualTrade",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualTradeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeResponse"
+                }
+              }
+            },
+            "description": "Trade recorded"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeResponse"
+                }
+              }
+            },
+            "description": "Platform account, or a missing price"
+          },
+          "409": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeResponse"
+                }
+              }
+            },
+            "description": "externalTradeId already recorded"
+          }
+        },
+        "summary": "Record a manual trade (tracking accounts)",
+        "tags": [
+          "Trades"
+        ]
+      }
+    },
+    "/api/v1/trades/account/{accountId}": {
+      "get": {
+        "description": "Newest first. Optional inclusive date range: give both from and to (yyyy-MM-dd).",
+        "operationId": "getTrades",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TradeResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "List an account's trades",
+        "tags": [
+          "Trades"
+        ]
+      }
+    },
+    "/api/v1/trades/buy": {
+      "post": {
+        "description": "Debits price x quantity + fees + taxes and adds to the holding.",
+        "operationId": "buy",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuyTradeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeResponse"
+                }
+              }
+            },
+            "description": "Trade executed"
+          },
+          "404": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeResponse"
+                }
+              }
+            },
+            "description": "Unknown symbol or account"
+          },
+          "422": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeResponse"
+                }
+              }
+            },
+            "description": "Insufficient balance"
+          },
+          "502": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeResponse"
+                }
+              }
+            },
+            "description": "market-data-service unavailable"
+          }
+        },
+        "summary": "Buy shares",
+        "tags": [
+          "Trades"
+        ]
+      }
+    },
+    "/api/v1/trades/sell": {
+      "post": {
+        "description": "Credits price x quantity, debits fees and taxes (incl. capital gains tax on profit).",
+        "operationId": "sell",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SellTradeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeResponse"
+                }
+              }
+            },
+            "description": "Trade executed"
+          },
+          "400": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeResponse"
+                }
+              }
+            },
+            "description": "Not enough shares held"
+          }
+        },
+        "summary": "Sell shares",
+        "tags": [
+          "Trades"
+        ]
+      }
+    },
+    "/api/v1/trades/{id}": {
+      "get": {
+        "operationId": "getTrade",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Get a trade",
+        "tags": [
+          "Trades"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "Direct (set X-User-Id yourself)",
+      "url": "http://localhost:8086"
+    },
+    {
+      "description": "Through api-gateway (Bearer token)",
+      "url": "http://localhost:8080"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Deposit and withdraw cash",
+      "name": "Funds"
+    },
+    {
+      "description": "Imported and manual charges, and yearly charge summaries",
+      "name": "Charges"
+    },
+    {
+      "description": "Buy and sell shares",
+      "name": "Trades"
+    },
+    {
+      "description": "Dividends paid on held shares",
+      "name": "Dividends"
+    },
+    {
+      "description": "Tax rules, previews, taxes charged and yearly summaries",
+      "name": "Taxes"
+    },
+    {
+      "description": "Open, view, rename and close investment accounts",
+      "name": "Accounts"
+    },
+    {
+      "description": "Shares held, valued at live prices",
+      "name": "Holdings"
+    },
+    {
+      "description": "Upload broker statements (xlsx, xls, csv) and manage their imports",
+      "name": "Statements (import)"
+    },
+    {
+      "description": "Interest paid on cash balances",
+      "name": "Interest"
+    },
+    {
+      "description": "Fee schedule, previews and fees charged",
+      "name": "Fees"
+    },
+    {
+      "description": "Account statements and ledger with running balance",
+      "name": "Statements"
+    }
+  ]
+}

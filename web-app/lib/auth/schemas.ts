@@ -60,10 +60,10 @@ export const registerSchema = z
     email,
     password: passwordRule,
     confirmPassword: z.string().min(1, "Confirm your password"),
-    country: z.enum(countryCodes, { errorMap: () => ({ message: "Select your country" }) }),
+    country: z.enum(countryCodes, { error: "Select your country" }),
     dialCode: z.string().regex(/^\+\d{1,4}$/, "Select a dial code"),
     mobile,
-    gender: z.enum(["male", "female"], { errorMap: () => ({ message: "Select a gender" }) }),
+    gender: z.enum(["male", "female"], { error: "Select a gender" }),
     // Set only by the Terms dialog after the visitor scrolls to the end and accepts (components/auth/TermsGate.tsx).
     termsAccepted: z.boolean().refine((v) => v === true, "Read the Terms and Risk Disclaimer to the end and accept them to continue"),
   })
