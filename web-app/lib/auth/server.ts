@@ -158,6 +158,9 @@ export function sameOriginOnly(req: NextRequest, opts: { multipart?: boolean } =
   }
   const type = req.headers.get("content-type") ?? "";
   const allowed = type.includes("application/json") || (opts.multipart === true && type.startsWith("multipart/form-data"));
-  if (!allowed && req.method !== "GET") return fail("VALIDATION", 415, opts.multipart ? "Expected JSON or a file upload" : "Expected JSON");
+  // Only methods that carry a body need a JSON (or upload) Content-Type. A DELETE has no body; it is protected by the
+  // Origin check above and by SameSite=Lax cookies (a cross-site form cannot send DELETE, and cross-site fetches get no cookie).
+  const hasBody = req.method === "POST" || req.method === "PUT" || req.method === "PATCH";
+  if (!allowed && hasBody) return fail("VALIDATION", 415, opts.multipart ? "Expected JSON or a file upload" : "Expected JSON");
   return null;
 }
