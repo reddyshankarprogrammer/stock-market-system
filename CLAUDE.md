@@ -15,6 +15,7 @@ Stock-trading microservices. Not a git repository; no parent POM: every service 
 | portfolio-service | 8084 | `com.stockmarket.portfolioservice` | 4.0.8 | MySQL, Hibernate update | [README](portfolio-service/README.md) · [CLAUDE](portfolio-service/CLAUDE.md) |
 | notification-service | 8085 | `com.stockmarket.notificationservice` | 4.0.8 | in memory | [README](notification-service/README.md) · [CLAUDE](notification-service/CLAUDE.md) |
 | account-service | 8086 | `com.stockmarket.accountservice` | 4.0.8 | MySQL, **Flyway** | [README](account-service/README.md) · [CLAUDE](account-service/CLAUDE.md) |
+| web-app | 3000 (cluster: `app.stockmarket.local`) | - | Next.js 16 | none (httpOnly cookies) | [README](web-app/README.md) |
 | ai-service | - | - | - | placeholder | [README](ai-service/README.md) |
 
 Infrastructure (`docker-compose.yml`, network `trading-network`): MySQL 8.0, Redis 7, Kafka 7.4.0 (KRaft), Kafka UI on 8090, Mailpit (dev email inbox) on 8025. account-service also has an opt-in compose entry (`--profile app`). Production runs on K3s from `k8s/` (MySQL 8.4, Valkey, Strimzi Kafka), deployed by GitHub Actions + Argo CD: see section 8.

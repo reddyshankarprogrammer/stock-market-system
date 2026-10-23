@@ -1,0 +1,45 @@
+# Public entry point of the web app: https://app.stockmarket.local
+#
+# Browsers talk only to the web app. Its Next.js route handlers (/api/auth, /api/onboarding) call
+# api-gateway inside the cluster, so the gateway needs no CORS rules and the JWT cookies stay
+# httpOnly on this one host. Same certificate arrangement as stock-market-ingress.yaml
+# (cert-manager, stockmarket-local-ca); *.local names cannot get a Let's Encrypt certificate.
+# The public production address is still to be decided.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-app
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: web-app
+    app.kubernetes.io/part-of: stock-market-system
+  annotations:
+    cert-manager.io/cluster-issuer: stockmarket-local-ca
+    cert-manager.io/private-key-algorithm: ECDSA
+    cert-manager.io/private-key-rotation-policy: Always
+    nginx.org/redirect-to-https: "true"
+    nginx.org/hsts: "true"
+    nginx.org/hsts-max-age: "31536000"
+    nginx.org/client-max-body-size: "1m"
+    nginx.org/proxy-connect-timeout: "10s"
+    nginx.org/proxy-read-timeout: "60s"
+    nginx.org/limit-req-rate: "50r/s"
+    nginx.org/limit-req-burst: "100"
+    nginx.org/limit-req-key: "${binary_remote_addr}"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - app.stockmarket.local
+      secretName: web-app-tls
+  rules:
+    - host: app.stockmarket.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-app
+                port:
+                  name: http

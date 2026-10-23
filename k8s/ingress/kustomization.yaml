@@ -6,3 +6,4 @@ resources:
   - cluster-issuer.yaml
   - stock-market-ingress.yaml
   - platform-ingress.yaml
+  - web-app-ingress.yaml

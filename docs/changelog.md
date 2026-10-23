@@ -2,6 +2,23 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: web app deployment (Docker, Kubernetes, Argo CD, CI)
+
+### Features
+
+| Feature | Where |
+|---|---|
+| `web-app/Dockerfile`: standalone Next.js server on distroless Node 24, uid 65532, read-only root; `GET /api/health` probe that does not depend on the gateway | `web-app/` |
+| `k8s/web-app/` (Deployment, Service, ConfigMap with `API_GATEWAY_URL`, HPA 2 to 5, PDB, ServiceAccount), ingress `app.stockmarket.local`, NetworkPolicy from the ingress controller, Argo CD application | `k8s/` |
+| CI job `web-app` (ESLint, type check, build, 46 browser checks on the standalone server); web-app added to the image matrix, `cd.yml`, `release.yml` and Dependabot (npm and docker); Grafana board "Stock Market / Web App" | `.github/`, `k8s/monitoring/` |
+
+### Bugs found by testing and fixed
+
+| Bug | Fix |
+|---|---|
+| The same-origin check compared the full `Origin` with the server's own origin, which would have returned 403 on every sign-in behind a TLS ingress (the server sees `http`, the browser sends `https`) | It compares hosts (`X-Forwarded-Host`, else `Host`); a foreign origin is still 403 (checked in the container) |
+| One onboarding browser check waited for the URL `**/dashboard` but the app ends on `/dashboard?welcome=1`, so it timed out on every run | The check accepts the query string; 46 of 46 pass |
+
 ## 2026-10-24: onboarding wizard (trading experience, brokers, plan, complete) with saved answers
 
 ### Features

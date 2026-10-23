@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-app-config
+  namespace: stock-market
+  labels:
+    app.kubernetes.io/name: web-app
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: stock-market-system
+data:
+  TZ: "UTC"
+  NODE_ENV: "production"
+  HOSTNAME: "0.0.0.0"
+  PORT: "3000"
+  # The Next.js route handlers (BFF) call the gateway server side; the browser never talks to it.
+  API_GATEWAY_URL: "http://api-gateway.stock-market.svc.cluster.local:8080"

@@ -33,6 +33,7 @@ concurrency:
 
 env:
   JAVA_VERSION: "21"
+  NODE_VERSION: "24"
   JACOCO_VERSION: "0.8.13"
   SONAR_MAVEN_PLUGIN_VERSION: "5.1.0.4751"
   TRIVY_VERSION: "0.71.1"
@@ -175,6 +176,58 @@ jobs:
         run: echo "::notice title=SonarQube::SONAR_TOKEN is not configured; analysis skipped (see docs/github-actions-guide.md)."
 
   # --------------------------------------------------------------------------------------------
+  web-app:
+    name: Build & test · web-app
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web-app
+    env:
+      # The browser tests run against a mock gateway (web-app/e2e/mock-gateway.mjs): no backend needed.
+      API_GATEWAY_URL: http://localhost:8099
+      BASE_URL: http://127.0.0.1:3100
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web-app/package-lock.json
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser tests (auth and onboarding, mock gateway)
+        run: |
+          # The standalone server is what the container image runs.
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+          PORT=3100 HOSTNAME=127.0.0.1 node .next/standalone/server.js > server.log 2>&1 &
+          for _ in $(seq 1 30); do curl -fs "${BASE_URL}/api/health" >/dev/null && break; sleep 1; done
+          curl -fs "${BASE_URL}/api/health"
+          npm run e2e:auth
+
+      - name: Server log
+        if: failure()
+        run: cat server.log || true
+
+  # --------------------------------------------------------------------------------------------
   validate-manifests:
     name: Validate Kubernetes manifests and scripts
     runs-on: ubuntu-latest
@@ -230,7 +283,7 @@ jobs:
   # --------------------------------------------------------------------------------------------
   docker:
     name: Image · ${{ matrix.service }}
-    needs: [build-test, validate-manifests, security]
+    needs: [build-test, web-app, validate-manifests, security]
     runs-on: ubuntu-latest
     timeout-minutes: 40
     permissions:
@@ -249,6 +302,7 @@ jobs:
           - portfolio-service
           - notification-service
           - account-service
+          - web-app
           - ai-service
     env:
       SERVICE: ${{ matrix.service }}
@@ -365,7 +419,7 @@ jobs:
   # --------------------------------------------------------------------------------------------
   notify:
     name: Build status notification
-    needs: [build-test, validate-manifests, security, docker]
+    needs: [build-test, web-app, validate-manifests, security, docker]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -374,13 +428,14 @@ jobs:
         env:
           WEBHOOK: ${{ secrets.NOTIFY_WEBHOOK_URL }}
           BUILD: ${{ needs.build-test.result }}
+          WEBAPP: ${{ needs.web-app.result }}
           MANIFESTS: ${{ needs.validate-manifests.result }}
           SECURITY: ${{ needs.security.result }}
           IMAGES: ${{ needs.docker.result }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           overall=success
-          for r in "${BUILD}" "${MANIFESTS}" "${SECURITY}" "${IMAGES}"; do
+          for r in "${BUILD}" "${WEBAPP}" "${MANIFESTS}" "${SECURITY}" "${IMAGES}"; do
             [[ "${r}" == "success" || "${r}" == "skipped" ]] || overall=failure
           done
           icon=$([[ "${overall}" == success ]] && echo "✅" || echo "❌")
@@ -390,6 +445,7 @@ jobs:
             echo "| Stage | Result |"
             echo "|---|---|"
             echo "| Build, unit + integration tests, coverage, SonarQube | ${BUILD} |"
+            echo "| Web app: lint, type check, build, browser tests | ${WEBAPP} |"
             echo "| Kubernetes manifests | ${MANIFESTS} |"
             echo "| OWASP, Trivy, secret scan | ${SECURITY} |"
             echo "| Docker images (scan, push, sign) | ${IMAGES} |"
@@ -398,9 +454,9 @@ jobs:
           # Slack-compatible incoming webhook (Slack, Mattermost, Rocket.Chat, Discord /slack).
           if [[ -n "${WEBHOOK}" ]]; then
             # shellcheck disable=SC2016  # backticks are Slack markup, not command substitution
-            text="$(printf '%s *CI %s* `%s` %s @ %s by %s\nbuild: %s · manifests: %s · security: %s · images: %s\n%s' \
+            text="$(printf '%s *CI %s* `%s` %s @ %s by %s\nbuild: %s · web: %s · manifests: %s · security: %s · images: %s\n%s' \
               "${icon}" "${overall}" "${GITHUB_REPOSITORY}" "${GITHUB_REF_NAME}" "${GITHUB_SHA::7}" "${GITHUB_ACTOR}" \
-              "${BUILD}" "${MANIFESTS}" "${SECURITY}" "${IMAGES}" "${RUN_URL}")"
+              "${BUILD}" "${WEBAPP}" "${MANIFESTS}" "${SECURITY}" "${IMAGES}" "${RUN_URL}")"
             curl -fsS -X POST -H 'Content-Type: application/json' \
               --data "$(jq -n --arg t "${text}" '{text: $t}')" "${WEBHOOK}" >/dev/null \
               || echo "::warning::notification webhook failed"

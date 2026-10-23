@@ -20,7 +20,7 @@ The work did not follow the unit order. The landing page, two clips and the sign
 | Area | Status | Where |
 |---|---|---|
 | Landing page | Stages 1 and 2 built: header, hero, trust, platform, AI coach demo, solutions, pricing, security, FAQ, JSON-LD, placeholder legal pages. Two clips (P&L calendar, statement import) rendered with Playwright, 8.00 s each. Waitlist, hero video, clips 3–8 not done. | `web-app/`, [06-ai-prompt-library.md](06-ai-prompt-library.md), [07-feature-video-scripts.md](07-feature-video-scripts.md) |
-| Web app scaffold | Next.js 16, Tailwind 4, brand tokens (about half of unit 17). Dockerfile, `k8s/web-app/`, Argo CD and CI lists (unit 18) not done. | `web-app/README.md` |
+| Web app scaffold and deployment | Next.js 16, Tailwind 4, brand tokens. Deployment built 24 Oct (branch `feature/web-app-deployment`): Dockerfile (verified read-only, non-root), `k8s/web-app/`, ingress, NetworkPolicy, Argo CD application, CI job, workflow lists, Grafana board. **Not yet run in a real cluster; public address undecided.** | `web-app/README.md` |
 | Sign-up and login screens, stage A | Login, Register (9 required fields, read-to-the-end Terms and Risk Disclaimer), protected routes, dark and light mode, httpOnly session cookies, `auth-service.ts`, `auth-hooks.ts`, `auth-store.ts`. 25 browser checks pass against a mock gateway. | `web-app/lib/auth/`, `web-app/e2e/` |
 | Forgot and Reset Password | Built (24 Oct, branch `feature/password-reset`): emailed single-use link (hash stored, 30 min), same answer for any email, older sessions end after a reset. Needs a production email provider. | `web-app/app/(auth)/`, `user-service` |
 | Pending by request | Verify Email (6-digit OTP, verify, resend). Its page says "Not available yet". | `web-app/app/(auth)/verify-email` |
@@ -58,12 +58,12 @@ Follow `user-service/CLAUDE.md` and root `CLAUDE.md` section 5 (contract first; 
 | 3 | ~~Backend step 2: refresh endpoint; route handlers refresh on 401~~ **done 24 Oct** (verified on the real stack; remaining: merge) | 0 (was 2) |
 | 4 | ~~Backend step 3: forgot and reset password, email service, screens~~ **done 24 Oct**. Backend step 5 (same 401 for an unknown email, status check at login) **also done 24 Oct** | 0 (was 3) |
 | 5 | ~~Backend step 6 and Onboarding (4 steps)~~ **done 24 Oct** | 0 (was 3) |
-| 6 | Web app deployment: Dockerfile, `k8s/web-app/`, Argo CD application, CI/CD lists, ingress (original unit 18) | 2 |
+| 6 | ~~Web app deployment: Dockerfile, `k8s/web-app/`, Argo CD application, CI/CD lists, ingress~~ **done 24 Oct** (not run in a cluster) | 0 (was 2) |
 | 7 | App shell and typed API client (original units 31–32) | 2 |
 | 8 | Settings screens and preferences (original units 33–36) | 4 |
 | 9 | Accounts, statement upload, trades, dashboard, portfolio, MVP demo (original units 37–40) | 4 |
 | 10 | Waitlist form on the landing page (original unit 23) | 2 |
-| | **Total** | **15** (25 before backend steps 1 to 3, 5 and 6 and the onboarding screens were done) |
+| | **Total** | **13** (25 before backend steps 1 to 3, 5 and 6, the onboarding screens and the deployment were done) |
 
 Moved to after the MVP: landing page clips 3–8, the hero video and "Watch Demo" modal, Verify Email (backend step 4), Keycloak with passkeys and social login (original units 6–16).
 

@@ -68,6 +68,15 @@ npm run e2e:auth                                                        # termin
 
 `e2e/mock-gateway.mjs` imitates the documented user-service behaviour (duplicate email 400, unknown email and wrong password both 401, blocked account 403 after the correct password, slow and failing gateways). For real use, run the whole system (`docker compose up -d`, `.\scripts\start-all.ps1`) and leave `API_GATEWAY_URL` at its default.
 
+## Deployment (Docker, Kubernetes, CI)
+
+- **Image:** `web-app/Dockerfile` (multi-stage; `next build` with `output: "standalone"`; distroless Node 24, uid 65532, no shell). `docker build -t web-app web-app`, then `docker run -p 3000:3000 -e API_GATEWAY_URL=http://host.docker.internal:8080 web-app`. Verified read-only (`--read-only`, only `/tmp` and `/app/.next/cache` writable, all capabilities dropped).
+- **Probe:** `GET /api/health` returns `{"status":"ok"}` and never calls the gateway.
+- **Cluster:** `k8s/web-app/` (Deployment, Service, ConfigMap, HPA 2 to 5, PDB, ServiceAccount; no Secret), ingress `https://app.stockmarket.local` in `k8s/ingress/web-app-ingress.yaml`, NetworkPolicy `allow-ingress-controller-to-web-app`, Argo CD application `web-app`, Grafana board "Stock Market / Web App" (container metrics and logs: Next.js has no Prometheus endpoint).
+- **CI:** job `web-app` in `ci.yml` (lint, type check, build, browser tests on the standalone server); the image job, CD, release and Dependabot (npm and docker) include it.
+- **Behind the ingress:** the same-origin check in `sameOriginOnly` compares the `Origin` host with `X-Forwarded-Host` or `Host`, because the server sees `http` while the browser sends `https`. Cookies are `Secure` in production, so use HTTPS (localhost is exempt).
+- **Open:** the public production address (the host name above is the local-cluster name); not yet run in a real cluster.
+
 ## Not done yet
 
 Dockerfile, `k8s/web-app/`, Argo CD application and the CI/CD service lists (root `CLAUDE.md` section 8.6) are planned for unit 18. Landing page sections start in unit 21.

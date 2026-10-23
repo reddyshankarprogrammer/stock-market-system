@@ -32,6 +32,8 @@ configMapGenerator:
     files: [dashboards/stock-market-market-data-service.json]
   - name: dashboard-notification-service
     files: [dashboards/stock-market-notification-service.json]
+  - name: dashboard-web-app
+    files: [dashboards/stock-market-web-app.json]
   - name: dashboard-kafka
     files: [dashboards/stock-market-kafka.json]
   - name: dashboard-mysql

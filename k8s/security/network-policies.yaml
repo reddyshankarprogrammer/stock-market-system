@@ -75,6 +75,24 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: allow-ingress-controller-to-web-app
+  namespace: stock-market
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: web-app
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: platform
+      ports:
+        - { protocol: TCP, port: 3000 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: allow-prometheus-scrape
   namespace: stock-market
 spec:

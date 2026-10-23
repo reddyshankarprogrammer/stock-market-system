@@ -207,6 +207,36 @@ def services_overview():
     return b
 
 
+def web_app_board():
+    # The Next.js server exposes no Prometheus metrics, so this board uses the container and Kubernetes metrics
+    # of the pods plus their logs.
+    c = 'namespace="stock-market", pod=~"web-app-.*", container="web-app"'
+    b = Board("stock-market-web-app", "Stock Market / Web App", ["stock-market", "web-app"], [],
+              "Quantiva web app (Next.js): pod health, resources and logs. Sign-in, registration and onboarding errors show in the gateway and user-service boards.")
+    b.add([
+        stat("Pods ready", 'kube_deployment_status_replicas_available{namespace="stock-market", deployment="web-app"}', thresholds=UP),
+        stat("Restarts (1h)", f'sum(increase(kube_pod_container_status_restarts_total{{{c}}}[1h]))',
+             thresholds=[{"color": "green", "value": None}, {"color": "orange", "value": 1}, {"color": "red", "value": 3}]),
+        stat("Memory vs limit", f'max(container_memory_working_set_bytes{{{c}}} / on(pod) group_left() max by (pod) (kube_pod_container_resource_limits{{namespace="stock-market", pod=~"web-app-.*", resource="memory"}}))',
+             w=8, unit="percentunit", thresholds=RED_AMBER),
+        stat("CPU throttled", f'sum(rate(container_cpu_cfs_throttled_periods_total{{{c}}}[5m])) / clamp_min(sum(rate(container_cpu_cfs_periods_total{{{c}}}[5m])), 1e-9)',
+             w=8, unit="percentunit", thresholds=RED_AMBER),
+    ], 4)
+    b.add([
+        ts("CPU by pod", [(f'sum by (pod) (rate(container_cpu_usage_seconds_total{{{c}}}[5m]))', "{{pod}}")], unit="cores"),
+        ts("Memory by pod", [(f'sum by (pod) (container_memory_working_set_bytes{{{c}}})', "{{pod}}")], unit="bytes"),
+    ], 8)
+    b.add([
+        ts("Replicas (HPA current / max)", [
+            ('kube_horizontalpodautoscaler_status_current_replicas{namespace="stock-market", horizontalpodautoscaler="web-app"}', "current"),
+            ('kube_horizontalpodautoscaler_spec_max_replicas{namespace="stock-market", horizontalpodautoscaler="web-app"}', "max")]),
+        ts("Network by pod", [(f'sum by (pod) (rate(container_network_receive_bytes_total{{namespace="stock-market", pod=~"web-app-.*"}}[5m]))', "{{pod}} in"),
+                              (f'sum by (pod) (rate(container_network_transmit_bytes_total{{namespace="stock-market", pod=~"web-app-.*"}}[5m]))', "{{pod}} out")], unit="Bps"),
+    ], 8)
+    b.add([logs("Web app logs", '{namespace="stock-market", app="web-app"}')], 10)
+    return b
+
+
 def kafka_board():
     k = 'namespace="messaging"'
     b = Board("stock-market-kafka", "Stock Market / Kafka", ["stock-market", "kafka"], [],
@@ -343,6 +373,7 @@ if __name__ == "__main__":
         spring_service_board("order-service", "Order Service", db_and_kafka),
         spring_service_board("market-data-service", "Market Data Service", db_and_kafka),
         spring_service_board("notification-service", "Notification Service", db_and_kafka),
+        web_app_board(),
         services_overview(),
         kafka_board(),
         mysql_board(),

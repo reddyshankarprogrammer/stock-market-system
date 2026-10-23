@@ -128,7 +128,10 @@ Every folder has `serviceaccount.yaml`, `configmap.yaml`, `secret.yaml` (templat
 | portfolio-service | 8084 | 2 / 4 | 100m / 1 | 512Mi / 768Mi | - |
 | notification-service | 8085 | **1 / 1** | 50m / 500m | 384Mi / 640Mi | - |
 | account-service | 8086 | **1 / 1** | 150m / 1500m | 768Mi / 1Gi | PVC `account-service-statements` 10Gi at `/data/statements` |
+| web-app | 3000 | 2 / 5 | 100m / 500m | 192Mi / 384Mi | emptyDir `/tmp` and `/app/.next/cache` (read-only root) |
 | ai-service | 8000 | 1 / 3 (inactive) | 100m / 1 | 256Mi / 1Gi | - |
+
+The **web app** (`k8s/web-app/`, Next.js standalone server, distroless Node 24, uid 65532) is the only thing the browser talks to, at `https://app.stockmarket.local` (`k8s/ingress/web-app-ingress.yaml`, certificate from cert-manager). Its route handlers call `api-gateway` inside the cluster (`API_GATEWAY_URL` in its ConfigMap), so the gateway needs no CORS rules and the JWT cookies stay httpOnly on one host. Pods are probed on `GET /api/health`, which does not call the gateway, so a gateway outage does not restart or unready them. The NetworkPolicy `allow-ingress-controller-to-web-app` admits only the ingress controller on port 3000. It needs no Secret. The public production address is still undecided.
 
 Why three services are singletons:
 

@@ -148,7 +148,13 @@ export function clearSession(res: NextResponse) {
 /** CSRF defence for state-changing routes: cookies are SameSite=Lax, and the Origin header must match this site when present. */
 export function sameOriginOnly(req: NextRequest): NextResponse | null {
   const origin = req.headers.get("origin");
-  if (origin && origin !== req.nextUrl.origin) return fail("FORBIDDEN_ORIGIN", 403);
+  // Compare hosts, not full origins: behind a TLS-terminating ingress the server sees http while the browser sends https.
+  if (origin) {
+    const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
+    let originHost = "";
+    try { originHost = new URL(origin).host; } catch { /* malformed Origin is rejected below */ }
+    if (originHost !== host) return fail("FORBIDDEN_ORIGIN", 403);
+  }
   if (!(req.headers.get("content-type") ?? "").includes("application/json") && req.method !== "GET") return fail("VALIDATION", 415, "Expected JSON");
   return null;
 }

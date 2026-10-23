@@ -629,6 +629,53 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
+  name: web-app
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: stock-market
+    stock-market/layer: service
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: stock-market
+  source:
+    repoURL: https://github.com/reddyshankarprogrammer/stock-market-system.git
+    targetRevision: main
+    path: k8s/web-app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: stock-market
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+  revisionHistoryLimit: 20
+  # replicas belongs to the HorizontalPodAutoscaler.
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
   name: ai-service
   namespace: argocd
   labels:

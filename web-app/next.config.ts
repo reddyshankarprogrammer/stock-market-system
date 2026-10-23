@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Self-contained server (server.js plus only the modules it needs) for the container image.
+  output: "standalone",
   cacheComponents: true,
   partialPrefetching: true,
   // The emailed reset link carries a secret token: never send it in a Referer header and never cache the page.

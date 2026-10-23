@@ -124,8 +124,9 @@ Settings → Rules → Rulesets (or Branches → branch protection) for **`main`
 - Require a pull request before merging, 1 approval, **require review from Code Owners**, dismiss stale approvals.
 - Require status checks to pass; select the CI checks after the first CI run has reported them:
   - `Build & test · api-gateway` … `Build & test · account-service` (7)
+  - `Build & test · web-app`
   - `Validate Kubernetes manifests and scripts`
-  - `Image · api-gateway` … `Image · ai-service` (8)
+  - `Image · api-gateway` … `Image · ai-service` (9)
   - `Build status notification`
 - Block force pushes and deletions.
 - **Bypass list**: repository admins (or the owner of `GITOPS_TOKEN`). Deployment pull requests only change `k8s/*/kustomization.yaml`, so CI does not run on them (`paths-ignore`) and the required checks never report; `cd.yml` merges them with `gh pr merge --admin` after the environment approval.

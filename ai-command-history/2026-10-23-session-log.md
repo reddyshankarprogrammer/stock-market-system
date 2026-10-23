@@ -217,6 +217,16 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 - **Docs:** user-service README, user manual, ER diagram, changelog, web-app README, plan (backend step 6 and onboarding done; remaining MVP work 18 to 15 units), Postman 112 to 119 requests.
 - **Not done:** pushing; the other Newman folders; a run in the cluster; email verification; plan items 6 to 10 (deployment, app shell, settings, MVP screens, waitlist).
 
+## 24. Web app deployment (24 October)
+
+- **Request:** continuing "start building next steps, step by step automatically": plan item 6.
+- **Branch:** `feature/web-app-deployment` (cut from `feature/onboarding`).
+- **Built:** `web-app/Dockerfile` and `.dockerignore`, `output: "standalone"`, `GET /api/health`; `k8s/web-app/` following the api-gateway pattern (no Secret); ingress `app.stockmarket.local`; NetworkPolicy `allow-ingress-controller-to-web-app`; Argo CD application; CI job `web-app` plus the image matrix, `cd.yml`, `release.yml`, Dependabot npm and docker; Grafana board "Stock Market / Web App" (generated; the other boards show no drift).
+- **Verified:** `docker build` works; the container ran with `--read-only`, `/tmp` and the Next cache as tmpfs and all capabilities dropped: health 200, login page 200, static asset 200, anonymous dashboard 307, wrong password through the container and the real gateway 401, foreign Origin 403, a request with a matching `X-Forwarded-Host` accepted. Every `k8s/*` kustomization renders. ESLint and `tsc` pass; 46 of 46 browser checks pass on the standalone server.
+- **Bugs found, fixed:** (1) the same-origin check would have rejected every sign-in behind the TLS ingress (full-origin comparison; now a host comparison); (2) one onboarding check expected `/dashboard` but the app ends on `/dashboard?welcome=1`, so it timed out on every run (my earlier note that all 46 passed was therefore wrong for that check, or an older version of it; the check now accepts the query). A new opt-in `PAGE_LOG=1` in the e2e script prints console errors and navigations.
+- **Not done:** not run in a real cluster (kubeconform and the Argo CD sync happen there); the workflow YAML was edited but not executed locally; no public address; OWASP Dependency-Check does not cover npm (Trivy and Dependabot do); nothing pushed.
+- **Docs:** root CLAUDE.md, kubernetes-architecture, cicd-pipeline, github-actions-guide, web-app README, changelog, [plan 05](../research-doc/05-daily-implementation-plan.md) (total 15 to 13).
+
 ## Open items after this session
 
 | Item | Where |
@@ -226,7 +236,7 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 | Run Lighthouse and test 320–1920 px, keyboard and screen reader on stage 2 | [06-ai-prompt-library.md](../research-doc/06-ai-prompt-library.md) A1 "Done when" |
 | Trust section statuses (Live, In progress, Planned) must be confirmed against the real deployment | `web-app/lib/content.ts`, [04-product-technology-roadmap.md](../research-doc/04-product-technology-roadmap.md) section 11 |
 | Share image is the 512 px icon, a placeholder | `web-app/app/layout.tsx` |
-| Dockerfile, `k8s/web-app/`, Argo CD and CI lists | Unit 18 of [05-daily-implementation-plan.md](../research-doc/05-daily-implementation-plan.md) |
+| ~~Dockerfile, `k8s/web-app/`, Argo CD and CI lists~~ built in entry 24 (not yet run in a cluster) | Unit 18 of [05-daily-implementation-plan.md](../research-doc/05-daily-implementation-plan.md) |
 | Fix the 24 mockup review findings that still apply to `web-app/` (contrast, tap targets, pause control, tab pattern, landmarks, risk line near numbers) in stage 2 | Section 11 above |
 | Remotion/Playwright project for the eight clips | [07-feature-video-scripts.md](../research-doc/07-feature-video-scripts.md) |
 | Shared Claude artifact not republished; `roadmap.html`, README and `web-app/` changes not yet committed | [research-doc/README.md](../research-doc/README.md) |

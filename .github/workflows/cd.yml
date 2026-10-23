@@ -40,7 +40,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SERVICES: "api-gateway user-service market-data-service order-service portfolio-service notification-service account-service ai-service"
+  SERVICES: "api-gateway user-service market-data-service order-service portfolio-service notification-service account-service web-app ai-service"
 
 jobs:
   # --------------------------------------------------------------------------------------------

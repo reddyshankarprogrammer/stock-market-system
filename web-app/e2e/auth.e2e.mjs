@@ -24,7 +24,18 @@ const ok = (cond, msg) => {
 
 const mock = await startMockGateway(8099);
 const browser = await chromium.launch();
-const newCtx = (o = {}) => browser.newContext({ viewport: { width: 1280, height: 900 }, ...o });
+// PAGE_LOG=1 prints console errors, failed requests and navigations of every page, to debug a failing test.
+const watch = (page) => {
+  page.on("console", (m) => m.type() === "error" && console.log("  [page] console.error", m.text().slice(0, 200)));
+  page.on("pageerror", (e) => console.log("  [page] error", e.message.slice(0, 300)));
+  page.on("requestfailed", (r) => console.log("  [page] request failed", r.url(), r.failure()?.errorText));
+  page.on("framenavigated", (f) => f === page.mainFrame() && console.log("  [page] navigated", f.url()));
+};
+const newCtx = async (o = {}) => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, ...o });
+  if (process.env.PAGE_LOG) ctx.on("page", watch);
+  return ctx;
+};
 
 async function login(page, email = "trader@example.com", password = "GoodPass123", remember = false) {
   await page.goto(`${BASE}/login`);
@@ -327,7 +338,7 @@ await test("onboarding: all four steps, saved as you go, then the dashboard with
   await p.getByLabel(/^Pro /).check(); await p.getByRole("button", { name: "Continue" }).click();
   await p.getByRole("heading", { name: "Check your answers" }).waitFor();
   const summary = await p.locator("dl").innerText(); ok(/Intermediate/.test(summary) && /Groww, Zerodha/.test(summary) && /Pro/.test(summary), summary);
-  await p.getByRole("button", { name: "Complete setup" }).click(); await p.waitForURL("**/dashboard");
+  await p.getByRole("button", { name: "Complete setup" }).click(); await p.waitForURL(/\/dashboard(\?|$)/);
   await p.getByText(/Hello|Welcome/).first().waitFor(); await p.waitForTimeout(800);
   ok(p.url().includes("/dashboard"), `ended on ${p.url()}`); await c.close();
 });
@@ -348,7 +359,7 @@ await test("onboarding: progress is saved, so a reload resumes at the next step 
 });
 await test("onboarding: skipping lasts for this browser session; a new session is asked again", async () => {
   const c = await newCtx(); const p = await registerNew(c);
-  await p.getByRole("button", { name: "Skip for now" }).click(); await p.waitForURL("**/dashboard");
+  await p.getByRole("button", { name: "Skip for now" }).click(); await p.waitForURL(/\/dashboard(\?|$)/);
   await p.getByText(/Hello|Welcome/).first().waitFor(); await p.reload(); await p.getByText(/Hello|Welcome/).first().waitFor();
   ok(p.url().includes("/dashboard"), "skipped session was sent back to onboarding");
   const cookies = await c.cookies(); await c.close();
