@@ -46,10 +46,10 @@ browser form (React Hook Form + Zod) → lib/auth/auth-service.ts → /api/auth/
 - **Files:** `lib/auth/auth-service.ts` (browser API), `auth-hooks.ts` (TanStack Query), `auth-store.ts` (Zustand), `schemas.ts` (Zod, shared by browser and server), `server.ts` (gateway calls with an 8 s timeout, error mapping, cookies), `legal-content.ts` (draft Terms and Risk Disclaimer).
 - **Configuration:** `API_GATEWAY_URL` (default `http://localhost:8080`), see `.env.example`.
 - **Security rules in the route handlers:** same-origin check for state-changing calls, JSON only, wrong password and unknown email give the same message, open redirects blocked (`?next=` must be a same-site path).
-- **Remember me** remembers the email on this device; with the refresh endpoint (not built yet) it will also keep the session longer.
+- **Sessions renew themselves.** The access cookie lasts 15 minutes. When it expires (or user-service answers 401), `/api/auth/me` exchanges the refresh cookie at `POST /api/v1/users/refresh`, retries once and sets a new access cookie. The refresh cookie lasts 7 days with **Remember me** and ends with the browser session without it. An invalid refresh token ends the session and clears both cookies; a gateway outage during renewal keeps the cookies. `proxy.ts` counts a refresh-only session as signed in.
+- **Remember me** also remembers the email on this device (never the password).
 
 Known limits (also in [research-doc/05-daily-implementation-plan.md](../research-doc/05-daily-implementation-plan.md)):
-- Sessions last 15 minutes: user-service has no refresh endpoint.
 - Mobile, gender, country and the Terms version are forwarded to user-service, which stores them (the server records the acceptance time). The mobile number is not verified. Consent is stored per user, but the legal text itself is a draft. Accounts created before this change have these fields empty.
 - There is no rate limiting on the login route; add it at the gateway or ingress.
 - The disclaimer text is a draft and needs legal review before launch.

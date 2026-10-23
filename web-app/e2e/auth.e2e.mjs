@@ -129,6 +129,49 @@ await test("logout clears the session; remember me pre-fills the email", async (
   ok((await p.getByLabel("Email", { exact: true }).inputValue()) === "keep@example.com" && (await p.getByLabel("Remember me").isChecked()), "not remembered"); await c.close();
 });
 
+// ---- session renewal (refresh token) ----
+const stats = async () => (await (await fetch("http://localhost:8099/__stats")).json()).refreshCalls;
+const cookieNamed = async (c, n) => (await c.cookies()).find((x) => x.name === n);
+
+await test("refresh: an expired access cookie is renewed from the refresh cookie, and the user stays signed in", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p); await p.waitForURL("**/dashboard");
+  const before = await stats(); const oldToken = (await cookieNamed(c, "qv_access")).value;
+  await c.clearCookies({ name: "qv_access" }); // what the browser does when the 15-minute cookie expires
+  await p.goto(`${BASE}/dashboard`); await p.getByText("Hello, Test").waitFor();
+  ok(p.url().endsWith("/dashboard"), `redirected to ${p.url()}`);
+  const fresh = await cookieNamed(c, "qv_access"); ok(fresh?.httpOnly && fresh.value !== oldToken, "no new httpOnly access cookie");
+  ok((await stats()) === before + 1, "expected exactly one refresh call"); await c.close();
+});
+await test("refresh: a 401 from user-service is renewed once and the call is retried", async () => {
+  const c = await newCtx(); const p = await c.newPage(); const before = await stats();
+  await login(p, "shortlived@example.com"); // its access token is already expired
+  await p.waitForURL("**/dashboard"); await p.getByText("Hello, Test").waitFor();
+  ok((await stats()) >= before + 1, "no refresh happened"); await c.close();
+});
+await test("refresh: an invalid refresh token ends the session and clears both cookies", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p); await p.waitForURL("**/dashboard");
+  await c.clearCookies({ name: "qv_access" }); await c.clearCookies({ name: "qv_refresh" });
+  await c.addCookies([{ name: "qv_refresh", value: "garbage.value.here", url: BASE, httpOnly: true }]);
+  await p.goto(`${BASE}/dashboard`); await p.waitForURL("**/login**");
+  ok(!(await cookieNamed(c, "qv_refresh")) && !(await cookieNamed(c, "qv_access")), "cookies not cleared"); await c.close();
+});
+await test("refresh: a blocked user cannot renew", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "suspended@example.com"); await p.waitForURL("**/dashboard");
+  await c.clearCookies({ name: "qv_access" }); await p.goto(`${BASE}/dashboard`); await p.waitForURL("**/login**"); await c.close();
+});
+await test("refresh: a gateway outage while renewing shows an error but does NOT log the user out", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "refresh-down@example.com"); await p.waitForURL("**/dashboard");
+  await c.clearCookies({ name: "qv_access" }); await p.goto(`${BASE}/dashboard`);
+  await p.getByText(/temporarily unavailable/i).waitFor(); ok(!!(await cookieNamed(c, "qv_refresh")), "refresh cookie was dropped"); await c.close();
+});
+await test("refresh cookie: a session cookie without Remember me, 7 days with it; tokens still unreadable by scripts", async () => {
+  const a = await newCtx(); const pa = await a.newPage(); await login(pa); await pa.waitForURL("**/dashboard");
+  const plain = await cookieNamed(a, "qv_refresh"); ok(plain.expires === -1 && plain.httpOnly, `plain: expires ${plain.expires}`); await a.close();
+  const b = await newCtx(); const pb = await b.newPage(); await login(pb, "keep2@example.com", "GoodPass123", true); await pb.waitForURL("**/dashboard");
+  const kept = await cookieNamed(b, "qv_refresh"); ok(kept.expires > Date.now() / 1000 + 6 * 86400 && kept.httpOnly, `remembered: expires ${kept.expires}`);
+  ok(!(await pb.evaluate(() => document.cookie)).includes("qv_"), "cookie visible to scripts"); await b.close();
+});
+
 // ---- register ----
 await test("register: empty submit lists the required fields", async () => {
   const c = await newCtx(); const p = await c.newPage(); await p.goto(`${BASE}/register`);

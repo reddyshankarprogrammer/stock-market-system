@@ -56,7 +56,7 @@ export function DashboardView() {
         </FormAlert>
       )}
       <FormAlert tone="success" title="Your session is active">
-        The session lives in a secure cookie that scripts on the page cannot read. It lasts 15 minutes, because the refresh endpoint does not exist yet; you will then be asked to log in again.
+        The session lives in secure cookies that scripts on the page cannot read. It renews itself every 15 minutes. It lasts up to 7 days if you ticked Remember me, and otherwise until you close the browser or log out.
       </FormAlert>
     </div>
   );

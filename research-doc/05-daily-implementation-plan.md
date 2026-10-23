@@ -41,7 +41,7 @@ Follow `user-service/CLAUDE.md` and root `CLAUDE.md` section 5 (contract first; 
 | # | Change | Why |
 |---|---|---|
 | 1 | **DONE (24 Oct, branch `feature/user-profile-fields`, 33 user-service tests pass, not yet run on MySQL).** Added nullable `mobile_country_code`, `mobile_number`, `gender`, `country`, `terms_version`, `terms_accepted_at` to `users`; optional validated fields on `RegisterRequest`; new fields last in `UserResponse`; the server sets the acceptance time. The `user.registered` Kafka map is **unchanged on purpose** (no personal data to consumers). The web app now forwards the fields and the "not saved" notice is gone. Postman, README, user manual, ER diagram and changelog updated. | Mandatory fields and the consent record are now stored. |
-| 2 | `POST /api/v1/users/refresh` (refresh token in, new access token out), public path in the gateway `PUBLIC_PATHS`. The route handlers refresh on a 401. | Without it a session ends after 15 minutes and "Remember me" has no effect. |
+| 2 | **DONE (24 Oct, branch `feature/refresh-token`; 43 user-service tests, 10 gateway tests, 31 web-app browser checks; not yet run on MySQL or the real gateway).** `POST /api/v1/users/refresh` (refresh token in the body, new access token out, same refresh token back), public path in the gateway `PUBLIC_PATHS`, typed 401 `Invalid refresh token`, blocked statuses refused. The web app renews the session itself and retries once. Not rotated and not revocable. | Without it a session ended after 15 minutes and "Remember me" had no effect. |
 | 3 | `POST /api/v1/users/forgot-password` and `/reset-password` (reset token table with expiry, one use), and an email service (Mailpit in development). Always answer the same way whether the email exists. | Forgot and Reset Password screens. |
 | 4 | Email verification: 6-digit code, verify and resend, attempt and rate limits. | Verify Email screen (pending). |
 | 5 | Return 401 instead of 404 for an unknown email at login (known limitation in `user-service/README.md`). | Stops revealing which emails are registered; the web app already hides it. |
@@ -53,7 +53,7 @@ Follow `user-service/CLAUDE.md` and root `CLAUDE.md` section 5 (contract first; 
 |---|---|---|
 | 1 | Decision log (launch market, billing provider, confirm the decisions above) and a short design check against the brand file | 1 |
 | 2 | ~~Backend step 1: profile fields and consent record; web app sends them~~ **done 24 Oct** (remaining: run it against MySQL and the gateway, then merge) | 0 (was 2) |
-| 3 | Backend step 2: refresh endpoint; route handlers refresh on 401 | 2 |
+| 3 | ~~Backend step 2: refresh endpoint; route handlers refresh on 401~~ **done 24 Oct** (remaining: run on MySQL and the real gateway, then merge) | 0 (was 2) |
 | 4 | Backend steps 3 and 5: forgot and reset password, email service; Forgot and Reset Password screens | 3 |
 | 5 | Backend step 6 and Onboarding (4 steps) | 3 |
 | 6 | Web app deployment: Dockerfile, `k8s/web-app/`, Argo CD application, CI/CD lists, ingress (original unit 18) | 2 |
@@ -61,7 +61,7 @@ Follow `user-service/CLAUDE.md` and root `CLAUDE.md` section 5 (contract first; 
 | 8 | Settings screens and preferences (original units 33–36) | 4 |
 | 9 | Accounts, statement upload, trades, dashboard, portfolio, MVP demo (original units 37–40) | 4 |
 | 10 | Waitlist form on the landing page (original unit 23) | 2 |
-| | **Total** | **23** (25 before backend step 1 was done) |
+| | **Total** | **21** (25 before backend steps 1 and 2 were done) |
 
 Moved to after the MVP: landing page clips 3–8, the hero video and "Watch Demo" modal, Verify Email (backend step 4), Keycloak with passkeys and social login (original units 6–16).
 
@@ -200,7 +200,7 @@ A block is five units, about 4 calendar days at this pace. Plan each block in de
 - **Weekend load:** 8 hours of weekend work after 10 hours on weekdays is heavy. Take one full free day every second week; that adds about one week to the end date.
 - Social providers Apple and LinkedIn need external approval; they are left out of units 1–40 and picked up when approved.
 - The Keycloak migration (units 11–14) is deferred. When it returns it touches the gateway and user-service, the most sensitive code; keep it on a branch until Newman passes.
-- **Sessions last 15 minutes** until the refresh endpoint exists (backend step 2); users log in again after that.
+- **Refresh tokens are stateless** (not rotated, not revocable, no logout endpoint), and **login does not check the user status**: both need a decision (store token ids or a per-user token version; check status at login) before launch. No rate limiting on login or refresh.
 - **Terms and Risk Disclaimer is a draft.** Acceptance (version and server time) is now stored per user, but counsel must review the text, and the stored version string must change whenever the text does.
 - The auth pages were tested against a mock gateway only (25 browser checks). Nothing has run against the real user-service, MySQL and Kafka yet; do that before relying on them.
 - Resetting a password and verifying an email need an email provider; choose one with the launch-market decision.

@@ -57,11 +57,34 @@ export function profileFrom(r: AuthResponse): Profile {
 
 const base = { httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/" };
 
-/** Set the session cookies. The access cookie expires with the token (15 minutes); the refresh cookie lasts 7 days only if "remember me" is ticked. */
+/** The access cookie expires together with the token (15 minutes). */
+export function setAccessCookie(res: NextResponse, accessToken: string) {
+  const now = Math.floor(Date.now() / 1000);
+  const accessExp = jwtClaims(accessToken).exp ?? now + 900;
+  res.cookies.set(ACCESS_COOKIE, accessToken, { ...base, maxAge: Math.max(accessExp - now, 1) });
+}
+
+export type RefreshResult = { status: "ok"; accessToken: string } | { status: "invalid" } | { status: "unavailable" };
+
+/**
+ * Exchange the refresh cookie for a new access token (user-service POST /api/v1/users/refresh).
+ * "invalid" means the refresh token is gone, expired or rejected, so the session is over. "unavailable" means the
+ * gateway could not be reached, so the session must NOT be dropped: the user may simply retry.
+ */
+export async function refreshAccessToken(req: NextRequest): Promise<RefreshResult> {
+  const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value;
+  if (!refreshToken) return { status: "invalid" };
+  const res = await gateway("/api/v1/users/refresh", { method: "POST", body: JSON.stringify({ refreshToken }) });
+  if (!res || res.status >= 500) return { status: "unavailable" };
+  if (!res.ok) return { status: "invalid" };
+  const body = (await res.json().catch(() => null)) as { accessToken?: string } | null;
+  return body?.accessToken ? { status: "ok", accessToken: body.accessToken } : { status: "invalid" };
+}
+
+/** Set the session cookies. The refresh cookie lasts 7 days only if "remember me" is ticked; otherwise it ends with the browser session. */
 export function setSession(res: NextResponse, r: AuthResponse, remember: boolean) {
   const now = Math.floor(Date.now() / 1000);
-  const accessExp = jwtClaims(r.accessToken).exp ?? now + 900;
-  res.cookies.set(ACCESS_COOKIE, r.accessToken, { ...base, maxAge: Math.max(accessExp - now, 1) });
+  setAccessCookie(res, r.accessToken);
   const refreshExp = jwtClaims(r.refreshToken).exp;
   res.cookies.set(REFRESH_COOKIE, r.refreshToken, {
     ...base,

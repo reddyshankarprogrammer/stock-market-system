@@ -155,6 +155,19 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 - **Not verified:** nothing ran on MySQL (the Spring context test uses H2), through the real gateway, or via Newman (needs all services and Docker; free memory was about 2.6 GB). `ddl-auto: update` should add nullable columns safely, but it has not been seen on a real database.
 - **Not done:** the other backend steps (refresh endpoint, forgot and reset password, email verification, onboarding preferences, 401 for unknown email), the gateway needs no change (register is already public).
 
+## 19. Push, then the refresh-token endpoint (24 October)
+
+- **Request:** "git commit and push the code and start the next step. follow your suggestion".
+- **Push:** `feature/frontend-landing-page` (`a8a8839..26f5f20`) and the new `feature/user-profile-fields` (contains it) were pushed. `main` untouched. Everything was already committed.
+- **Next step (my suggestion): the refresh endpoint**, on a new branch `feature/refresh-token`, because sessions ended after 15 minutes and "Remember me" had no effect. Read first: `JwtService`, `UserController`, the gateway filter and its test, `GlobalExceptionHandler`, and both `CLAUDE.md` files.
+- **user-service:** `POST /api/v1/users/refresh` with `RefreshRequest`; the service validates signature, expiry and token type (an access token must never work), loads the user, refuses blocked statuses, and returns a new access token (role and email from the database) with the same refresh token. Typed `InvalidRefreshTokenException` mapped to 401 with one message. A new `RefreshTokenFlowTest` uses a **real** `JwtService` (spy), not a mock, so signature, expiry and type are genuinely checked.
+- **api-gateway:** `/api/v1/users/refresh` added to `PUBLIC_PATHS` (the access token has expired by then; the refresh token is in the body). A test pins that refresh tokens are still 401 as Bearer tokens elsewhere. A test comment that claimed spoofed `X-User-*` headers are stripped on public paths was wrong (public paths skip the filter entirely) and was corrected.
+- **Found, not changed:** login does not check the user status, so a SUSPENDED user can still log in. Refresh refuses blocked statuses, so it does not widen this. Recorded in the README, root `CLAUDE.md` gaps, technical documentation and the plan.
+- **Web app:** `/api/auth/me` renews the access cookie from the refresh cookie (when missing, or on a 401), retries once, clears both cookies only if the refresh token is invalid, and keeps them on a gateway outage. `proxy.ts` treats a refresh-only session as signed in. Remember me keeps the refresh cookie 7 days; otherwise it is a session cookie. Dashboard text updated.
+- **Verified:** user-service **43 tests, 0 failures** (10 new); api-gateway **10 tests, 0 failures** (1 new); web app **31 of 31** browser checks (6 new) against an extended mock gateway; lint and build pass. The mock first failed one check because two tokens issued in the same second were identical; it now adds a unique token id.
+- **Docs updated per repo rules:** user-service and gateway READMEs, user manual, technical documentation (section 9 and the gaps table), root `CLAUDE.md` gaps, Postman generator and collection (102 → 106 requests), changelog, web-app README, the plan (steps marked done, remaining MVP work 23 → 21 units).
+- **Not verified:** MySQL, the real gateway, Newman (needs Docker and all services; memory was low). No rate limiting. Refresh tokens are not rotated or revocable.
+
 ## Open items after this session
 
 | Item | Where |
