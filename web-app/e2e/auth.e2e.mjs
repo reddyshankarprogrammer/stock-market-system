@@ -157,6 +157,7 @@ const cookieNamed = async (c, n) => (await c.cookies()).find((x) => x.name === n
 
 await test("refresh: an expired access cookie is renewed from the refresh cookie, and the user stays signed in", async () => {
   const c = await newCtx(); const p = await c.newPage(); await login(p); await p.waitForURL("**/dashboard");
+  await p.waitForLoadState("networkidle"); // the dashboard's own data requests must be finished: they would renew the session too
   const before = await stats(); const oldToken = (await cookieNamed(c, "qv_access")).value;
   await c.clearCookies({ name: "qv_access" }); // what the browser does when the 15-minute cookie expires
   await p.goto(`${BASE}/dashboard`); await p.getByText("Hello, Test").waitFor();
@@ -460,10 +461,6 @@ await test("shell: every nav item opens its page, is marked current, and has a 4
     await c.close();
   }
 });
-await test("shell: page skeletons say plainly that the screen is not built yet", async () => {
-  const c = await newCtx(); const p = await c.newPage(); await login(p); await p.waitForURL(/\/dashboard/);
-  await p.goto(`${BASE}/portfolio`); await p.getByRole("heading", { name: "Portfolio" }).waitFor(); await p.getByText(/planned/).waitFor(); await c.close();
-});
 
 // ---- typed account API (BFF /api/gw) and the Accounts page ----
 const gw = (ctx, path) => ctx.request.get(`${BASE}/api/gw${path}`);
@@ -721,6 +718,59 @@ await test("trades: the table scrolls inside itself on a phone (no page overflow
   const r = await p.evaluate(() => ({ overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
     small: [...document.querySelectorAll("main a, main button, main input, main select")].filter((e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height < 43.5; }).map((e) => (e.textContent || e.id).trim().slice(0, 20)) }));
   ok(!r.overflow, "page overflows"); ok(r.small.length === 0, `small targets: ${r.small}`); await c.close();
+});
+
+// ---- dashboard and portfolio ----
+const apiJson = async (c, path) => (await c.request.get(`${BASE}/api/gw${path}`)).json();
+const SELLS_CSV = "symbol,trade_date,trade_type,quantity,price,trade_id\nINFY,2026-09-25,buy,10,1500,d1\nINFY,2026-09-30,sell,5,1600,d2\nINFY,2026-10-02,sell,2,1450,d3\n";
+await test("dashboard: key figures are the account's own numbers and the calendar opens on the latest trade's month", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "d1@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.getByRole("heading", { name: "Key figures" }).waitFor();
+  for (const t of ["$13,700.50", "$12,500.50", "$1,200.00", "+$200.00", "+$80.00", "+$120.00"]) await p.getByText(t, { exact: true }).first().waitFor();
+  await p.getByRole("status").filter({ hasText: "October 2026" }).waitFor();
+  const cell = p.getByRole("cell", { name: /^5 October: profit \$80\.00, 1 trade/ }); await cell.waitFor(); ok((await cell.innerText()).includes("+$80.00"), "day cell");
+  ok((await p.getByTestId("month-total").innerText()) === "+$80.00", "month total"); ok((await p.getByTestId("all-time").innerText()) === "+$80.00", "all time");
+  await p.getByRole("button", { name: "Previous month" }).click(); await p.getByRole("status").filter({ hasText: "September 2026" }).waitFor();
+  ok((await p.getByTestId("month-total").innerText()) === "$0.00", "empty month"); await c.close();
+});
+await test("dashboard: every calendar day equals the sum of that day's trades and all days equal the account's realised profit", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "d2@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/accounts/a-2`); await p.getByLabel("Upload a Zerodha statement").setInputFiles(csv("sells.csv", SELLS_CSV)); await p.getByText("Statement imported").waitFor({ timeout: 20000 });
+  const trades = await apiJson(c, "/api/v1/trades/account/a-2"), perf = await apiJson(c, "/api/v1/accounts/a-2/performance");
+  const byDay = {}; for (const t of trades) byDay[t.tradeDate.slice(0, 10)] = Math.round(((byDay[t.tradeDate.slice(0, 10)] ?? 0) + t.realizedProfit) * 100) / 100;
+  await p.goto(`${BASE}/dashboard?account=a-2`); await p.getByRole("status").filter({ hasText: "October 2026" }).waitFor();
+  const oct = await p.locator("td[data-day]").evaluateAll((els) => els.map((e) => [e.getAttribute("aria-label"), Number(e.getAttribute("data-day"))]));
+  ok(oct.length === 1 && oct[0][1] === byDay["2026-10-02"] && byDay["2026-10-02"] === -100, `october ${JSON.stringify(oct)} vs ${JSON.stringify(byDay)}`);
+  ok((await p.getByTestId("month-total").innerText()) === "-₹100.00", "october total");
+  await p.getByRole("button", { name: "Previous month" }).click(); await p.getByRole("status").filter({ hasText: "September 2026" }).waitFor();
+  ok((await p.getByTestId("month-total").innerText()) === "+₹500.00", "september total");
+  ok((await p.getByTestId("all-time").innerText()) === "+₹400.00" && perf.realizedProfit === 400, `all time vs API ${perf.realizedProfit}`);
+  ok((await p.getByText(/the account reports/).count()) === 0, "calendar disagrees with the account"); await c.close();
+});
+await test("dashboard: the account picker switches figures; an empty account shows zeros, not errors; no overflow on a phone", async () => {
+  const c = await newCtx({ viewport: { width: 360, height: 800 } }); const p = await c.newPage(); await login(p, "d3@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.getByRole("heading", { name: "Key figures" }).waitFor(); await p.getByLabel("Account").selectOption("a-2");
+  await p.getByText("0 open positions").waitFor(); await p.getByText("+$80.00", { exact: true }).waitFor({ state: "detached" });
+  ok(!(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), "page overflows");
+  const small = await p.evaluate(() => [...document.querySelectorAll("main a, main button, main select")].filter((e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height < 43.5; }).map((e) => (e.textContent || e.id).trim().slice(0, 20)));
+  ok(small.length === 0, `small targets: ${small}`); await c.close();
+});
+await test("portfolio: open positions at current prices; prices refresh on request and by themselves", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "p1@example.com"); await p.waitForURL(/\/dashboard/);
+  try {
+    await p.goto(`${BASE}/portfolio`); await p.getByRole("region", { name: "Holdings table" }).waitFor();
+    const row = p.locator("tbody tr").filter({ hasText: "AAPL" }); await row.waitFor();
+    const text = await row.innerText(); for (const t of ["6", "$180.00", "$200.00", "$1,200.00", "+$120.00", "+11.11%"]) ok(text.includes(t), `row lacks ${t}: ${text}`);
+    await mockGet("/__set-price?symbol=AAPL&price=250"); await p.getByRole("button", { name: "Refresh prices" }).click();
+    await p.locator("tbody tr").filter({ hasText: "$250.00" }).waitFor({ timeout: 15000 }); await p.getByText("+$420.00").first().waitFor();
+    await mockGet("/__set-price?symbol=AAPL&price=300"); await p.locator("tbody tr").filter({ hasText: "$300.00" }).waitFor({ timeout: 20000 }); // the 10 s poll
+  } finally { await mockGet("/__set-price?symbol=AAPL&price=200"); await c.close(); }
+});
+await test("portfolio: an account without positions says so; the picker and a phone layout work", async () => {
+  const c = await newCtx({ viewport: { width: 360, height: 800 } }); const p = await c.newPage(); await login(p, "p2@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/portfolio?account=a-2`); await p.getByText("No open positions").waitFor();
+  await p.getByLabel("Account").selectOption("a-1"); await p.getByRole("region", { name: "Holdings table" }).waitFor();
+  ok(!(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), "page overflows"); await c.close();
 });
 
 await browser.close();

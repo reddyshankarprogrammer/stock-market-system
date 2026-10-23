@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
-import { PageSkeleton } from "@/components/shell/PageSkeleton";
+import { Suspense } from "react";
+import { PortfolioView } from "@/components/portfolio/PortfolioView";
 
 export const metadata: Metadata = { title: "Portfolio" };
 
 export default function Page() {
-  return <PageSkeleton title="Portfolio">Holdings, profit and loss, and the AI coach summary are planned for the MVP.</PageSkeleton>;
+  return (
+    <Suspense fallback={<p role="status">Loading…</p>}>
+      <PortfolioView />
+    </Suspense>
+  );
 }

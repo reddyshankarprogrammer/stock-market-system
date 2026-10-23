@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Overview } from "@/components/dashboard/Overview";
 import { FormAlert } from "@/components/ui/form";
 import { useMe } from "@/lib/auth/auth-hooks";
 import { useAuthStore } from "@/lib/auth/auth-store";
@@ -18,7 +19,6 @@ function skippedThisSession() {
   }
 }
 
-// Placeholder for the real dashboard (daily plan, phase 3). It proves the session works end to end.
 export function DashboardView() {
   const router = useRouter();
   const welcome = useSearchParams().get("welcome") === "1";
@@ -58,21 +58,17 @@ export function DashboardView() {
 
   const user = me.data;
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-8">
       <div>
         <h1 className="font-display text-3xl font-extrabold tracking-tight">{welcome ? `Welcome to Quantiva, ${user.firstName}` : `Hello, ${user.firstName}`}</h1>
-        <p className="mt-2 text-subtle">
-          Signed in as {user.email} ({user.role === "ADMIN" ? "administrator" : "trader"}). This is a placeholder dashboard.
-        </p>
+        <p className="mt-2 text-subtle">Your accounts at a glance. Every figure comes straight from your accounts.</p>
       </div>
       {welcome && notice && notice.length > 0 && (
         <FormAlert tone="info" title="Some details were not saved yet">
           Your {notice.map((n) => fieldNames[n] ?? n).join(", ")} passed validation but our profile service cannot store them yet. We will ask for them again when saving is available.
         </FormAlert>
       )}
-      <FormAlert tone="success" title="Your session is active">
-        The session lives in secure cookies that scripts on the page cannot read. It renews itself every 15 minutes. It lasts up to 7 days if you ticked Remember me, and otherwise until you close the browser or log out.
-      </FormAlert>
+      <Overview />
     </div>
   );
 }
