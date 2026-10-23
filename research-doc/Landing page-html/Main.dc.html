@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" type="image/png" href="./assets/favicon-32.png">
+<title>Quantiva | Trade With Intelligence | quantiva.ai</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0}
+.page{--ink:#0B1F3A;--ink-2:#12294A;--ink-3:#1E3A66;--paper:#F5F7F9;--card:#FFFFFF;--line:#DCE3EA;--muted:#4F5E72;--on-ink:#E6EDF3;--on-ink-muted:#A3B3C6;--gain:#008A57;--gain-bright:#00C878;--loss:#C2410C;--loss-bright:#FB923C;--display:"Manrope",ui-sans-serif,system-ui,sans-serif;--body:"Inter",ui-sans-serif,system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace}
+.page *{box-sizing:border-box}
+a{color:var(--accent)}a:hover{color:var(--ink)}
+button,input,select{font:inherit}
+summary{cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+details[open] .faq-plus{transform:rotate(45deg)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@keyframes draw{0%,8%{stroke-dashoffset:640}62%,100%{stroke-dashoffset:0}}
+@keyframes pop{0%,8%{transform:scale(.55);opacity:0}22%,100%{transform:scale(1);opacity:1}}
+@keyframes rise{0%,10%{opacity:0;transform:translateY(12px)}24%,100%{opacity:1;transform:none}}
+@keyframes grow{0%,6%{transform:scaleY(0)}28%,100%{transform:scaleY(1)}}
+@keyframes progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes typing{0%,15%{width:0}55%,100%{width:100%}}
+@keyframes slidein{0%,35%{opacity:0;transform:translateX(28px)}48%,100%{opacity:1;transform:none}}
+@keyframes ring{0%,10%{stroke-dashoffset:226}60%,100%{stroke-dashoffset:45}}
+@keyframes fill{0%,10%{transform:scaleX(0)}55%,100%{transform:scaleX(1)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes scan{0%{left:0%}100%{left:100%}}
+.still *,.still *::before,.still *::after{animation:none!important}
+@media (prefers-reduced-motion: reduce){.page *,.page *::before,.page *::after{animation:none!important}}
+</style>
+</helmet>
+<div class="page {{motionClass}}" style="--accent: {{accent}}; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.55; min-height: 400px;">
+
+<!-- Navigation -->
+<header style="background: var(--ink); color: var(--on-ink); border-bottom: 1px solid var(--ink-3);">
+<nav aria-label="Main" style="max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px;">
+<a href="#top" style="display: flex; align-items: center; gap: 10px; color: var(--on-ink); text-decoration: none; margin-right: auto;">
+<span style="flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: #fff;"><img src="./assets/quantiva-icon.png" alt="" width="32" height="32" style="display: block;"></span>
+<span style="font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: -0.01em;">Quantiva</span>
+</a>
+<div style="display: flex; flex-wrap: wrap; gap: 4px 22px; font-size: 15px;">
+<a href="#features" style="color: var(--on-ink-muted); text-decoration: none; padding: 10px 0;">Features</a>
+<a href="#coach" style="color: var(--on-ink-muted); text-decoration: none; padding: 10px 0;">AI coach</a>
+<a href="#security" style="color: var(--on-ink-muted); text-decoration: none; padding: 10px 0;">Security</a>
+<a href="#pricing" style="color: var(--on-ink-muted); text-decoration: none; padding: 10px 0;">Pricing</a>
+<a href="#faq" style="color: var(--on-ink-muted); text-decoration: none; padding: 10px 0;">FAQ</a>
+</div>
+<div style="display: flex; gap: 10px; align-items: center;">
+<a href="#security" style="color: var(--on-ink); text-decoration: none; padding: 10px 14px; font-weight: 500;">Sign in</a>
+<a href="#security" style="background: var(--accent); color: #fff; text-decoration: none; padding: 11px 18px; border-radius: 10px; font-weight: 600;">Start free trial</a>
+</div>
+</nav>
+</header>
+
+<!-- Hero -->
+<section id="top" style="background: var(--ink); color: var(--on-ink); padding: 64px 0 88px;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 56px;">
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 24px;">
+<span style="align-self: flex-start; font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--gain-bright); border: 1px solid var(--ink-3); border-radius: 999px; padding: 6px 12px;">Trading journal · Trade replay · AI coach</span>
+<h1 style="margin: 0; font-family: var(--display); font-weight: 800; font-size: clamp(2.5rem, 5vw, 4.25rem); line-height: 1.02; letter-spacing: -0.03em; text-wrap: balance;">Know why you win. Stop repeating why you lose.</h1>
+<p style="margin: 0; font-size: 19px; color: var(--on-ink-muted); max-width: 34em;">Import your broker statements, see every trading day on one calendar, replay any trade on the chart, and get a coach that reads your whole history and tells you what to change on Monday.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+<a href="#security" style="background: var(--accent); color: #fff; text-decoration: none; padding: 15px 24px; border-radius: 12px; font-weight: 600; font-size: 17px;">Start free trial</a>
+<a href="#features" style="display: inline-flex; align-items: center; gap: 10px; color: var(--on-ink); text-decoration: none; padding: 14px 20px; border-radius: 12px; border: 1px solid var(--ink-3); font-weight: 500;">
+<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" fill="none" stroke="currentColor" style="stroke-width: 1.4"></circle><path d="M7.3 5.8 L12 9 L7.3 12.2 Z" fill="currentColor"></path></svg>
+Watch the 60-second tour</a>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--on-ink-muted);">
+<span style="display: inline-flex; align-items: center; gap: 6px;"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="#00C878" style="stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"></path></svg>Sign in with a passkey or Google</span>
+<span style="display: inline-flex; align-items: center; gap: 6px;"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="#00C878" style="stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"></path></svg>No card needed for the trial</span>
+<span style="display: inline-flex; align-items: center; gap: 6px;"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="#00C878" style="stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"></path></svg>Works on your phone</span>
+</div>
+</div>
+
+<!-- Hero product preview -->
+<div style="flex: 1 1 560px; min-width: 0; position: relative;">
+<div style="background: var(--ink-2); border: 1px solid var(--ink-3); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--on-ink-muted);">
+<span style="font-family: var(--display); font-weight: 700; color: var(--on-ink); font-size: 15px;">Dashboard</span>
+<span>October 2026</span>
+<span style="margin-left: auto; font-family: var(--mono); font-size: 11.5px; border: 1px solid var(--ink-3); border-radius: 6px; padding: 2px 8px;">Sample account</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+<div style="flex: 1 1 120px; background: var(--ink); border: 1px solid var(--ink-3); border-radius: 12px; padding: 12px 14px;">
+<div style="font-size: 12px; color: var(--on-ink-muted);">Net P&amp;L</div>
+<div style="font-family: var(--mono); font-size: 22px; color: var(--gain-bright); font-variant-numeric: tabular-nums;">+₹18,640</div>
+</div>
+<div style="flex: 1 1 120px; background: var(--ink); border: 1px solid var(--ink-3); border-radius: 12px; padding: 12px 14px;">
+<div style="font-size: 12px; color: var(--on-ink-muted);">Win rate</div>
+<div style="font-family: var(--mono); font-size: 22px; font-variant-numeric: tabular-nums;">59%</div>
+</div>
+<div style="flex: 1 1 120px; background: var(--ink); border: 1px solid var(--ink-3); border-radius: 12px; padding: 12px 14px;">
+<div style="font-size: 12px; color: var(--on-ink-muted);">Profit factor</div>
+<div style="font-family: var(--mono); font-size: 22px; font-variant-numeric: tabular-nums;">1.84</div>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+<div style="flex: 3 1 280px; min-width: 0; background: var(--ink); border: 1px solid var(--ink-3); border-radius: 12px; padding: 12px 14px;">
+<div style="font-size: 12px; color: var(--on-ink-muted); margin-bottom: 6px;">Equity curve</div>
+<svg viewBox="0 0 400 140" style="width: 100%; height: auto; display: block;" aria-hidden="true">
+<path d="M0 35 H400 M0 70 H400 M0 105 H400" stroke="#1E3A66" fill="none" style="stroke-width: 1"></path>
+<path d="M0 118 L30 112 L55 116 L80 100 L105 104 L130 88 L155 92 L180 74 L205 80 L230 66 L255 70 L280 52 L305 58 L330 40 L355 46 L380 28 L400 24" fill="none" stroke="#00C878" style="stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 640; stroke-dashoffset: 0; animation: draw 8s ease-in-out infinite;"></path>
+<circle cx="400" cy="24" r="4" fill="#00C878" style="animation: blink 1.6s ease-in-out infinite;"></circle>
+</svg>
+</div>
+<div style="flex: 2 1 180px; min-width: 0; background: var(--ink); border: 1px solid var(--ink-3); border-radius: 12px; padding: 12px 14px;">
+<div style="font-size: 12px; color: var(--on-ink-muted); margin-bottom: 8px;">P&amp;L calendar</div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px;">
+<sc-for list="{{heroCells}}" as="c" hint-placeholder-count="20">
+<div style="aspect-ratio: 1; border-radius: 5px; background: {{c.bg}}; opacity: {{c.op}}; animation: pop 8s ease-out {{c.delay}} infinite;"></div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+<div style="position: absolute; right: -12px; bottom: -36px; max-width: 320px; background: var(--card); color: var(--ink); border-radius: 14px; padding: 14px 16px; box-shadow: 0 18px 40px rgba(5, 12, 24, .45); display: flex; gap: 12px; align-items: flex-start; animation: slidein 8s ease-out infinite;">
+<span style="flex: none; width: 30px; height: 30px; border-radius: 9px; background: var(--accent); display: grid; place-items: center;">
+<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 L9.6 6.4 L14.5 8 L9.6 9.6 L8 14.5 L6.4 9.6 L1.5 8 L6.4 6.4 Z" fill="#fff"></path></svg>
+</span>
+<div style="font-size: 14px; line-height: 1.45;"><b style="display: block; font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase;">AI coach</b>Trades you open in the first 15 minutes lose twice as often. Waiting until 9:30 would have added ₹6,200 this month.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Broker strip -->
+<section aria-label="Supported brokers" style="border-bottom: 1px solid var(--line); background: var(--card);">
+<div style="max-width: 1200px; margin: 0 auto; padding: 26px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 36px;">
+<span style="font-size: 14px; color: var(--muted);">Import statements from</span>
+<span style="font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--ink);">Groww</span>
+<span style="font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--ink);">Zerodha</span>
+<span style="font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--ink);">Binance</span>
+<span style="font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--ink);">Exness</span>
+<span style="font-size: 14px; color: var(--muted);">and any CSV, with AI column mapping</span>
+</div>
+</section>
+
+<!-- How it works -->
+<section style="padding: 96px 0 40px;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 40px;">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 720px;">
+<span style="font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--gain);">How it works</span>
+<h2 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(2rem, 3.4vw, 2.75rem); line-height: 1.08; letter-spacing: -0.02em; text-wrap: balance;">Three steps from a messy statement to a clear plan</h2>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px;">
+<div style="flex: 1 1 300px; min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+<span style="font-family: var(--mono); font-size: 14px; color: var(--gain); font-weight: 500;">Step 1</span>
+<h3 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: 24px;">Import</h3>
+<p style="margin: 0; color: var(--muted);">Drop in a broker statement or add trades by hand. Charges, taxes and dividends are matched to the right trades automatically.</p>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+<span style="font-family: var(--mono); font-size: 14px; color: var(--gain); font-weight: 500;">Step 2</span>
+<h3 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: 24px;">Review</h3>
+<p style="margin: 0; color: var(--muted);">Your calendar, reports and trade replay show where the money came from and where it went, by symbol, setup, weekday and hour.</p>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+<span style="font-family: var(--mono); font-size: 14px; color: var(--gain); font-weight: 500;">Step 3</span>
+<h3 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: 24px;">Improve</h3>
+<p style="margin: 0; color: var(--muted);">The AI coach turns patterns into a short list of rules. Your risk plan checks every new trade against them.</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Feature clips -->
+<section id="features" style="padding: 56px 0 96px;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 32px;">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px 40px;">
+<div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+<span style="font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--gain);">See it working</span>
+<h2 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(2rem, 3.4vw, 2.75rem); line-height: 1.08; letter-spacing: -0.02em; text-wrap: balance;">Every feature in an 8-second clip</h2>
+</div>
+<p style="flex: 1 1 340px; margin: 0; color: var(--muted);">Pick a feature to play its clip. Clips are drawn live from the real interface, so they stay sharp on any screen and always match the current app.</p>
+</div>
+
+<div role="tablist" aria-label="Features" style="display: flex; flex-wrap: wrap; gap: 8px;">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="6">
+<sc-if value="{{t.isSel}}" hint-placeholder-val="{{false}}">
+<button type="button" role="tab" aria-selected="true" onClick="{{t.pick}}" style="min-height: 44px; padding: 10px 18px; border-radius: 999px; border: 1px solid var(--ink); background: var(--ink); color: #fff; font-weight: 600; cursor: pointer;">{{t.label}}</button>
+</sc-if>
+<sc-if value="{{t.notSel}}" hint-placeholder-val="{{true}}">
+<button type="button" role="tab" aria-selected="false" onClick="{{t.pick}}" style="min-height: 44px; padding: 10px 18px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-weight: 500; cursor: pointer;">{{t.label}}</button>
+</sc-if>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 28px; align-items: stretch;">
+<!-- Clip player -->
+<div role="tabpanel" style="flex: 3 1 560px; min-width: 0; background: var(--ink); color: var(--on-ink); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column;">
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--ink-3); font-size: 13px; color: var(--on-ink-muted);">
+<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.8 L12 7 L3 12.2 Z" fill="#00C878"></path></svg>
+<span style="color: var(--on-ink); font-weight: 500;">{{cur.label}}</span>
+<span style="margin-left: auto; font-family: var(--mono);">{{cur.len}} · loops</span>
+</div>
+<div style="padding: 24px; min-height: 360px; display: flex; flex-direction: column; justify-content: center;">
+
+<sc-if value="{{show.calendar}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 10px;">
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; font-family: var(--mono); font-size: 11.5px; color: var(--on-ink-muted);">
+<span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Week</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px;">
+<sc-for list="{{calCells}}" as="c" hint-placeholder-count="30">
+<div style="min-height: 52px; border-radius: 8px; padding: 6px 8px; background: {{c.bg}}; border: 1px solid {{c.border}}; display: flex; flex-direction: column; justify-content: space-between; animation: pop 8s ease-out {{c.delay}} infinite;">
+<span style="font-family: var(--mono); font-size: 11px; color: var(--on-ink-muted);">{{c.day}}</span>
+<span style="font-family: var(--mono); font-size: 13px; color: {{c.fg}}; font-variant-numeric: tabular-nums;">{{c.label}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{show.replay}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 14px;">
+<div style="display: flex; gap: 10px; font-family: var(--mono); font-size: 12.5px; color: var(--on-ink-muted);"><span style="color: var(--on-ink);">INFY</span><span>5 min</span><span>21 Oct 2026</span><span style="margin-left: auto;">Replay 4×</span></div>
+<div style="position: relative; height: 230px; border-bottom: 1px solid var(--ink-3);">
+<sc-for list="{{candles}}" as="k" hint-placeholder-count="22">
+<div style="position: absolute; left: {{k.left}}; top: {{k.wickTop}}; height: {{k.wickH}}; width: 2px; margin-left: 7px; background: {{k.color}}; opacity: .7;"></div>
+<div style="position: absolute; left: {{k.left}}; top: {{k.top}}; height: {{k.h}}; width: 16px; border-radius: 2px; background: {{k.color}}; transform-origin: bottom; animation: grow 8s ease-out {{k.delay}} infinite;"></div>
+</sc-for>
+<div style="position: absolute; left: 22%; top: 168px; font-family: var(--mono); font-size: 11.5px; background: var(--gain-bright); color: var(--ink); padding: 2px 8px; border-radius: 6px; animation: rise 8s ease-out 1.6s infinite;">Buy 120 @ 1,482</div>
+<div style="position: absolute; left: 70%; top: 18px; font-family: var(--mono); font-size: 11.5px; background: var(--loss-bright); color: var(--ink); padding: 2px 8px; border-radius: 6px; animation: rise 8s ease-out 3.4s infinite;">Sell 120 @ 1,506</div>
+</div>
+<div style="height: 4px; border-radius: 4px; background: var(--ink-3); overflow: hidden;"><div style="height: 100%; background: var(--gain-bright); transform-origin: left; animation: progress 8s linear infinite;"></div></div>
+</div>
+</sc-if>
+
+<sc-if value="{{show.coach}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 560px;">
+<div style="align-self: flex-end; background: var(--ink-3); border-radius: 14px 14px 4px 14px; padding: 10px 14px; animation: rise 8s ease-out .2s infinite;">Why was last week negative?</div>
+<div style="align-self: flex-start; background: var(--ink-2); border: 1px solid var(--ink-3); border-radius: 14px 14px 14px 4px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; animation: rise 8s ease-out 1.2s infinite;">
+<span>Three things cost you ₹9,450:</span>
+<span style="color: var(--on-ink-muted);">1. Four trades after two losses in a row, all outside your plan.</span>
+<span style="color: var(--on-ink-muted);">2. Holding losers 3× longer than winners on BANKNIFTY options.</span>
+<span style="color: var(--on-ink-muted);">3. Position size above your 1% risk rule on Thursday.</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; animation: rise 8s ease-out 2.4s infinite;">
+<span style="font-size: 13px; border: 1px solid var(--ink-3); border-radius: 999px; padding: 5px 12px; color: var(--on-ink-muted);">Add a stop-after-2-losses rule</span>
+<span style="font-size: 13px; border: 1px solid var(--ink-3); border-radius: 999px; padding: 5px 12px; color: var(--on-ink-muted);">Show my best setup</span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{show.import}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 10px;">
+<div style="display: flex; align-items: center; gap: 12px; border: 1px dashed var(--ink-3); border-radius: 12px; padding: 14px 16px; animation: rise 8s ease-out 0s infinite;">
+<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M5 2.5 H13 L17.5 7 V19.5 H5 Z M13 2.5 V7 H17.5" fill="none" stroke="#A3B3C6" style="stroke-width: 1.5; stroke-linejoin: round"></path></svg>
+<span style="font-family: var(--mono); font-size: 13px;">zerodha_tradebook_oct2026.xlsx</span>
+<span style="margin-left: auto; font-size: 12.5px; color: var(--gain-bright);">212 trades found</span>
+</div>
+<div style="overflow-x: auto;">
+<div style="min-width: 460px; display: flex; flex-direction: column; font-family: var(--mono); font-size: 12.5px;">
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding: 8px 4px; color: var(--on-ink-muted); border-bottom: 1px solid var(--ink-3);"><span>Date</span><span>Symbol</span><span>Side</span><span>Qty</span><span>P&amp;L</span></div>
+<sc-for list="{{importRows}}" as="r" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding: 8px 4px; border-bottom: 1px solid var(--ink-3); animation: rise 8s ease-out {{r.delay}} infinite;"><span>{{r.date}}</span><span style="color: var(--on-ink);">{{r.sym}}</span><span>{{r.side}}</span><span>{{r.qty}}</span><span style="color: {{r.color}};">{{r.pnl}}</span></div>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{show.journal}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 14px; max-width: 560px;">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px;"><span style="font-family: var(--display); font-weight: 700; font-size: 22px;">INFY · Long</span><span style="font-family: var(--mono); color: var(--gain-bright);">+₹2,880</span><span style="font-family: var(--mono); font-size: 12.5px; color: var(--on-ink-muted);">2.1R</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+<span style="font-size: 13px; border-radius: 6px; padding: 4px 10px; background: rgba(63, 198, 164, .16); color: var(--gain-bright); animation: pop 8s ease-out .4s infinite;">Opening range breakout</span>
+<span style="font-size: 13px; border-radius: 6px; padding: 4px 10px; background: rgba(63, 198, 164, .16); color: var(--gain-bright); animation: pop 8s ease-out .8s infinite;">Followed plan</span>
+<span style="font-size: 13px; border-radius: 6px; padding: 4px 10px; background: rgba(251, 146, 60, .16); color: var(--loss-bright); animation: pop 8s ease-out 1.2s infinite;">Mistake: late exit</span>
+</div>
+<div style="background: var(--ink-2); border: 1px solid var(--ink-3); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;">
+<span style="font-size: 12px; color: var(--on-ink-muted);">Note</span>
+<span style="display: block; overflow: hidden; white-space: nowrap; width: 100%; animation: typing 8s steps(40, end) infinite;">Waited for the 15-min high. Should have sold at 1,510 target.</span>
+</div>
+<div style="display: flex; gap: 10px;">
+<div style="flex: 1; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 8px; background: var(--ink-3); display: grid; place-items: center; font-size: 12px; color: var(--on-ink-muted);">Chart screenshot</div>
+<div style="flex: 1; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 8px; background: var(--ink-3); display: grid; place-items: center; font-size: 12px; color: var(--on-ink-muted);">Order ticket</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{show.risk}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 28px; align-items: center;">
+<div style="flex: none; position: relative; width: 150px; height: 150px;">
+<svg width="150" height="150" viewBox="0 0 90 90" aria-hidden="true"><circle cx="45" cy="45" r="36" fill="none" stroke="#1E3A66" style="stroke-width: 9"></circle><circle cx="45" cy="45" r="36" fill="none" stroke="#00C878" transform="rotate(-90 45 45)" style="stroke-width: 9; stroke-linecap: round; stroke-dasharray: 226; stroke-dashoffset: 45; animation: ring 8s ease-out infinite;"></circle></svg>
+<div style="position: absolute; inset: 0; display: grid; place-items: center; text-align: center;"><span><b style="display: block; font-family: var(--mono); font-size: 26px;">80%</b><span style="font-size: 12px; color: var(--on-ink-muted);">plan followed</span></span></div>
+</div>
+<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; flex-direction: column; gap: 6px;"><div style="display: flex; font-size: 13.5px;"><span>Daily loss limit</span><span style="margin-left: auto; font-family: var(--mono);">₹3,100 of ₹5,000</span></div><div style="height: 8px; border-radius: 8px; background: var(--ink-3); overflow: hidden;"><div style="width: 62%; height: 100%; background: var(--loss-bright); transform-origin: left; animation: fill 8s ease-out infinite;"></div></div></div>
+<div style="display: flex; flex-direction: column; gap: 6px;"><div style="display: flex; font-size: 13.5px;"><span>Trades today</span><span style="margin-left: auto; font-family: var(--mono);">4 of 6</span></div><div style="height: 8px; border-radius: 8px; background: var(--ink-3); overflow: hidden;"><div style="width: 66%; height: 100%; background: var(--gain-bright); transform-origin: left; animation: fill 8s ease-out .3s infinite;"></div></div></div>
+<div style="font-size: 13.5px; color: var(--loss-bright); animation: blink 2s ease-in-out infinite;">Two losses in a row. Your plan says take a 30-minute break.</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+<div style="height: 3px; background: var(--ink-3);"><div style="height: 100%; background: var(--accent); transform-origin: left; animation: progress 8s linear infinite;"></div></div>
+</div>
+
+<!-- Clip caption -->
+<div style="flex: 2 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 16px; padding: 8px 0;">
+<h3 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: 28px; line-height: 1.15; text-wrap: balance;">{{cur.title}}</h3>
+<p style="margin: 0; color: var(--muted); font-size: 17px;">{{cur.body}}</p>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px;">
+<sc-for list="{{cur.points}}" as="p" hint-placeholder-count="3">
+<li style="display: flex; gap: 10px; align-items: flex-start;"><svg width="18" height="18" viewBox="0 0 16 16" style="flex: none; margin-top: 3px;" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="#146EF5" style="stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"></path></svg><span>{{p.text}}</span></li>
+</sc-for>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- AI coach -->
+<section id="coach" style="background: var(--ink); color: var(--on-ink); padding: 96px 0;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap; gap: 56px; align-items: center;">
+<div style="flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 18px;">
+<span style="font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--gain-bright);">AI coach</span>
+<h2 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(2rem, 3.4vw, 2.75rem); line-height: 1.08; letter-spacing: -0.02em; text-wrap: balance;">Ask about your trading in plain words</h2>
+<p style="margin: 0; color: var(--on-ink-muted); font-size: 17px;">The coach reads every trade, note and tag you have, then answers with numbers from your own history. It suggests rules you can add to your plan in one tap.</p>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; color: var(--on-ink);">
+<li style="display: flex; gap: 10px;"><svg width="18" height="18" viewBox="0 0 16 16" style="flex: none; margin-top: 3px;" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="#00C878" style="stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"></path></svg>Weekly review written for you every Saturday</li>
+<li style="display: flex; gap: 10px;"><svg width="18" height="18" viewBox="0 0 16 16" style="flex: none; margin-top: 3px;" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="#00C878" style="stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"></path></svg>Auto-tags setups and mistakes on import</li>
+<li style="display: flex; gap: 10px;"><svg width="18" height="18" viewBox="0 0 16 16" style="flex: none; margin-top: 3px;" aria-hidden="true"><path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="#00C878" style="stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"></path></svg>Price outlook from a forecasting model trained on market candles</li>
+</ul>
+<p style="margin: 0; font-size: 13.5px; color: var(--on-ink-muted);">Educational insights from your own data. Not investment advice.</p>
+</div>
+<div style="flex: 1 1 520px; min-width: 0; background: var(--ink-2); border: 1px solid var(--ink-3); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--on-ink-muted);"><span style="width: 8px; height: 8px; border-radius: 50%; background: var(--gain-bright); animation: blink 1.6s ease-in-out infinite;"></span>Coach · example conversation · sample data</div>
+<div style="align-self: flex-end; max-width: 80%; background: var(--ink-3); border-radius: 14px 14px 4px 14px; padding: 10px 14px;">At what time of day do I trade best?</div>
+<div style="background: var(--ink); border: 1px solid var(--ink-3); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+<span>Your win rate peaks between 10:00 and 11:30, and drops sharply after 14:30.</span>
+<div style="display: flex; align-items: flex-end; gap: 8px; height: 120px; border-bottom: 1px solid var(--ink-3); padding: 0 4px;">
+<sc-for list="{{hours}}" as="h" hint-placeholder-count="7">
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end;">
+<span style="font-family: var(--mono); font-size: 11px; color: var(--on-ink-muted);">{{h.pct}}</span>
+<div style="width: 100%; height: {{h.height}}; background: {{h.color}}; border-radius: 4px 4px 0 0; transform-origin: bottom; animation: grow 8s ease-out {{h.delay}} infinite;"></div>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; gap: 8px; font-family: var(--mono); font-size: 11px; color: var(--on-ink-muted); padding: 0 4px;">
+<sc-for list="{{hours}}" as="h" hint-placeholder-count="7"><span style="flex: 1; text-align: center;">{{h.label}}</span></sc-for>
+</div>
+<span style="color: var(--on-ink-muted);">Suggestion: stop opening new intraday positions after 14:30. It would have saved ₹7,900 over the last 3 months.</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+<button type="button" style="min-height: 44px; background: var(--accent); color: #fff; border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 600; cursor: pointer;">Add rule to my plan</button>
+<button type="button" style="min-height: 44px; background: transparent; color: var(--on-ink); border: 1px solid var(--ink-3); border-radius: 10px; padding: 10px 16px; cursor: pointer;">Show the trades</button>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Modern platform -->
+<section style="padding: 96px 0 40px;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 36px;">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 720px;">
+<span style="font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--gain);">Built for today</span>
+<h2 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(2rem, 3.4vw, 2.75rem); line-height: 1.08; letter-spacing: -0.02em; text-wrap: balance;">Fast, private and ready on every screen</h2>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px;">
+<div style="flex: 2 1 460px; min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px;">
+<svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 A5 5 0 0 1 17 7.5 V10 M7 10 V7.5 A5 5 0 0 1 12.2 2.5" fill="none" stroke="#146EF5" style="stroke-width: 1.6; stroke-linecap: round"></path><rect x="4.5" y="10" width="15" height="11.5" rx="3" fill="none" stroke="#146EF5" style="stroke-width: 1.6"></rect><circle cx="12" cy="15.5" r="1.6" fill="#146EF5"></circle></svg>
+<h3 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: 22px;">One-tap sign-in with passkeys</h3>
+<p style="margin: 0; color: var(--muted);">Use your fingerprint, face or phone screen lock. Passkeys can't be phished or reused, and you never type a password on a shared computer.</p>
+</div>
+<div style="flex: 1 1 280px; min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px;">
+<svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17 L8 11 L12 14 L20 5" fill="none" stroke="#146EF5" style="stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round"></path><circle cx="20" cy="5" r="2" fill="#146EF5"></circle></svg>
+<h3 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: 22px;">Live prices</h3>
+<p style="margin: 0; color: var(--muted);">Open positions update in real time, without refreshing the page.</p>
+</div>
+<div style="flex: 1 1 280px; min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px;">
+<svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5" fill="none" stroke="#146EF5" style="stroke-width: 1.6"></rect><path d="M10.5 18.5 H13.5" stroke="#146EF5" style="stroke-width: 1.6; stroke-linecap: round"></path></svg>
+<h3 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: 22px;">Install it on your phone</h3>
+<p style="margin: 0; color: var(--muted);">Add the app to your home screen and get alerts when you break a rule in your plan.</p>
+</div>
+<div style="flex: 1 1 280px; min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px;">
+<svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 L20 5.5 V11.5 C20 16.5 16.5 20 12 21.5 C7.5 20 4 16.5 4 11.5 V5.5 Z" fill="none" stroke="#146EF5" style="stroke-width: 1.6; stroke-linejoin: round"></path><path d="M8.5 12 L11 14.5 L15.5 9.5" fill="none" stroke="#146EF5" style="stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round"></path></svg>
+<h3 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: 22px;">Your data stays yours</h3>
+<p style="margin: 0; color: var(--muted);">Encrypted, stored in our own infrastructure, and deleted when you ask. We never sell trading data.</p>
+</div>
+<div style="flex: 2 1 460px; min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px;">
+<svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2.5 L5 13.5 H11.5 L10.5 21.5 L19 10 H12.5 Z" fill="none" stroke="#146EF5" style="stroke-width: 1.6; stroke-linejoin: round"></path></svg>
+<h3 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: 22px;">Pages that open instantly</h3>
+<p style="margin: 0; color: var(--muted);">Server-rendered pages, cached data and lightweight charts keep the app fast even on a mid-range phone and a slow connection.</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Sign in / create account -->
+<section id="security" style="padding: 80px 0 96px;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap; gap: 56px; align-items: flex-start;">
+<div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 18px;">
+<span style="font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--gain);">Get started</span>
+<h2 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(2rem, 3.4vw, 2.75rem); line-height: 1.08; letter-spacing: -0.02em; text-wrap: balance;">Sign in the way you like</h2>
+<p style="margin: 0; color: var(--muted); font-size: 17px;">Create an account with a user ID and password, or continue with Google. After your first sign-in, turn on a passkey or a device PIN for one-tap access.</p>
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<div style="display: flex; gap: 12px; align-items: flex-start;"><span style="flex: none; font-family: var(--mono); font-size: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px;">Passkey</span><span style="color: var(--muted);">Fingerprint, face or screen lock. Fastest and safest.</span></div>
+<div style="display: flex; gap: 12px; align-items: flex-start;"><span style="flex: none; font-family: var(--mono); font-size: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px;">Google</span><span style="color: var(--muted);">Any Gmail or Google Workspace account.</span></div>
+<div style="display: flex; gap: 12px; align-items: flex-start;"><span style="flex: none; font-family: var(--mono); font-size: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px;">Device PIN</span><span style="color: var(--muted);">6 digits, works only on a device you trust. Trades and withdrawals still ask for your password or passkey.</span></div>
+<div style="display: flex; gap: 12px; align-items: flex-start;"><span style="flex: none; font-family: var(--mono); font-size: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px;">2-step</span><span style="color: var(--muted);">Authenticator app codes for money and trading actions.</span></div>
+</div>
+</div>
+
+<div style="flex: 1 1 440px; min-width: 0; max-width: 520px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 20px 50px rgba(14, 26, 43, .08);">
+<div role="tablist" aria-label="Account" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: var(--paper); border-radius: 12px; padding: 4px;">
+<sc-if value="{{auth.signin}}" hint-placeholder-val="{{true}}">
+<button type="button" role="tab" aria-selected="true" onClick="{{auth.pickSignin}}" style="min-height: 44px; border: 0; border-radius: 9px; background: var(--card); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(14, 26, 43, .12); cursor: pointer;">Sign in</button>
+<button type="button" role="tab" aria-selected="false" onClick="{{auth.pickSignup}}" style="min-height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-weight: 500; cursor: pointer;">Create account</button>
+</sc-if>
+<sc-if value="{{auth.signup}}" hint-placeholder-val="{{false}}">
+<button type="button" role="tab" aria-selected="false" onClick="{{auth.pickSignin}}" style="min-height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-weight: 500; cursor: pointer;">Sign in</button>
+<button type="button" role="tab" aria-selected="true" onClick="{{auth.pickSignup}}" style="min-height: 44px; border: 0; border-radius: 9px; background: var(--card); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(14, 26, 43, .12); cursor: pointer;">Create account</button>
+</sc-if>
+</div>
+
+<sc-if value="{{auth.signin}}" hint-placeholder-val="{{true}}">
+<form style="display: flex; flex-direction: column; gap: 14px;">
+<button type="button" style="min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 12px; background: var(--ink); color: #fff; font-weight: 600; cursor: pointer;">
+<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 C8 3 5.5 6 5.5 9.5 V12 M18.5 12 V9.5 C18.5 6 16 3 12 3 M9 21 C8.2 18.5 8.5 15.5 8.5 12.5 A3.5 3.5 0 0 1 15.5 12.5 C15.5 14.5 15.3 16.5 14.8 18.5 M12 12.5 C12 15.5 11.6 18.5 10.8 21" fill="none" stroke="#fff" style="stroke-width: 1.6; stroke-linecap: round"></path></svg>
+Sign in with a passkey</button>
+<button type="button" style="min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); font-weight: 600; cursor: pointer;">
+<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" style="stroke-width: 1.6"></circle><path d="M12 11.5 H20.5 M12 11.5 V14" fill="none" stroke="currentColor" style="stroke-width: 1.6; stroke-linecap: round"></path></svg>
+Continue with Google</button>
+<div style="display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted);"><span style="flex: 1; height: 1px; background: var(--line);"></span>or with your user ID<span style="flex: 1; height: 1px; background: var(--line);"></span></div>
+<div style="display: flex; flex-direction: column; gap: 6px;"><label for="si-user" style="font-size: 14px; font-weight: 500;">User ID or email</label><input id="si-user" type="text" autocomplete="username" placeholder="e.g. shanker.trades" style="min-height: 46px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--card); color: var(--ink);"></div>
+<div style="display: flex; flex-direction: column; gap: 6px;"><div style="display: flex; align-items: baseline;"><label for="si-pass" style="font-size: 14px; font-weight: 500;">Password</label><a href="#security" style="margin-left: auto; font-size: 13.5px;">Forgot password?</a></div><input id="si-pass" type="password" autocomplete="current-password" style="min-height: 46px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--card); color: var(--ink);"></div>
+<button type="button" style="min-height: 48px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer;">Sign in</button>
+<a href="#security" style="align-self: center; font-size: 14px;">Use my PIN on this device</a>
+</form>
+</sc-if>
+
+<sc-if value="{{auth.signup}}" hint-placeholder-val="{{false}}">
+<form style="display: flex; flex-direction: column; gap: 14px;">
+<button type="button" style="min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); font-weight: 600; cursor: pointer;">
+<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" style="stroke-width: 1.6"></circle><path d="M12 11.5 H20.5 M12 11.5 V14" fill="none" stroke="currentColor" style="stroke-width: 1.6; stroke-linecap: round"></path></svg>
+Sign up with Google</button>
+<div style="display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted);"><span style="flex: 1; height: 1px; background: var(--line);"></span>or create a user ID<span style="flex: 1; height: 1px; background: var(--line);"></span></div>
+<div style="display: flex; flex-direction: column; gap: 6px;"><label for="su-user" style="font-size: 14px; font-weight: 500;">User ID</label><input id="su-user" type="text" autocomplete="username" placeholder="Letters, numbers, dots" style="min-height: 46px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--card); color: var(--ink);"></div>
+<div style="display: flex; flex-wrap: wrap; gap: 12px;">
+<div style="flex: 1 1 180px; min-width: 0; display: flex; flex-direction: column; gap: 6px;"><label for="su-pass" style="font-size: 14px; font-weight: 500;">Password</label><input id="su-pass" type="password" autocomplete="new-password" style="min-height: 46px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--card); color: var(--ink);"></div>
+<div style="flex: 1 1 180px; min-width: 0; display: flex; flex-direction: column; gap: 6px;"><label for="su-pass2" style="font-size: 14px; font-weight: 500;">Confirm password</label><input id="su-pass2" type="password" autocomplete="new-password" style="min-height: 46px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--card); color: var(--ink);"></div>
+</div>
+<div style="display: flex; gap: 4px; align-items: center;"><span style="flex: 1; height: 4px; border-radius: 4px; background: var(--gain);"></span><span style="flex: 1; height: 4px; border-radius: 4px; background: var(--gain);"></span><span style="flex: 1; height: 4px; border-radius: 4px; background: var(--line);"></span><span style="flex: 1; height: 4px; border-radius: 4px; background: var(--line);"></span><span style="font-size: 12.5px; color: var(--muted); margin-left: 8px;">Fair. Add a symbol.</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px;"><label for="su-mobile" style="font-size: 14px; font-weight: 500;">Mobile number</label><div style="display: flex; gap: 8px;"><select id="su-cc" aria-label="Country code" style="min-height: 46px; border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; background: var(--card); color: var(--ink);"><option>+91</option><option>+1</option><option>+44</option></select><input id="su-mobile" type="tel" autocomplete="tel-national" placeholder="98765 43210" style="flex: 1; min-width: 0; min-height: 46px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--card); color: var(--ink);"></div></div>
+<div style="display: flex; flex-direction: column; gap: 6px;"><label for="su-email" style="font-size: 14px; font-weight: 500;">Email</label><input id="su-email" type="email" autocomplete="email" placeholder="you@example.com" style="min-height: 46px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--card); color: var(--ink);"></div>
+<div style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--muted);"><input id="su-terms" type="checkbox" style="width: 18px; height: 18px; margin-top: 2px;"><label for="su-terms">I agree to the Terms and Privacy Policy</label></div>
+<button type="button" style="min-height: 48px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer;">Create account</button>
+<p style="margin: 0; font-size: 13.5px; color: var(--muted); display: flex; gap: 8px; align-items: flex-start;"><svg width="18" height="18" viewBox="0 0 24 24" style="flex: none;" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2" fill="none" stroke="currentColor" style="stroke-width: 1.6"></rect><path d="M3.5 6.5 L12 13 L20.5 6.5" fill="none" stroke="currentColor" style="stroke-width: 1.6; stroke-linejoin: round"></path></svg>We'll email you a link to verify your address. Your account opens after you click it.</p>
+</form>
+</sc-if>
+</div>
+</div>
+</section>
+
+<!-- Pricing -->
+<section id="pricing" style="background: var(--card); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 96px 0;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 36px;">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 720px;">
+<span style="font-family: var(--mono); font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--gain);">Pricing</span>
+<h2 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(2rem, 3.4vw, 2.75rem); line-height: 1.08; letter-spacing: -0.02em; text-wrap: balance;">Start free. Upgrade when the coach earns it.</h2>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch;">
+<div style="flex: 1 1 300px; min-width: 0; border: 1px solid var(--line); border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 16px;">
+<h3 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: 22px;">Starter</h3>
+<div style="font-family: var(--mono); font-size: 32px; font-variant-numeric: tabular-nums;">Free</div>
+<ul style="margin: 0; padding-left: 1.1em; color: var(--muted); display: flex; flex-direction: column; gap: 8px;"><li>1 broker account</li><li>Journal, tags and P&amp;L calendar</li><li>Last 3 months of history</li></ul>
+<a href="#security" style="margin-top: auto; text-align: center; min-height: 46px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 600;">Start free</a>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; border: 2px solid var(--ink); border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 16px; position: relative;">
+<span style="position: absolute; top: -13px; left: 24px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 4px 12px;">Most popular</span>
+<h3 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: 22px;">Pro</h3>
+<div style="font-family: var(--mono); font-size: 32px;">[PRICE]<span style="font-size: 15px; color: var(--muted);"> / month</span></div>
+<ul style="margin: 0; padding-left: 1.1em; color: var(--muted); display: flex; flex-direction: column; gap: 8px;"><li>Unlimited accounts and history</li><li>Reports, trade replay, risk plan</li><li>Weekly AI review</li></ul>
+<a href="#security" style="margin-top: auto; text-align: center; min-height: 46px; display: grid; place-items: center; border-radius: 12px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 600;">Start 14-day trial</a>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; border: 1px solid var(--line); border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 16px;">
+<h3 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: 22px;">Pro + Coach</h3>
+<div style="font-family: var(--mono); font-size: 32px;">[PRICE]<span style="font-size: 15px; color: var(--muted);"> / month</span></div>
+<ul style="margin: 0; padding-left: 1.1em; color: var(--muted); display: flex; flex-direction: column; gap: 8px;"><li>Everything in Pro</li><li>Unlimited AI coach questions</li><li>Price outlook and alerts</li></ul>
+<a href="#security" style="margin-top: auto; text-align: center; min-height: 46px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 600;">Start 14-day trial</a>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Social proof placeholder -->
+<section style="padding: 88px 0 24px;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 28px;">
+<h2 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(1.75rem, 3vw, 2.25rem); letter-spacing: -0.02em;">What beta traders say</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 16px;">
+<figure style="flex: 1 1 300px; min-width: 0; margin: 0; background: var(--card); border: 1px dashed var(--line); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 14px;"><blockquote style="margin: 0; font-size: 17px;">[Quote from a beta tester, used with permission]</blockquote><figcaption style="font-size: 14px; color: var(--muted);">[Name] · [Trading style]</figcaption></figure>
+<figure style="flex: 1 1 300px; min-width: 0; margin: 0; background: var(--card); border: 1px dashed var(--line); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 14px;"><blockquote style="margin: 0; font-size: 17px;">[Quote from a beta tester, used with permission]</blockquote><figcaption style="font-size: 14px; color: var(--muted);">[Name] · [Trading style]</figcaption></figure>
+<figure style="flex: 1 1 300px; min-width: 0; margin: 0; background: var(--card); border: 1px dashed var(--line); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 14px;"><blockquote style="margin: 0; font-size: 17px;">[Quote from a beta tester, used with permission]</blockquote><figcaption style="font-size: 14px; color: var(--muted);">[Name] · [Trading style]</figcaption></figure>
+</div>
+</div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" style="padding: 64px 0 96px;">
+<div style="max-width: 860px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 20px;">
+<h2 style="margin: 0; font-family: var(--display); font-weight: 700; font-size: clamp(1.75rem, 3vw, 2.25rem); letter-spacing: -0.02em;">Questions</h2>
+<div style="display: flex; flex-direction: column; border-top: 1px solid var(--line);">
+<details style="border-bottom: 1px solid var(--line);"><summary style="display: flex; align-items: center; gap: 16px; padding: 18px 0; font-weight: 600; font-size: 17px;">Which brokers can I import from?<span class="faq-plus" aria-hidden="true" style="margin-left: auto; font-family: var(--mono); font-size: 22px; color: var(--muted); transition: transform .2s;">+</span></summary><p style="margin: 0 0 18px; color: var(--muted);">Groww, Zerodha, Binance and Exness statements today, plus any CSV file. The AI maps unfamiliar columns for you, and you confirm before anything is saved.</p></details>
+<details style="border-bottom: 1px solid var(--line);"><summary style="display: flex; align-items: center; gap: 16px; padding: 18px 0; font-weight: 600; font-size: 17px;">Does the AI coach tell me what to buy or sell?<span class="faq-plus" aria-hidden="true" style="margin-left: auto; font-family: var(--mono); font-size: 22px; color: var(--muted); transition: transform .2s;">+</span></summary><p style="margin: 0 0 18px; color: var(--muted);">No. It explains patterns in your own past trades and suggests rules for your plan. It is educational and is not investment advice.</p></details>
+<details style="border-bottom: 1px solid var(--line);"><summary style="display: flex; align-items: center; gap: 16px; padding: 18px 0; font-weight: 600; font-size: 17px;">How does the device PIN work?<span class="faq-plus" aria-hidden="true" style="margin-left: auto; font-family: var(--mono); font-size: 22px; color: var(--muted); transition: transform .2s;">+</span></summary><p style="margin: 0 0 18px; color: var(--muted);">After you sign in fully once, you can set a 6-digit PIN for that device only. It locks after five wrong tries, and placing trades or moving money always asks for your password or passkey.</p></details>
+<details style="border-bottom: 1px solid var(--line);"><summary style="display: flex; align-items: center; gap: 16px; padding: 18px 0; font-weight: 600; font-size: 17px;">Is my trading data safe?<span class="faq-plus" aria-hidden="true" style="margin-left: auto; font-family: var(--mono); font-size: 22px; color: var(--muted); transition: transform .2s;">+</span></summary><p style="margin: 0 0 18px; color: var(--muted);">Data is encrypted in transit and at rest, kept in our own infrastructure, and deleted on request. AI features send only the trades needed to answer your question.</p></details>
+<details style="border-bottom: 1px solid var(--line);"><summary style="display: flex; align-items: center; gap: 16px; padding: 18px 0; font-weight: 600; font-size: 17px;">Can I use it on my phone?<span class="faq-plus" aria-hidden="true" style="margin-left: auto; font-family: var(--mono); font-size: 22px; color: var(--muted); transition: transform .2s;">+</span></summary><p style="margin: 0 0 18px; color: var(--muted);">Yes. Open it in your phone's browser and add it to your home screen. Native iOS and Android apps are planned.</p></details>
+</div>
+</div>
+</section>
+
+<!-- Final call to action -->
+<section style="background: var(--ink); color: var(--on-ink); padding: 88px 0;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 24px 48px;">
+<h2 style="flex: 1 1 520px; min-width: 0; margin: 0; font-family: var(--display); font-weight: 800; font-size: clamp(2rem, 4vw, 3.25rem); line-height: 1.05; letter-spacing: -0.03em; text-wrap: balance;">Your next 100 trades can be your best 100.</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 12px;">
+<a href="#security" style="background: var(--accent); color: #fff; text-decoration: none; padding: 15px 24px; border-radius: 12px; font-weight: 600; font-size: 17px;">Start free trial</a>
+<a href="#features" style="color: var(--on-ink); text-decoration: none; padding: 14px 22px; border-radius: 12px; border: 1px solid var(--ink-3); font-weight: 500;">See the features</a>
+</div>
+</div>
+</section>
+
+<!-- Footer -->
+<footer style="background: var(--ink); color: var(--on-ink-muted); border-top: 1px solid var(--ink-3); padding: 56px 0 40px; font-size: 14px;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 36px;">
+<div style="display: flex; flex-wrap: wrap; gap: 32px 64px;">
+<div style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 10px;"><span style="font-family: var(--display); font-weight: 700; font-size: 18px; color: var(--on-ink);">Quantiva</span><span>Trading journal, trade replay and AI coach for active traders.</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px;"><b style="color: var(--on-ink); font-weight: 600;">Product</b><a href="#features" style="color: var(--on-ink-muted); text-decoration: none;">Features</a><a href="#coach" style="color: var(--on-ink-muted); text-decoration: none;">AI coach</a><a href="#pricing" style="color: var(--on-ink-muted); text-decoration: none;">Pricing</a></div>
+<div style="display: flex; flex-direction: column; gap: 8px;"><b style="color: var(--on-ink); font-weight: 600;">Help</b><a href="#faq" style="color: var(--on-ink-muted); text-decoration: none;">FAQ</a><a href="#features" style="color: var(--on-ink-muted); text-decoration: none;">Video tutorials</a><a href="#security" style="color: var(--on-ink-muted); text-decoration: none;">Contact</a></div>
+<div style="display: flex; flex-direction: column; gap: 8px;"><b style="color: var(--on-ink); font-weight: 600;">Legal</b><a href="#top" style="color: var(--on-ink-muted); text-decoration: none;">Terms</a><a href="#top" style="color: var(--on-ink-muted); text-decoration: none;">Privacy</a><a href="#top" style="color: var(--on-ink-muted); text-decoration: none;">Risk disclosure</a></div>
+</div>
+<p style="margin: 0; font-size: 12.5px; line-height: 1.6; max-width: 900px;">Quantiva (quantiva.ai) provides tools to record and analyse your own trades. We do not recommend specific securities and do not provide investment advice. Trading involves risk, including the loss of your capital. Sample figures on this page are illustrative.</p>
+<span style="font-size: 12.5px;">© 2026 Quantiva™ · quantiva.ai · All rights reserved.</span>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#146EF5","options":["#146EF5","#1D4ED8","#7C3AED","#B45309"]},"motion":{"editor":"boolean","default":true},"$preview":{"width":1440,"height":7400}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'calendar', auth: 'signin' };
+  }
+
+  renderVals() {
+    const accent = this.props.accent ?? '#146EF5';
+    const motion = this.props.motion ?? true;
+    const tab = this.state.tab;
+    const auth = this.state.auth;
+
+    const gainBg = 'rgba(63, 198, 164, ALPHA)';
+    const lossBg = 'rgba(251, 146, 60, ALPHA)';
+
+    const heroPattern = [1, 1, -1, 1, 0, 1, -1, 1, 1, 1, -1, 1, 0, 1, -1, 1, 1, 1, -1, 1];
+    const heroCells = heroPattern.map((v, i) => ({
+      bg: v > 0 ? '#00C878' : (v < 0 ? '#FB923C' : '#1E3A66'),
+      op: v === 0 ? '1' : (0.5 + ((i * 37) % 45) / 100).toFixed(2),
+      delay: (i * 0.1).toFixed(2) + 's'
+    }));
+
+    const fmt = (n) => {
+      if (n === 0) return '₹0';
+      const s = Math.abs(n) >= 1000 ? (Math.abs(n) / 1000).toFixed(1) + 'k' : String(Math.abs(n));
+      return (n > 0 ? '+₹' : '−₹') + s;
+    };
+    const octPnl = [1240, -820, 2310, -450, 980, 0, 1760, -1320, 640, 2890, -210, 1100, 450, -2040, 1530, 780, -610, 1980, 920, -380, 1450, 2210];
+    const weeks = [
+      [null, null, null, 1, 2],
+      [5, 6, 7, 8, 9],
+      [12, 13, 14, 15, 16],
+      [19, 20, 21, 22, 23],
+      [26, 27, 28, 29, 30]
+    ];
+    let k = 0;
+    const calCells = [];
+    weeks.forEach((week, w) => {
+      let total = 0;
+      week.forEach((day, d) => {
+        if (day === null) {
+          calCells.push({ day: '', label: '', bg: 'transparent', border: 'transparent', fg: '#A3B3C6', delay: '0s' });
+          return;
+        }
+        const v = octPnl[k++];
+        total += v;
+        const a = Math.min(0.5, 0.14 + Math.abs(v) / 6000).toFixed(2);
+        calCells.push({
+          day: String(day),
+          label: fmt(v),
+          bg: v > 0 ? gainBg.replace('ALPHA', a) : (v < 0 ? lossBg.replace('ALPHA', a) : '#12294A'),
+          border: '#1E3A66',
+          fg: v > 0 ? '#00C878' : (v < 0 ? '#FB923C' : '#A3B3C6'),
+          delay: ((w * 5 + d) * 0.08).toFixed(2) + 's'
+        });
+      });
+      calCells.push({ day: 'Wk ' + (w + 1), label: fmt(total), bg: '#12294A', border: '#1E3A66', fg: total >= 0 ? '#00C878' : '#FB923C', delay: ((w * 5 + 5) * 0.08).toFixed(2) + 's' });
+    });
+
+    const closes = [150, 146, 152, 149, 143, 140, 147, 155, 160, 158, 166, 171, 168, 176, 180, 177, 184, 190, 186, 181, 178, 183];
+    const candles = closes.map((c, i) => {
+      const o = i === 0 ? 146 : closes[i - 1];
+      const hi = Math.max(o, c) + 4 + (i % 3) * 2;
+      const lo = Math.min(o, c) - 3 - (i % 2) * 3;
+      const y = (p) => 230 - (p - 120) * 2.6;
+      return {
+        left: (i * 4.4 + 1) + '%',
+        top: y(Math.max(o, c)).toFixed(0) + 'px',
+        h: Math.max(3, Math.abs(c - o) * 2.6).toFixed(0) + 'px',
+        wickTop: y(hi).toFixed(0) + 'px',
+        wickH: ((hi - lo) * 2.6).toFixed(0) + 'px',
+        color: c >= o ? '#00C878' : '#FB923C',
+        delay: (i * 0.22).toFixed(2) + 's'
+      };
+    });
+
+    const importRows = [
+      { date: '01 Oct', sym: 'RELIANCE', side: 'Buy', qty: '40', pnl: '+₹1,240', color: '#00C878' },
+      { date: '01 Oct', sym: 'TCS', side: 'Sell', qty: '15', pnl: '−₹820', color: '#FB923C' },
+      { date: '05 Oct', sym: 'INFY', side: 'Buy', qty: '120', pnl: '+₹2,310', color: '#00C878' },
+      { date: '06 Oct', sym: 'HDFCBANK', side: 'Buy', qty: '60', pnl: '−₹450', color: '#FB923C' },
+      { date: '07 Oct', sym: 'BTCUSDT', side: 'Buy', qty: '0.02', pnl: '+₹980', color: '#00C878' }
+    ].map((r, i) => ({ ...r, delay: (0.8 + i * 0.35).toFixed(2) + 's' }));
+
+    const hourData = [
+      { label: '9:15', pct: 38 }, { label: '10:00', pct: 64 }, { label: '11:00', pct: 68 },
+      { label: '12:00', pct: 55 }, { label: '13:00', pct: 51 }, { label: '14:30', pct: 33 }, { label: '15:00', pct: 29 }
+    ];
+    const hours = hourData.map((h, i) => ({
+      label: h.label,
+      pct: h.pct + '%',
+      height: Math.round(h.pct * 1.3) + 'px',
+      color: h.pct >= 50 ? '#00C878' : '#FB923C',
+      delay: (0.4 + i * 0.15).toFixed(2) + 's'
+    }));
+
+    const defs = [
+      { id: 'calendar', label: 'P&L calendar', len: '0:08', title: 'See every trading day at a glance', body: 'Profit and loss by day with weekly totals. Click any day to open its trades, notes and charts.', points: ['Colour strength shows the size of the day', 'Weekly totals in the last column', 'Filter by account, symbol or tag'] },
+      { id: 'replay', label: 'Trade replay', len: '0:08', title: 'Replay any trade on the real chart', body: 'Watch the candles form around your entry and exit, at up to 8× speed, and see what you could have done differently.', points: ['Your entries and exits marked on the chart', '1-minute to daily candles', 'Step candle by candle or play'] },
+      { id: 'coach', label: 'AI coach', len: '0:08', title: 'A coach that reads your whole history', body: 'Ask a question in plain words and get an answer built from your own trades, with the numbers to back it up.', points: ['Finds your costliest habits', 'Suggests rules for your plan', 'Writes a weekly review for you'] },
+      { id: 'import', label: 'Statement import', len: '0:08', title: 'Drop a statement, get a clean journal', body: 'Upload a tradebook from your broker. Trades, charges and taxes are read, matched and ready to review in seconds.', points: ['Groww, Zerodha, Binance and Exness', 'Any CSV with AI column mapping', 'Duplicates detected automatically'] },
+      { id: 'journal', label: 'Journal and tags', len: '0:08', title: 'Notes and tags on every trade', body: 'Tag the setup and any mistakes, write a quick note and paste a screenshot. Reports then group trades by those tags.', points: ['Setup and mistake tags', 'Rich notes with screenshots', 'Daily journal for the session'] },
+      { id: 'risk', label: 'Risk plan', len: '0:08', title: 'Rules that hold you to your plan', body: 'Set a daily loss limit, a maximum number of trades and the setups you allow. The app warns you before you break them.', points: ['Daily loss and trade limits', 'Plan adherence score', 'Phone alerts when a rule is broken'] }
+    ];
+    const tabs = defs.map((d) => ({
+      label: d.label,
+      isSel: d.id === tab,
+      notSel: d.id !== tab,
+      pick: () => this.setState({ tab: d.id })
+    }));
+    const curDef = defs.find((d) => d.id === tab) || defs[0];
+    const cur = { ...curDef, points: curDef.points.map((text) => ({ text })) };
+    const show = {
+      calendar: tab === 'calendar', replay: tab === 'replay', coach: tab === 'coach',
+      import: tab === 'import', journal: tab === 'journal', risk: tab === 'risk'
+    };
+
+    return {
+      accent,
+      motionClass: motion ? 'anim' : 'still',
+      heroCells,
+      calCells,
+      candles,
+      importRows,
+      hours,
+      tabs,
+      cur,
+      show,
+      auth: {
+        signin: auth === 'signin',
+        signup: auth === 'signup',
+        pickSignin: () => this.setState({ auth: 'signin' }),
+        pickSignup: () => this.setState({ auth: 'signup' })
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

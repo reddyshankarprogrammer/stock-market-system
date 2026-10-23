@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quantiva Roadmap | quantiva.ai</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column with a sticky section index on wide screens; the roadmap is a vertical ledger of phases drawn like candles on a chart. */
+:root {
+  --bg: #f5f7f9;
+  --surface: #ffffff;
+  --fg: #0b1f3a;
+  --muted: #55666b;
+  --line: #d9e2e3;
+  --accent: #146ef5;        /* Quantiva electric blue */
+  --accent-soft: #e3edfe;
+  --caution: #a8620a;
+  --caution-soft: #fbf0df;
+  --down: #b8423a;
+  --code-bg: #eef3f3;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1416; --surface: #151d20; --fg: #e3ecec; --muted: #94a6aa; --line: #263235;
+    --accent: #5b9cf8; --accent-soft: #12263f; --caution: #e7a54a; --caution-soft: #2e2414;
+    --down: #ef7d72; --code-bg: #1b2629; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1416; --surface: #151d20; --fg: #e3ecec; --muted: #94a6aa; --line: #263235;
+  --accent: #5b9cf8; --accent-soft: #12263f; --caution: #e7a54a; --caution-soft: #2e2414;
+  --down: #ef7d72; --code-bg: #1b2629; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 72px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 48px; }
+@media (max-width: 860px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; } .toc { position: static !important; } }
+
+/* Section index */
+.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; font-size: 14px; }
+.toc p { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 860px) { .toc ol { flex-direction: row; flex-wrap: wrap; gap: 6px; } .toc a { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; } }
+.toc a { color: var(--muted); text-decoration: none; display: block; padding: 3px 0; }
+.toc a:hover, .toc a:focus-visible { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+main { min-width: 0; }
+header.doc { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 4.5vw, 3rem); line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 14px; text-wrap: balance; }
+.lede { font-size: 1.125rem; color: var(--muted); max-width: 65ch; margin: 0 0 18px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; color: var(--muted); }
+.meta b { color: var(--fg); font-weight: 600; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--caution-soft); color: var(--caution); }
+
+section { padding-top: 40px; scroll-margin-top: 16px; }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; letter-spacing: -0.01em; margin: 0 0 6px; text-wrap: balance; }
+h2 + .sub { color: var(--muted); margin: 0 0 20px; max-width: 65ch; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; margin: 28px 0 10px; }
+p, li { max-width: 70ch; }
+ul.plain { padding-left: 1.2em; margin: 0; display: grid; gap: 6px; }
+code, .mono { font-family: var(--font-mono); font-size: .88em; }
+code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; }
+
+/* Tables */
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { font-family: var(--font-mono); font-weight: 500; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--code-bg); }
+td:first-child { font-weight: 600; white-space: nowrap; }
+td .why { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); white-space: nowrap; }
+
+/* Today snapshot */
+.split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 640px) { .split { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; min-width: 0; }
+.panel h3 { margin-top: 0; display: flex; align-items: center; gap: 8px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex: none; }
+.dot.down { background: var(--down); }
+
+/* Landing storyboard */
+.storyboard { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.clip { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.clip .frame { aspect-ratio: 16 / 9; max-width: 100%; border-radius: 6px; background: var(--code-bg); position: relative; overflow: hidden; }
+.clip .frame svg { width: 100%; height: 100%; display: block; }
+.clip b { font-size: 14.5px; }
+.clip span { font-size: 13px; color: var(--muted); }
+.clip .len { font-family: var(--font-mono); font-size: 11.5px; color: var(--accent); }
+
+/* Auth flows */
+.flows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 640px) { .flows { grid-template-columns: minmax(0, 1fr); } }
+.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; font-size: 14.5px; }
+.steps li::before { content: counter(s); font-family: var(--font-mono); font-size: 12px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.callout { border-left: 3px solid var(--caution); background: var(--caution-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin-top: 16px; font-size: 14.5px; }
+.callout b { color: var(--caution); }
+
+/* Roadmap ledger: each phase is a candle */
+.ledger { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
+.phase { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 16px; padding: 18px 20px 18px 8px; border-bottom: 1px solid var(--line); }
+.phase:last-child { border-bottom: 0; }
+.candle { position: relative; display: grid; justify-items: center; }
+.candle::before { content: ""; position: absolute; top: -18px; bottom: -18px; width: 2px; background: var(--line); }
+.phase:first-child .candle::before { top: 14px; }
+.phase:last-child .candle::before { bottom: calc(100% - 30px); }
+.candle .body { position: relative; z-index: 1; width: 30px; height: 30px; border-radius: 5px; background: var(--accent); color: var(--surface); font-family: var(--font-mono); font-size: 13px; font-weight: 500; display: grid; place-items: center; }
+.candle .body.hollow { background: var(--surface); color: var(--accent); border: 2px solid var(--accent); }
+.phase h3 { margin: 2px 0 4px; }
+.phase .goal { color: var(--muted); font-size: 14.5px; margin: 0 0 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12.5px; padding: 3px 9px; border-radius: 6px; background: var(--code-bg); color: var(--fg); }
+.chip.key { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.done-when { font-size: 13.5px; margin: 10px 0 0; color: var(--muted); }
+.done-when b { color: var(--fg); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--accent); vertical-align: -1px; margin-right: 6px; }
+.legend i.h { background: transparent; border: 2px solid var(--accent); }
+
+/* Decisions */
+.decisions { display: grid; gap: 10px; }
+.decision { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: baseline; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; }
+.decision p { margin: 0; }
+.decision .rec { font-size: 13.5px; color: var(--muted); grid-column: 1 / -1; }
+.decision .owner { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+@media (max-width: 520px) { .decision { grid-template-columns: minmax(0, 1fr); } }
+
+.mermaid-box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; overflow-x: auto; }
+pre.mermaid { margin: 0; }
+.sources { font-size: 13.5px; color: var(--muted); }
+.sources a { color: var(--accent); word-break: break-word; }
+footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Sections">
+    <p>On this page</p>
+    <ol>
+      <li><a href="#today">Where we are</a></li>
+      <li><a href="#stack">Technology stack</a></li>
+      <li><a href="#landing">Landing page</a></li>
+      <li><a href="#auth">Sign-up and login</a></li>
+      <li><a href="#ai">AI models</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#licenses">References and licenses</a></li>
+      <li><a href="#risks">Risks and compliance</a></li>
+      <li><a href="#decisions">Decisions needed</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="doc">
+      <p class="eyebrow">Quantiva · quantiva.ai · product and technology plan</p>
+      <h1>A trading journal and trading platform our users will want to open every day</h1>
+      <p class="lede">This plan takes our existing Java microservices to a full product in the class of TraderSync and TradeZella: a polished web app, a landing page that shows every feature in short video clips, modern sign-in, and AI coaching on top of each trader's own history.</p>
+      <div class="meta">
+        <span>Owner <b>Shanker Reddy</b></span>
+        <span>Date <b>22 October 2026</b></span>
+        <span class="pill">Proposal: nothing implemented yet</span>
+      </div>
+    </header>
+
+    <section id="today">
+      <h2>Where we are</h2>
+      <p class="sub">The backend is further along than most products at this stage. What is missing is everything a user sees.</p>
+      <div class="split">
+        <div class="panel">
+          <h3><span class="dot"></span>Already built</h3>
+          <ul class="plain">
+            <li>7 Spring Boot services behind an API gateway, with Kafka, MySQL and Redis</li>
+            <li>account-service: multi-broker accounts, trades, holdings, fees, taxes, dividends, performance</li>
+            <li>Broker statement import for Groww, Zerodha, Binance and Exness</li>
+            <li>K3s production setup with GitHub Actions and Argo CD</li>
+            <li><code>ai-service</code> folder, Dockerfile and Kubernetes manifests ready for a Python service</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3><span class="dot down"></span>Gaps to close</h3>
+          <ul class="plain">
+            <li>No frontend and no landing page</li>
+            <li>No refresh tokens, no Google sign-in, no email verification</li>
+            <li>Market prices are simulated for six US stocks; no real price history or candles</li>
+            <li>No journal features yet: notes, tags, screenshots, playbooks</li>
+            <li>user-service is still on Spring Boot 3; the rest are on Boot 4</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="stack">
+      <h2>Technology stack</h2>
+      <p class="sub">Current, well-supported choices that fit our Java backend and K3s platform. Everything listed is open source unless marked as a paid service.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Area</th><th>Choice</th><th>Why it fits</th></tr></thead>
+          <tbody>
+            <tr><td>Web app and landing page</td><td>Next.js 16 (App Router), React 19, TypeScript</td><td class="why">Server rendering makes the landing page fast and readable by search engines. One codebase serves both the marketing site and the app.</td></tr>
+            <tr><td>Look and feel</td><td>Tailwind CSS 4, shadcn/ui, Motion, Magic UI and Aceternity UI blocks</td><td class="why">Modern components with smooth animation, animated number counters and page transitions. Dark theme by default, light theme included.</td></tr>
+            <tr><td>Price charts</td><td>TradingView lightweight-charts</td><td class="why">Fast candlestick charts for trade replay and entry/exit markers.</td></tr>
+            <tr><td>Analytics charts</td><td>Recharts</td><td class="why">Equity curve, P&amp;L calendar heatmap, win/loss breakdowns.</td></tr>
+            <tr><td>Data and forms</td><td>TanStack Query, Zustand, react-hook-form with zod</td><td class="why">Cached server data, small app state, validated forms.</td></tr>
+            <tr><td>Journal editor</td><td>TipTap</td><td class="why">Rich text notes with pasted screenshots.</td></tr>
+            <tr><td>Identity</td><td>Keycloak 26, self-hosted on K3s</td><td class="why">Password login, Google sign-in, email verification, password reset, passkeys, authenticator codes and refresh tokens out of the box. Java-based, like the rest of our stack.</td></tr>
+            <tr><td>Email</td><td>Amazon SES, Resend or Brevo (paid service); React Email for templates</td><td class="why">Reliable delivery for verification links and alerts.</td></tr>
+            <tr><td>SMS codes</td><td>MSG91 for India or Twilio Verify (paid service)</td><td class="why">Mobile number verification. India requires DLT template registration.</td></tr>
+            <tr><td>Bot protection</td><td>Cloudflare Turnstile</td><td class="why">Free, invisible check on sign-up and login forms.</td></tr>
+            <tr><td>Backend baseline</td><td>Java 25 LTS, Spring Boot 4 everywhere, OpenTelemetry</td><td class="why">Virtual threads, one framework version across services, end-to-end tracing.</td></tr>
+            <tr><td>AI service</td><td>Python 3.12 with FastAPI</td><td class="why">The AI models are Python-first. Java services stay as they are.</td></tr>
+            <tr><td>Mobile</td><td>Installable web app first, then Expo (React Native)</td><td class="why">Reuses our TypeScript code and API types.</td></tr>
+            <tr><td>Quality and insight</td><td>Playwright, Vitest, Storybook, Sentry, PostHog</td><td class="why">End-to-end tests, component library, error tracking, product analytics.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>How the pieces connect</h3>
+      <div class="mermaid-box">
+<pre class="mermaid">
+flowchart LR
+  U[Browser or mobile app] --> W[Next.js web app]
+  W -->|session cookie| G[API gateway]
+  U -. sign in .-> K[Keycloak]
+  K -. Google sign-in .-> GO[Google]
+  K -. verification email .-> E[Email provider]
+  G -->|X-User-Id, X-User-Role| S[Java services]
+  G --> J[journal-service, new]
+  G --> A[ai-service, Python]
+  A --> C[Claude API]
+  A --> KR[Kronos-small, self-hosted]
+  S --- KF[(Kafka)]
+</pre>
+      </div>
+      <p>The browser never holds raw tokens. The gateway keeps them in a server-side session stored in Redis and gives the browser an httpOnly cookie. The gateway checks Keycloak's signed tokens instead of today's shared <code>JWT_SECRET</code>, and the services keep receiving <code>X-User-Id</code> and <code>X-User-Role</code> as they do now.</p>
+    </section>
+
+    <section id="landing">
+      <h2>Landing page</h2>
+      <p class="sub">The landing page explains the product with short looping clips of the real app. Each clip shows one feature in under ten seconds, with no sound.</p>
+      <div class="storyboard">
+        <div class="clip">
+          <div class="frame" aria-hidden="true"><svg viewBox="0 0 160 90"><rect x="10" y="10" width="140" height="70" rx="4" fill="none" stroke="currentColor" opacity=".25"/><polyline points="18,66 40,58 58,62 78,44 98,48 118,30 142,24" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg></div>
+          <b>Hero: dashboard</b><span>Equity curve, today's P&amp;L, win rate</span><span class="len">8–10 s</span>
+        </div>
+        <div class="clip">
+          <div class="frame" aria-hidden="true"><svg viewBox="0 0 160 90"><g fill="var(--accent)"><rect x="20" y="18" width="18" height="14" rx="2"/><rect x="62" y="18" width="18" height="14" rx="2" opacity=".5"/><rect x="104" y="36" width="18" height="14" rx="2"/><rect x="41" y="54" width="18" height="14" rx="2" opacity=".7"/></g><g fill="var(--down)"><rect x="41" y="18" width="18" height="14" rx="2"/><rect x="83" y="36" width="18" height="14" rx="2" opacity=".6"/><rect x="125" y="54" width="18" height="14" rx="2"/></g></svg></div>
+          <b>P&amp;L calendar</b><span>Green and red trading days, click into a day</span><span class="len">5–8 s</span>
+        </div>
+        <div class="clip">
+          <div class="frame" aria-hidden="true"><svg viewBox="0 0 160 90"><rect x="24" y="16" width="44" height="58" rx="3" fill="none" stroke="currentColor" opacity=".35"/><path d="M80 45h30" stroke="var(--accent)" stroke-width="2.5"/><path d="M104 39l8 6-8 6" fill="none" stroke="var(--accent)" stroke-width="2.5"/><g stroke="currentColor" opacity=".35"><path d="M120 24h22M120 36h22M120 48h22M120 60h22"/></g></svg></div>
+          <b>Statement import</b><span>Drop a Groww or Zerodha file, trades appear</span><span class="len">5–8 s</span>
+        </div>
+        <div class="clip">
+          <div class="frame" aria-hidden="true"><svg viewBox="0 0 160 90"><g stroke="currentColor" opacity=".45"><path d="M30 20v50M50 28v40M70 16v46M90 30v44M110 22v38M130 14v40"/></g><g><rect x="25" y="32" width="10" height="24" fill="var(--accent)"/><rect x="45" y="38" width="10" height="18" fill="var(--down)"/><rect x="65" y="26" width="10" height="26" fill="var(--accent)"/><rect x="85" y="40" width="10" height="22" fill="var(--down)"/><rect x="105" y="30" width="10" height="20" fill="var(--accent)"/><rect x="125" y="22" width="10" height="22" fill="var(--accent)"/></g><circle cx="70" cy="26" r="4" fill="none" stroke="var(--caution)" stroke-width="2"/><circle cx="130" cy="22" r="4" fill="none" stroke="var(--caution)" stroke-width="2"/></svg></div>
+          <b>Trade replay</b><span>Candles with entry and exit markers</span><span class="len">5–8 s</span>
+        </div>
+        <div class="clip">
+          <div class="frame" aria-hidden="true"><svg viewBox="0 0 160 90"><rect x="18" y="16" width="86" height="20" rx="8" fill="currentColor" opacity=".12"/><rect x="56" y="44" width="86" height="30" rx="8" fill="var(--accent)" opacity=".85"/><g stroke="var(--surface)" stroke-width="2"><path d="M66 54h60M66 64h40"/></g></svg></div>
+          <b>AI trade coach</b><span>"You lose most on Monday mornings"</span><span class="len">5–8 s</span>
+        </div>
+        <div class="clip">
+          <div class="frame" aria-hidden="true"><svg viewBox="0 0 160 90"><g fill="currentColor" opacity=".14"><rect x="20" y="18" width="120" height="12" rx="3"/><rect x="20" y="38" width="120" height="12" rx="3"/><rect x="20" y="58" width="120" height="12" rx="3"/></g><g fill="var(--accent)"><rect x="24" y="21" width="40" height="6" rx="3"/><rect x="24" y="61" width="26" height="6" rx="3"/></g><rect x="24" y="41" width="20" height="6" rx="3" fill="var(--down)"/></svg></div>
+          <b>Journal and tags</b><span>Setups, mistakes, notes, screenshots</span><span class="len">5–8 s</span>
+        </div>
+      </div>
+
+      <h3>Page order</h3>
+      <ul class="plain">
+        <li>Hero with headline, one call to action and the dashboard clip</li>
+        <li>Feature clips (above), then animated statistics counters</li>
+        <li>Supported brokers. Use broker logos only with each broker's permission.</li>
+        <li>Security section: passkeys, two-factor codes, data stays in our own cluster</li>
+        <li>Pricing, FAQ, final call to action</li>
+      </ul>
+
+      <h3>How we make and serve the clips</h3>
+      <ul class="plain">
+        <li><b>Remotion</b> renders clips from React code, so they match the real UI and can be re-rendered after each redesign. Its free license covers individuals and very small companies; Sesami likely needs a company license.</li>
+        <li><b>Screen Studio</b> or Playwright recordings for quick real captures. <b>Rive</b> or <b>Lottie</b> for small animated icons.</li>
+        <li>WebM (AV1) with an MP4 fallback, autoplay muted and looping, a still poster frame first, loaded only when scrolled into view, served from a CDN.</li>
+        <li>Respect the browser's reduce-motion setting by showing the poster frame instead of the clip.</li>
+      </ul>
+    </section>
+
+    <section id="auth">
+      <h2>Sign-up and login</h2>
+      <p class="sub">Keycloak handles every flow below. We style its screens to match the app.</p>
+      <div class="flows">
+        <div class="panel">
+          <h3>Create an account</h3>
+          <ol class="steps">
+            <li><span>User enters a user ID, password and confirmation, mobile number and email.</span></li>
+            <li><span>Password strength meter and a breached-password check run as the user types.</span></li>
+            <li><span>Turnstile confirms a real person is signing up.</span></li>
+            <li><span>Keycloak sends a verification email. The account is active only after the link is clicked.</span></li>
+            <li><span>Optional: a 6-digit SMS code verifies the mobile number.</span></li>
+          </ol>
+        </div>
+        <div class="panel">
+          <h3>Sign in</h3>
+          <ol class="steps">
+            <li><span><b>User ID or email with password.</b></span></li>
+            <li><span><b>Continue with Google</b> for any Gmail or Google Workspace account.</span></li>
+            <li><span><b>Passkey</b> for fast login with fingerprint, face or the device's own PIN.</span></li>
+            <li><span><b>Authenticator code</b> as a second step for trading and money actions.</span></li>
+          </ol>
+        </div>
+      </div>
+      <div class="callout"><b>About a custom app PIN.</b> Passkeys give the same one-tap login and cannot be phished, so we recommend them first. If we also offer a 4–6 digit app PIN, it must be set up after a full login on that device, work on that device only, and lock after about five wrong attempts. A PIN alone must never place trades, move money, or change the password or email; those always ask for the password or passkey again.</div>
+    </section>
+
+    <section id="ai">
+      <h2>AI models</h2>
+      <p class="sub">Claude models for language and reasoning tasks, plus a small self-hosted model for price forecasting. Prices are per million input / output tokens.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Task</th><th>Model</th><th>Price</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>AI trade coach, monthly reports</td><td>Claude Opus 5.5 <code>claude-opus-5-5</code></td><td class="num">$4 / $20</td><td class="why">Best reasoning over a trader's full history. Recommended default.</td></tr>
+            <tr><td>Everyday chat, journal summaries</td><td>Claude Sonnet 5.5 <code>claude-sonnet-5-5</code></td><td class="num">$2 / $10</td><td class="why">Lower-cost option if the team prefers it.</td></tr>
+            <tr><td>Auto-tagging, CSV column mapping</td><td>Claude Haiku 5.5 <code>claude-haiku-5-5</code></td><td class="num">$0.10 / $0.50</td><td class="why">High-volume small tasks. Team decision whether to trade some quality for cost.</td></tr>
+            <tr><td>Price forecasting</td><td>Kronos-small (self-hosted)</td><td class="num">Our compute</td><td class="why">24.7M parameters, runs on CPU. Needs real candle history to be useful.</td></tr>
+            <tr><td>News sentiment (later)</td><td>FinGPT</td><td class="num">Our compute</td><td class="why">Needs a news data source first.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Trade data sent to the Claude API leaves our cluster, so the privacy policy must say so. All AI output is labelled as educational and not investment advice.</p>
+    </section>
+
+    <section id="roadmap">
+      <h2>Roadmap</h2>
+      <p class="sub">Nine phases in order. Phases 0 to 3 give us a usable product on today's APIs; later phases add new services.</p>
+      <div class="legend"><span><i></i>Uses existing backend</span><span><i class="h"></i>Needs new backend work</span></div>
+      <div class="ledger">
+        <div class="phase"><div class="candle"><span class="body">0</span></div><div>
+          <h3>Design</h3><p class="goal">Agree how the product looks before writing UI code.</p>
+          <div class="chips"><span class="chip key">Figma design system</span><span class="chip">Colors, type, components</span><span class="chip">Brand and logo</span><span class="chip">Landing and app wireframes</span></div>
+          <p class="done-when"><b>Done when</b> the team signs off the design system and the five main screens.</p>
+        </div></div>
+        <div class="phase"><div class="candle"><span class="body hollow">1</span></div><div>
+          <h3>Identity</h3><p class="goal">Modern, secure sign-up and login for every later phase.</p>
+          <div class="chips"><span class="chip key">Keycloak on K3s</span><span class="chip">Email verification</span><span class="chip">Google sign-in</span><span class="chip">Passkeys</span><span class="chip">Authenticator codes</span><span class="chip">Gateway on Keycloak tokens</span></div>
+          <p class="done-when"><b>Done when</b> a new user can register, verify email, and sign in all four ways.</p>
+        </div></div>
+        <div class="phase"><div class="candle"><span class="body">2</span></div><div>
+          <h3>Landing page</h3><p class="goal">Start collecting sign-ups while the app is being built.</p>
+          <div class="chips"><span class="chip key">Next.js marketing site</span><span class="chip">Feature clips</span><span class="chip">SEO</span><span class="chip">PostHog analytics</span><span class="chip">Waitlist</span></div>
+          <p class="done-when"><b>Done when</b> the site is live and loads in under 2.5 seconds on a mid-range phone.</p>
+        </div></div>
+        <div class="phase"><div class="candle"><span class="body">3</span></div><div>
+          <h3>App core (MVP)</h3><p class="goal">A usable journal built on our existing account-service APIs.</p>
+          <div class="chips"><span class="chip key">Dashboard</span><span class="chip">Accounts</span><span class="chip">Statement import</span><span class="chip">Trades table and filters</span><span class="chip">P&amp;L calendar</span><span class="chip">Portfolio with live prices</span></div>
+          <p class="done-when"><b>Done when</b> a trader can import a broker statement and review their month.</p>
+        </div></div>
+        <div class="phase"><div class="candle"><span class="body hollow">4</span></div><div>
+          <h3>Journaling</h3><p class="goal">The habits that make traders come back daily.</p>
+          <div class="chips"><span class="chip key">New journal-service</span><span class="chip">Trade notes</span><span class="chip">Setup and mistake tags</span><span class="chip">Screenshots</span><span class="chip">Daily journal</span><span class="chip">Playbooks</span></div>
+          <p class="done-when"><b>Done when</b> every trade can carry notes, tags and screenshots.</p>
+        </div></div>
+        <div class="phase"><div class="candle"><span class="body hollow">5</span></div><div>
+          <h3>Analytics and charts</h3><p class="goal">Show traders what works and what does not.</p>
+          <div class="chips"><span class="chip key">Reports by symbol, tag, hour, weekday</span><span class="chip">Drawdown</span><span class="chip">R-multiple</span><span class="chip">Candles endpoint</span><span class="chip">Trade replay</span></div>
+          <p class="done-when"><b>Done when</b> win rate, profit factor and expectancy match a hand-checked sample.</p>
+        </div></div>
+        <div class="phase"><div class="candle"><span class="body hollow">6</span></div><div>
+          <h3>AI</h3><p class="goal">Personal coaching from each trader's own history.</p>
+          <div class="chips"><span class="chip key">ai-service (Python)</span><span class="chip">AI trade coach</span><span class="chip">Auto-tagging</span><span class="chip">CSV column mapping</span><span class="chip">Kronos forecasts</span></div>
+          <p class="done-when"><b>Done when</b> the coach's insights are checked against real trade data for 20 test accounts.</p>
+        </div></div>
+        <div class="phase"><div class="candle"><span class="body">7</span></div><div>
+          <h3>Mobile and growth</h3><p class="goal">Reach traders on their phones and start earning.</p>
+          <div class="chips"><span class="chip key">Installable web app</span><span class="chip">Expo app</span><span class="chip">Push notifications</span><span class="chip">Subscriptions and billing</span><span class="chip">Share a trade</span></div>
+          <p class="done-when"><b>Done when</b> the mobile app is in both stores and paid plans are live.</p>
+        </div></div>
+        <div class="phase"><div class="candle"><span class="body">8</span></div><div>
+          <h3>Hardening</h3><p class="goal">Ready for real money and real scale.</p>
+          <div class="chips"><span class="chip key">Security review</span><span class="chip">Penetration test</span><span class="chip">Load test</span><span class="chip">Backup and recovery drills</span><span class="chip">Compliance review</span></div>
+          <p class="done-when"><b>Done when</b> the penetration test has no open high-severity findings.</p>
+        </div></div>
+      </div>
+    </section>
+
+    <section id="licenses">
+      <h2>References and licenses</h2>
+      <p class="sub">Open-source projects we can learn from or build on. The license decides which one we can use as code.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Project</th><th>License</th><th>How we use it</th></tr></thead>
+          <tbody>
+            <tr><td>TradeNote</td><td>GPL v3</td><td class="why">Feature reference only. It has its own MongoDB backend and copyleft terms.</td></tr>
+            <tr><td>Deltalytix</td><td>CC BY-NC 4.0</td><td class="why">Feature reference only. Commercial use is not allowed.</td></tr>
+            <tr><td>shadcn-admin</td><td>MIT</td><td class="why">Starting layout for the app: sidebar, tables, settings pages.</td></tr>
+            <tr><td>lightweight-charts</td><td>Apache 2.0</td><td class="why">Use as a library. Its attribution notice must be shown.</td></tr>
+            <tr><td>Kronos</td><td>MIT</td><td class="why">Price forecasting model in ai-service.</td></tr>
+            <tr><td>FinGPT</td><td>MIT</td><td class="why">Later, for news sentiment.</td></tr>
+            <tr><td>Remotion</td><td>Company license may be needed</td><td class="why">Feature clips for the landing page.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="risks">
+      <h2>Risks and compliance</h2>
+      <ul class="plain">
+        <li><b>Personal data.</b> Email and mobile numbers fall under India's DPDP Act. We need consent text, a privacy policy and a deletion process.</li>
+        <li><b>Trading and advice.</b> Live trading, or AI output that reads as a buy or sell signal, may fall under SEBI rules. Keep AI labelled as educational until legal review.</li>
+        <li><b>Market data.</b> Forecasts and replay need real historical prices. Simulated data makes both meaningless.</li>
+        <li><b>Third-party AI.</b> Sending trade history to an external API needs to be disclosed to users.</li>
+        <li><b>Brand assets.</b> Broker logos and names only with permission.</li>
+      </ul>
+    </section>
+
+    <section id="decisions">
+      <h2>Decisions needed</h2>
+      <p class="sub">Open questions for the team before phase 1 starts.</p>
+      <div class="decisions">
+        <div class="decision"><p>Which market do we launch in first: India, US, or both?</p><span class="owner">Product</span><p class="rec">Drives SMS provider, compliance work and which brokers we import first.</p></div>
+        <div class="decision"><p>Passkeys only for fast login, or passkeys plus a device-bound app PIN?</p><span class="owner">Product, security</span><p class="rec">Recommendation: passkeys first; add a PIN only if users ask for it.</p></div>
+        <div class="decision"><p>Self-host Keycloak, or use a managed identity service?</p><span class="owner">Engineering</span><p class="rec">Recommendation: self-host on K3s; it fits our platform and avoids per-user fees.</p></div>
+        <div class="decision"><p>Which Claude model tier for each AI feature?</p><span class="owner">Product, finance</span><p class="rec">Recommendation: Opus 5.5 for the coach; decide on Sonnet or Haiku for high-volume tasks after measuring quality.</p></div>
+        <div class="decision"><p>Buy a Remotion company license, or record clips by hand?</p><span class="owner">Marketing</span><p class="rec">Remotion keeps clips in sync with the UI; hand recording is cheaper to start.</p></div>
+        <div class="decision"><p>Where does real price history come from?</p><span class="owner">Engineering</span><p class="rec">Needed for trade replay and Kronos forecasts; the provider choice depends on the launch market.</p></div>
+      </div>
+    </section>
+
+    <section id="sources">
+      <h2>Sources</h2>
+      <ul class="plain sources">
+        <li><a href="https://github.com/Eleven-Trading/TradeNote">TradeNote on GitHub</a></li>
+        <li><a href="https://github.com/hugodemenez/deltalytix">Deltalytix on GitHub</a></li>
+        <li><a href="https://github.com/satnaing/shadcn-admin">shadcn-admin on GitHub</a></li>
+        <li><a href="https://github.com/shiyu-coder/Kronos">Kronos on GitHub</a> and <a href="https://ojs.aaai.org/index.php/AAAI/article/view/39730">AAAI 2026 paper</a></li>
+        <li><a href="https://github.com/AI4Finance-Foundation/FinGPT">FinGPT on GitHub</a></li>
+        <li><a href="https://adminlte.io/blog/free-shadcn-admin-dashboards">Free shadcn admin dashboards (AdminLTE)</a></li>
+      </ul>
+    </section>
+
+    <footer>Prepared for the Sesami team. Product brand: Quantiva (quantiva.ai). This is a plan only; no code in stock-market-system has been changed.</footer>
+  </main>
+</div>
+
+</html>
