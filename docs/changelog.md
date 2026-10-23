@@ -2,6 +2,34 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: refresh-token endpoint; web app sessions renew themselves
+
+### Features
+
+| Feature | Where |
+|---|---|
+| `POST /api/v1/users/refresh` `{refreshToken}`: returns a new access token (role and email read from the database) and the same refresh token. Rejects bad signature, expired, tampered or access tokens, unknown users and blocked statuses with one `401 Invalid refresh token`. | `user-service` `UserServiceImpl.refresh`, `RefreshRequest`, `InvalidRefreshTokenException` (typed, mapped in `GlobalExceptionHandler`) |
+| `/api/v1/users/refresh` is a **public path** (the access token has expired; the refresh token is in the body). Refresh tokens are still rejected as Bearer tokens everywhere else. | `api-gateway` `JwtAuthFilter.PUBLIC_PATHS` |
+| The web app renews the access cookie from the refresh cookie when it expires or user-service answers 401, retries once, and ends the session only when the refresh token is really invalid. A gateway outage during renewal does not log anyone out. "Remember me" now keeps the refresh cookie for 7 days (otherwise it ends with the browser session). | `web-app` `app/api/auth/me`, `lib/auth/server.ts`, `proxy.ts` |
+
+### Compatibility and limits
+
+- New endpoint only; no existing request or response changed.
+- Refresh tokens stay stateless: not rotated, not revocable, no logout endpoint, so a stolen token works until it expires or the user's status blocks it.
+- Found while working: **login does not check the user status** (a SUSPENDED user can still log in). Not changed here; listed in the gaps in the root `CLAUDE.md`, the user-service README and the technical documentation.
+- No rate limiting on `/login` or `/refresh`.
+
+### Changes to existing files
+
+| File | Change |
+|---|---|
+| `user-service/README.md`, `api-gateway/README.md`, `docs/user-manual.md`, `docs/technical-documentation.md` (section 9 and the gaps table), root `CLAUDE.md` (gaps) | Endpoint, public path and the corrected limitations |
+| `docs/postman/generate_collection.py` and the generated collection | 4 new requests (refresh, access token rejected, garbage rejected, missing token); 102 → 106 requests |
+
+### Tests
+
+user-service 43 tests pass (10 new: real-token round trip, access token refused, expired, other secret, tampered, unknown user, blocked statuses, controller 200/401/400); api-gateway 10 tests pass (1 new). Web app: 31 of 31 browser checks against the mock gateway (6 new: renewal from the refresh cookie, 401 retried once, invalid token ends the session, blocked user, outage keeps the session, cookie lifetimes). Not run through the real gateway, MySQL or Newman.
+
 ## 2026-10-24: user-service stores profile fields collected at registration
 
 ### Features

@@ -76,8 +76,23 @@ class JwtAuthFilterTest {
     void publicAndNonApiPaths_passWithoutToken() throws Exception {
         MockHttpServletRequest login = new MockHttpServletRequest("POST", "/api/v1/users/login");
         assertThat(run(login).getStatus()).isEqualTo(200);
+        MockHttpServletRequest refresh = new MockHttpServletRequest("POST", "/api/v1/users/refresh");
+        assertThat(run(refresh).getStatus()).isEqualTo(200);
         assertThat(run(get("/api/v1/market-data/stocks/AAPL")).getStatus()).isEqualTo(200);
         assertThat(run(get("/actuator/health")).getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    void refreshEndpointIsPublic_butRefreshTokensStillCannotCallProtectedPaths() throws Exception {
+        // Public: no Authorization header needed (the access token has expired by then). Like login and register,
+        // public paths skip the filter, so the user-service refresh handler must never read X-User-* (it does not).
+        MockHttpServletRequest refresh = new MockHttpServletRequest("POST", "/api/v1/users/refresh");
+        assertThat(run(refresh).getStatus()).isEqualTo(200);
+
+        // The rule that makes the endpoint necessary stays: a refresh token as a Bearer token is rejected elsewhere.
+        MockHttpServletRequest protectedPath = get("/api/v1/users/me");
+        protectedPath.addHeader("Authorization", "Bearer " + token("REFRESH", SECRET, ISSUER, 60));
+        assertThat(run(protectedPath).getStatus()).isEqualTo(401);
     }
 
     @Test

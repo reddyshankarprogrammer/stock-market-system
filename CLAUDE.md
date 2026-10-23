@@ -108,7 +108,7 @@ Logs: `logs/<service>.log`; process ids: `logs/pids.txt`. No linter is configure
 - portfolio-service `GET /api/v1/portfolio/{userId}` has no ownership check.
 - order-service SELL is not checked against holdings; no compensation if saving fails after funds moved.
 - Market data only simulates six US stocks; external price APIs are unused.
-- No refresh-token endpoint; login with unknown e-mail returns 404.
+- Refresh tokens (`POST /api/v1/users/refresh`) are stateless: not rotated, not revocable, no logout endpoint; login with unknown e-mail returns 404 and login ignores the user status.
 - Notifications are in memory; account-service Kafka events have no consumers.
 - Broker statement column mappings are not yet confirmed with real files.
 - `user-service/application-docker.yaml` and `JwtService` still contain fallback values for the DB password and `jwt.secret`; Kubernetes always sets them, but the fallbacks should be removed.

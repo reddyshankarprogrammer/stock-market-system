@@ -10,6 +10,9 @@ public interface UserService {
 
     AuthResponse login(LoginRequest request);
 
+    /** Exchange a valid refresh token for a new access token. The refresh token is returned unchanged (not rotated). */
+    AuthResponse refresh(RefreshRequest request);
+
     UserResponse getUserById(String userId);
 
     UserResponse addFunds(String userId, BigDecimal amount);

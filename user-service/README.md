@@ -39,6 +39,7 @@ com.stockmarket.userservice
 |---|---|---|---|
 | POST | `/register` | public | Create user (BCrypt), wallet = `initialBalance` (default 10000), publish `user.registered`, return tokens (201). Duplicate e-mail → 400. Optional profile fields below |
 | POST | `/login` | public | Tokens. Unknown e-mail → 404, wrong password → 401 |
+| POST | `/refresh` | public | Body `{refreshToken}`. Returns a new access token and the same refresh token (not rotated). Bad, expired, tampered or access token, unknown user, or a blocked status (INACTIVE, SUSPENDED, DELETED, BLOCKED, BANNED, ACCOUNT_LOCKED/EXPIRED/DISABLED) → 401 `Invalid refresh token`. Public because the access token has already expired; the gateway rejects refresh tokens on every other path |
 | GET | `/me` | X-User-Id | Own profile |
 | GET | `/{userId}` | X-User-Id (+ X-User-Role) | Own profile, or any profile for ADMIN; else 403 |
 | POST | `/{userId}/funds/add?amount=` | X-User-Id | Owner only; amount > 0 |
@@ -77,7 +78,7 @@ Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, acc
 | Token | Lifetime | Claims |
 |---|---|---|
 | Access | `jwt.access-token-expiry-minutes` (15) | `sub`=userId, `userId`, `email`, `role`, `tokenType=ACCESS`, `iss` |
-| Refresh | `jwt.refresh-token-expiry-days` (7) | `sub`, `userId`, `tokenType=REFRESH` (no refresh endpoint exists yet) |
+| Refresh | `jwt.refresh-token-expiry-days` (7) | `sub`, `userId`, `tokenType=REFRESH`; exchanged at `POST /refresh` |
 
 `generateAccessToken(userId, email)` defaults the role to USER; `generateAccessToken(userId, email, role)` is what register/login use. `extractRole` returns USER for tokens without the claim.
 
@@ -98,6 +99,8 @@ Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, acc
 ## Known limitations
 
 - Login with an unknown e-mail returns 404 (reveals registered e-mails); should be 401.
-- No refresh endpoint; refresh tokens are issued but unused.
+- Refresh tokens are stateless: they are not rotated and cannot be revoked, so a stolen one works until it expires (7 days) or the user's status blocks it. There is no logout endpoint (the web app only clears its cookies).
+- Login does not check `status`, so a SUSPENDED user can still log in; only `/refresh` refuses blocked statuses.
+- No rate limiting on `/login` or `/refresh`.
 - `GlobalExceptionHandler` maps generic `RuntimeException`s by message text ("not found" → 404, "invalid credentials" → 401); prefer typed exceptions.
 - `JWT_EXPIRATION` in `.env` is not read (`jwt.access-token-expiry-minutes` is).

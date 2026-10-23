@@ -16,6 +16,8 @@ import java.util.*;
 
 import com.stockmarket.userservice.entity.Gender;
 import com.stockmarket.userservice.entity.User;
+import com.stockmarket.userservice.entity.UserStatus;
+import com.stockmarket.userservice.exception.InvalidRefreshTokenException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
@@ -145,6 +147,32 @@ public class UserServiceImpl implements UserService {
                 refreshToken);
     }
 
+
+    // Statuses that must not get a new access token. Note: login does not check status today (known gap in the README).
+    private static final Set<UserStatus> REFRESH_DENIED = EnumSet.of(
+            UserStatus.INACTIVE, UserStatus.SUSPENDED, UserStatus.DELETED, UserStatus.BLOCKED, UserStatus.BANNED,
+            UserStatus.ACCOUNT_LOCKED, UserStatus.ACCOUNT_EXPIRED, UserStatus.ACCOUNT_DISABLED);
+
+    @Override
+    public AuthResponse refresh(RefreshRequest request) {
+        String refreshToken = request.getRefreshToken();
+
+        // Signature, expiry and token type are all checked; an access token must never work here.
+        if (!jwtService.validateToken(refreshToken)
+                || !JwtService.TokenType.REFRESH.name().equals(jwtService.extractTokenType(refreshToken))) {
+            throw new InvalidRefreshTokenException();
+        }
+
+        User user = userRepository.findById(jwtService.extractUserId(refreshToken))
+                .orElseThrow(InvalidRefreshTokenException::new);
+        if (user.getStatus() != null && REFRESH_DENIED.contains(user.getStatus())) {
+            throw new InvalidRefreshTokenException();
+        }
+
+        log.info("Access token refreshed for user: {}", user.getId());
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
+        return buildAuthResponse(user, accessToken, refreshToken);
+    }
 
     @Override
     public UserResponse getUserById(String userId) {

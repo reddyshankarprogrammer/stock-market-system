@@ -23,6 +23,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidRefreshToken(InvalidRefreshTokenException ex) {
+        log.warn("Refresh rejected");
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
     @ExceptionHandler(UserAccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleUserAccessDenied(UserAccessDeniedException ex) {
         log.warn("Access denied: {}", ex.getMessage());

@@ -58,6 +58,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private static final List<String> PUBLIC_PATHS = List.of(
             "/api/v1/users/register",
             "/api/v1/users/login",
+            "/api/v1/users/refresh", // the refresh token is in the body; the expired access token cannot be required here
             "/api/v1/market-data/**");
 
     // Service-to-service endpoints, never exposed to clients: wallet settlement called by order-service.

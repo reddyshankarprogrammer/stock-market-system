@@ -2,6 +2,7 @@ package com.stockmarket.userservice.controller;
 
 import com.stockmarket.userservice.dto.AuthResponse;
 import com.stockmarket.userservice.dto.LoginRequest;
+import com.stockmarket.userservice.dto.RefreshRequest;
 import com.stockmarket.userservice.dto.RegisterRequest;
 import com.stockmarket.userservice.dto.UserResponse;
 import com.stockmarket.userservice.exception.UserAccessDeniedException;
@@ -36,6 +37,17 @@ public class UserController {
             @Valid @RequestBody LoginRequest request) {
 
         return ResponseEntity.ok(userService.login(request));
+    }
+
+    /**
+     * Public (the gateway cannot require an access token here: the old one has expired). The refresh token travels
+     * in the body, never in the Authorization header, because the gateway rejects refresh tokens on protected paths.
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(
+            @Valid @RequestBody RefreshRequest request) {
+
+        return ResponseEntity.ok(userService.refresh(request));
     }
 
     @GetMapping("/me")

@@ -102,6 +102,43 @@ class UserControllerTest {
     }
 
     @Test
+    void refresh_ValidToken_ReturnsNewAccessToken() throws Exception {
+        AuthResponse authResponse = new AuthResponse();
+        authResponse.setUserId("user-1");
+        authResponse.setAccessToken("new-access");
+        authResponse.setRefreshToken("same-refresh");
+        when(userService.refresh(any(com.stockmarket.userservice.dto.RefreshRequest.class))).thenReturn(authResponse);
+
+        mockMvc.perform(post("/api/v1/users/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"same-refresh\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("new-access"))
+                .andExpect(jsonPath("$.refreshToken").value("same-refresh"));
+    }
+
+    @Test
+    void refresh_InvalidToken_ReturnsUnauthorized() throws Exception {
+        when(userService.refresh(any(com.stockmarket.userservice.dto.RefreshRequest.class)))
+                .thenThrow(new com.stockmarket.userservice.exception.InvalidRefreshTokenException());
+
+        mockMvc.perform(post("/api/v1/users/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"bad\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Invalid refresh token"));
+    }
+
+    @Test
+    void refresh_BlankToken_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/v1/users/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"\"}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(userService);
+    }
+
+    @Test
     void login_ValidRequest_ReturnsOk() throws Exception {
         LoginRequest request = new LoginRequest();
         request.setEmail("user@example.com");

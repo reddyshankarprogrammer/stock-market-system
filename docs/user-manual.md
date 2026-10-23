@@ -175,6 +175,7 @@ All paths are relative to `http://localhost:8080`. 🔒 means a token is require
 |---|---|---|---|
 | POST | `/api/v1/users/register` | public | Create an account and log in |
 | POST | `/api/v1/users/login` | public | Log in, get new tokens |
+| POST | `/api/v1/users/refresh` | public | Exchange a refresh token for a new access token |
 | GET | `/api/v1/users/me` | 🔒 | Your profile and wallet balance |
 | GET | `/api/v1/users/{userId}` | 🔒 | A profile by id (only your own) |
 | POST | `/api/v1/users/{userId}/funds/add?amount=` | 🔒 | Add money to your wallet (only your own) |
@@ -203,6 +204,14 @@ Returns `201 Created` with the body shown in [step 1](#step-1-create-an-account)
 ```
 
 Returns `200 OK` with the same body as register.
+
+**Refresh** `POST /api/v1/users/refresh`
+
+```json
+{ "refreshToken": "eyJhbGciOiJIUzI1NiJ9..." }
+```
+
+Returns `200 OK` with the same body, a **new** `accessToken` and the **same** `refreshToken`. Send the refresh token in the body, never as a Bearer token (the gateway rejects it there). A bad, expired or tampered token, an access token, an unknown user or a blocked account gives `401` with `Invalid refresh token`.
 
 **My profile** `GET /api/v1/users/me` 🔒
 
@@ -453,7 +462,7 @@ A failed order adds `orderId`.
 - All orders are **market orders**: they fill immediately at the current price. There are no limit orders, order books or cancellations.
 - A BUY needs enough wallet balance for `price × quantity`.
 - **Known issue**: a SELL is not yet checked against your holdings, so selling shares you do not own currently succeeds and credits your wallet. Do not rely on this; it will be fixed.
-- Access tokens last 15 minutes. There is no refresh endpoint yet; log in again to get a new token.
+- Access tokens last 15 minutes. Use `POST /api/v1/users/refresh` with your refresh token (valid 7 days) to get a new one; after that, log in again.
 - Prices are simulated (a random walk of up to ±0.25% per minute), not real market data.
 - Notification messages show amounts as "AED", while stock prices are in USD. The wallet has no real currency.
 
