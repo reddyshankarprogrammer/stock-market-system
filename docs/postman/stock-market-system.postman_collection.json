@@ -308,7 +308,7 @@
             "description": "Publishes user.registered; notification-service creates a WELCOME notification.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"firstName\": \"Asha\",\n  \"lastName\": \"Rao\",\n  \"initialBalance\": 10000\n}"
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"firstName\": \"Asha\",\n  \"lastName\": \"Rao\",\n  \"initialBalance\": 10000,\n  \"mobileCountryCode\": \"+91\",\n  \"mobileNumber\": \"9876543210\",\n  \"gender\": \"FEMALE\",\n  \"country\": \"IN\",\n  \"termsVersion\": \"2026-10-24-draft\"\n}"
             },
             "auth": {
               "type": "noauth"
@@ -455,7 +455,10 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Is me', () => pm.expect(pm.response.json().id).to.eql(pm.environment.get('userId')));"
+                  "pm.test('Is me', () => pm.expect(pm.response.json().id).to.eql(pm.environment.get('userId')));",
+                  "const me = pm.response.json();",
+                  "pm.test('Profile fields were saved', () => { pm.expect(me.mobileCountryCode).to.eql('+91'); pm.expect(me.mobileNumber).to.eql('9876543210'); pm.expect(me.gender).to.eql('FEMALE'); pm.expect(me.country).to.eql('IN'); pm.expect(me.termsVersion).to.eql('2026-10-24-draft'); });",
+                  "pm.test('Terms acceptance time is set by the server', () => pm.expect(me.termsAcceptedAt).to.be.a('string'));"
                 ]
               }
             }

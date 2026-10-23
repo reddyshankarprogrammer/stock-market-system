@@ -188,6 +188,11 @@ All paths are relative to `http://localhost:8080`. 🔒 means a token is require
 | `firstName` | yes | not blank |
 | `lastName` | yes | not blank |
 | `initialBalance` | no | starting wallet amount, default `10000` |
+| `mobileCountryCode` | no | `+` and 1–4 digits, e.g. `+91`; send together with `mobileNumber` |
+| `mobileNumber` | no | 6–14 digits; stored as entered, not verified |
+| `gender` | no | `MALE` or `FEMALE` |
+| `country` | no | 2-letter uppercase ISO code, e.g. `IN` |
+| `termsVersion` | no | version of the Terms and Risk Disclaimer accepted; the server records the time |
 
 Returns `201 Created` with the body shown in [step 1](#step-1-create-an-account).
 

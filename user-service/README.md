@@ -15,7 +15,7 @@ Accounts of people: registration, login, JWT issuing, profile, role and the wall
 
 ```powershell
 .\mvnw.cmd spring-boot:run        # from user-service/, needs MySQL + Kafka (docker compose up -d)
-.\mvnw.cmd test                   # 23 tests, no infrastructure (H2, mocks)
+.\mvnw.cmd test                   # 33 tests, no infrastructure (H2, mocks)
 ```
 
 ## Package layout
@@ -37,7 +37,7 @@ com.stockmarket.userservice
 
 | Method | Path | Auth | Behaviour |
 |---|---|---|---|
-| POST | `/register` | public | Create user (BCrypt), wallet = `initialBalance` (default 10000), publish `user.registered`, return tokens. Duplicate e-mail → 400 |
+| POST | `/register` | public | Create user (BCrypt), wallet = `initialBalance` (default 10000), publish `user.registered`, return tokens (201). Duplicate e-mail → 400. Optional profile fields below |
 | POST | `/login` | public | Tokens. Unknown e-mail → 404, wrong password → 401 |
 | GET | `/me` | X-User-Id | Own profile |
 | GET | `/{userId}` | X-User-Id (+ X-User-Role) | Own profile, or any profile for ADMIN; else 403 |
@@ -45,7 +45,17 @@ com.stockmarket.userservice
 | POST | `/{userId}/funds/deduct?amount=` | none | **Internal** (order-service); gateway blocks it. Insufficient → 400 |
 | POST | `/{userId}/funds/credit?amount=` | none | **Internal** (order-service); gateway blocks it |
 
-Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, accessToken, refreshToken, tokenType}`, `UserResponse {id, email, firstName, lastName, walletBalance, status, createdAt, role}`.
+**Optional register fields** (the web app makes them mandatory; the API keeps them optional so older clients still work). Validated when present:
+
+| Field | Rule |
+|---|---|
+| `mobileCountryCode` | `+` and 1–4 digits, e.g. `+91`. Must be sent together with `mobileNumber` |
+| `mobileNumber` | 6–14 digits, national number only. Stored as entered, **not verified** (no OTP) |
+| `gender` | `MALE` or `FEMALE` |
+| `country` | 2-letter uppercase ISO code, e.g. `IN` |
+| `termsVersion` | Version of the Terms and Risk Disclaimer accepted (max 50 characters). The server sets `termsAcceptedAt` itself; a client-sent time is never used |
+
+Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, accessToken, refreshToken, tokenType}`, `UserResponse {id, email, firstName, lastName, walletBalance, status, createdAt, role, mobileCountryCode, mobileNumber, gender, country, termsVersion, termsAcceptedAt}` (the new fields are `null` for users who registered before they existed).
 
 ## Data model: `users`
 
@@ -59,6 +69,8 @@ Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, acc
 | status | `UserStatus`, default ACTIVE |
 | role | `varchar(20) not null default 'USER'` (`USER` / `ADMIN`) |
 | created_at | |
+| mobile_country_code, mobile_number, gender, country | nullable profile fields (`varchar`; `gender` is `MALE`/`FEMALE`); existing users have none |
+| terms_version, terms_accepted_at | nullable; set together at registration, time from the server clock |
 
 ## Tokens (`JwtService`)
 
@@ -71,7 +83,7 @@ Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, acc
 
 ## Events
 
-`user.registered`, key userId: `{userId, email, firstName, lastName, walletBalance}`. Consumed by notification-service.
+`user.registered`, key userId: `{userId, email, firstName, lastName, walletBalance}`. Consumed by notification-service. The mobile number, gender, country and terms fields are deliberately **not** published (personal data nobody downstream needs); a test pins this contract.
 
 ## Configuration
 

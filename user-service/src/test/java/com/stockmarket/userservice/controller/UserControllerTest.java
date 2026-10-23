@@ -65,6 +65,42 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.accessToken").value("token-123"));
     }
 
+    private static final String BASE_REGISTER = "\"email\":\"user@example.com\",\"password\":\"SecurePass123!\",\"firstName\":\"John\",\"lastName\":\"Doe\"";
+
+    @Test
+    void register_WithProfileFields_PassesThemToTheService() throws Exception {
+        when(userService.register(any(RegisterRequest.class))).thenReturn(new AuthResponse());
+
+        mockMvc.perform(post("/api/v1/users/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{" + BASE_REGISTER + ",\"mobileCountryCode\":\"+91\",\"mobileNumber\":\"9876543210\","
+                                + "\"gender\":\"FEMALE\",\"country\":\"IN\",\"termsVersion\":\"2026-10-24-draft\"}"))
+                .andExpect(status().isCreated());
+
+        org.mockito.ArgumentCaptor<RegisterRequest> sent = org.mockito.ArgumentCaptor.forClass(RegisterRequest.class);
+        org.mockito.Mockito.verify(userService).register(sent.capture());
+        org.junit.jupiter.api.Assertions.assertEquals("+91", sent.getValue().getMobileCountryCode());
+        org.junit.jupiter.api.Assertions.assertEquals("9876543210", sent.getValue().getMobileNumber());
+        org.junit.jupiter.api.Assertions.assertEquals("FEMALE", sent.getValue().getGender());
+        org.junit.jupiter.api.Assertions.assertEquals("IN", sent.getValue().getCountry());
+    }
+
+    @Test
+    void register_InvalidProfileFields_ReturnsBadRequest() throws Exception {
+        for (String bad : new String[] {
+                "\"gender\":\"OTHER\"",
+                "\"country\":\"india\"",
+                "\"mobileCountryCode\":\"91\",\"mobileNumber\":\"9876543210\"",
+                "\"mobileCountryCode\":\"+91\",\"mobileNumber\":\"12ab\"",
+                "\"mobileCountryCode\":\"+91\"" }) {
+            mockMvc.perform(post("/api/v1/users/register")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{" + BASE_REGISTER + "," + bad + "}"))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(userService);
+    }
+
     @Test
     void login_ValidRequest_ReturnsOk() throws Exception {
         LoginRequest request = new LoginRequest();
@@ -88,7 +124,7 @@ class UserControllerTest {
 
     @Test
     void getUserById_ReturnsOk() throws Exception {
-        UserResponse response = new UserResponse("user-1", "user@example.com", "John", "Doe", BigDecimal.valueOf(5000), UserStatus.ACTIVE, LocalDateTime.now(), Role.USER);
+        UserResponse response = new UserResponse("user-1", "user@example.com", "John", "Doe", BigDecimal.valueOf(5000), UserStatus.ACTIVE, LocalDateTime.now(), Role.USER, null, null, null, null, null, null);
 
         when(userService.getUserById("user-1")).thenReturn(response);
 
@@ -108,7 +144,7 @@ class UserControllerTest {
 
     @Test
     void getUserById_OtherUserAsAdmin_ReturnsOk() throws Exception {
-        UserResponse response = new UserResponse("user-2", "other@example.com", "Jane", "Roe", BigDecimal.valueOf(100), UserStatus.ACTIVE, LocalDateTime.now(), Role.USER);
+        UserResponse response = new UserResponse("user-2", "other@example.com", "Jane", "Roe", BigDecimal.valueOf(100), UserStatus.ACTIVE, LocalDateTime.now(), Role.USER, null, null, null, null, null, null);
         when(userService.getUserById("user-2")).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/users/user-2").header("X-User-Id", "admin-1").header("X-User-Role", "ADMIN"))
@@ -124,7 +160,7 @@ class UserControllerTest {
 
     @Test
     void addFunds_ReturnsOk() throws Exception {
-        UserResponse response = new UserResponse("user-1", "user@example.com", "John", "Doe", BigDecimal.valueOf(6000), UserStatus.ACTIVE, LocalDateTime.now(), Role.USER);
+        UserResponse response = new UserResponse("user-1", "user@example.com", "John", "Doe", BigDecimal.valueOf(6000), UserStatus.ACTIVE, LocalDateTime.now(), Role.USER, null, null, null, null, null, null);
 
         when(userService.addFunds(eq("user-1"), any(BigDecimal.class))).thenReturn(response);
 

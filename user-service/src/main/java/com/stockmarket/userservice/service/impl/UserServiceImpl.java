@@ -10,9 +10,11 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 
 
+import com.stockmarket.userservice.entity.Gender;
 import com.stockmarket.userservice.entity.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -46,6 +48,15 @@ public class UserServiceImpl implements UserService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
+
+        user.setMobileCountryCode(request.getMobileCountryCode());
+        user.setMobileNumber(request.getMobileNumber());
+        user.setGender(request.getGender() != null ? Gender.valueOf(request.getGender()) : null);
+        user.setCountry(request.getCountry());
+        if (request.getTermsVersion() != null) {
+            user.setTermsVersion(request.getTermsVersion());
+            user.setTermsAcceptedAt(LocalDateTime.now()); // server time, never taken from the client
+        }
 
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
@@ -195,7 +206,13 @@ public class UserServiceImpl implements UserService {
                 user.getWalletBalance(),
                 user.getStatus(),
                 user.getCreatedAt(),
-                user.getRole()
+                user.getRole(),
+                user.getMobileCountryCode(),
+                user.getMobileNumber(),
+                user.getGender(),
+                user.getCountry(),
+                user.getTermsVersion(),
+                user.getTermsAcceptedAt()
         );
     }
 }

@@ -49,6 +49,26 @@ public class User {
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    // Profile fields (all nullable: existing users have none, so Hibernate can add the columns without defaults).
+    @Column(length = 8)
+    private String mobileCountryCode;
+
+    @Column(length = 20)
+    private String mobileNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private Gender gender;
+
+    @Column(length = 2)
+    private String country;
+
+    /** Version of the Terms and Risk Disclaimer accepted at registration, and when (server time). */
+    @Column(length = 50)
+    private String termsVersion;
+
+    private LocalDateTime termsAcceptedAt;
 }
 
 

@@ -1,5 +1,6 @@
 package com.stockmarket.userservice.dto;
 
+import com.stockmarket.userservice.entity.Gender;
 import com.stockmarket.userservice.entity.Role;
 import com.stockmarket.userservice.entity.UserStatus;
 
@@ -27,4 +28,10 @@ public class UserResponse {
     private UserStatus status;
     private LocalDateTime createdAt;
     private Role role;
+    private String mobileCountryCode;
+    private String mobileNumber;
+    private Gender gender;
+    private String country;
+    private String termsVersion;
+    private LocalDateTime termsAcceptedAt;
 }

@@ -81,7 +81,9 @@ collection = {
                "user-service through the gateway. Register creates a fresh user on every run.", [
                    req("Register", "POST", f"{G}/api/v1/users/register", auth=False,
                        body={"email": "{{email}}", "password": "{{password}}", "firstName": "Asha",
-                             "lastName": "Rao", "initialBalance": 10000},
+                             "lastName": "Rao", "initialBalance": 10000,
+                             "mobileCountryCode": "+91", "mobileNumber": "9876543210", "gender": "FEMALE",
+                             "country": "IN", "termsVersion": "2026-10-24-draft"},
                        events=pre("// Unique email per run so Register never collides with an existing user",
                                   "pm.environment.set('email', `user${Date.now()}@example.com`);")
                        + tests(status(201),
@@ -104,7 +106,10 @@ collection = {
                                     "pm.test('Field errors', () => pm.expect(pm.response.json().errors).to.have.property('email'));")),
                    req("Get my profile", "GET", f"{G}/api/v1/users/me",
                        events=tests(status(200),
-                                    "pm.test('Is me', () => pm.expect(pm.response.json().id).to.eql(pm.environment.get('userId')));")),
+                                    "pm.test('Is me', () => pm.expect(pm.response.json().id).to.eql(pm.environment.get('userId')));",
+                                    "const me = pm.response.json();",
+                                    "pm.test('Profile fields were saved', () => { pm.expect(me.mobileCountryCode).to.eql('+91'); pm.expect(me.mobileNumber).to.eql('9876543210'); pm.expect(me.gender).to.eql('FEMALE'); pm.expect(me.country).to.eql('IN'); pm.expect(me.termsVersion).to.eql('2026-10-24-draft'); });",
+                                    "pm.test('Terms acceptance time is set by the server', () => pm.expect(me.termsAcceptedAt).to.be.a('string'));")),
                    req("Get user by id (own)", "GET", f"{G}/api/v1/users/{{{{userId}}}}", events=tests(status(200))),
                    req("Add funds", "POST", f"{G}/api/v1/users/{{{{userId}}}}/funds/add?amount=5000",
                        events=tests(status(200),

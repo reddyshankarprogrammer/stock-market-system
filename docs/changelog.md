@@ -2,6 +2,34 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: user-service stores profile fields collected at registration
+
+### Features
+
+| Feature | Where |
+|---|---|
+| `POST /api/v1/users/register` accepts optional `mobileCountryCode`, `mobileNumber`, `gender` (`MALE`/`FEMALE`), `country` (ISO alpha-2) and `termsVersion`; validated when present; country code and number must come together. The server records `termsAcceptedAt` from its own clock. | `user-service` `RegisterRequest`, `UserServiceImpl` |
+| `GET /api/v1/users/me` (and the other `UserResponse` endpoints) return the six new fields, `null` for users registered earlier | `UserResponse` (new fields last) |
+| New nullable columns on `users` (Hibernate `update`, no data migration needed) | `entity/User`, new `entity/Gender` |
+
+### Compatibility
+
+- All new request fields are optional, so existing clients and the old Postman request keep working.
+- The `user.registered` Kafka map is unchanged on purpose: mobile, gender and country are personal data no consumer needs. A test pins the key set.
+- account-service ignores unknown fields in its `UserDto`, so it needs no change.
+
+### Changes to existing files
+
+| File | Change |
+|---|---|
+| `user-service/README.md`, `docs/user-manual.md`, `docs/technical-documentation.md` | API fields, data model and ER diagram; test count 23 → 33 |
+| `docs/postman/generate_collection.py` and the generated collection | Register sends the fields; Get my profile asserts them |
+| `web-app/app/api/auth/register/route.ts` | Forwards the fields; the "not saved yet" notice is gone |
+
+### Tests
+
+5 new user-service tests (fields saved, acceptance time from the server, no fields still works, Kafka contract unchanged, validation of bad values); 33 tests pass. The web app's 25 browser checks run against a mock gateway and now verify the exact forwarded body. Not yet run against MySQL and the real gateway.
+
 ## 2026-10-18: GitOps bootstrap fixes (found on the first K3s install)
 
 ### Fixes

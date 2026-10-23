@@ -369,6 +369,12 @@ erDiagram
         decimal wallet_balance "15,2"
         varchar status "UserStatus"
         datetime created_at
+        varchar mobile_country_code "nullable"
+        varchar mobile_number "nullable, not verified"
+        varchar gender "nullable, MALE | FEMALE"
+        varchar country "nullable, ISO 3166 alpha-2"
+        varchar terms_version "nullable"
+        datetime terms_accepted_at "nullable, server time"
     }
     orders {
         varchar id PK "UUID"

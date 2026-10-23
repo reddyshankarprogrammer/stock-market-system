@@ -81,6 +81,76 @@ class UserServiceImplTest {
     }
 
     @Test
+    void register_WithProfileFields_SavesThemAndSetsAcceptanceTimeOnServer() {
+        registerRequest.setMobileCountryCode("+91");
+        registerRequest.setMobileNumber("9876543210");
+        registerRequest.setGender("FEMALE");
+        registerRequest.setCountry("IN");
+        registerRequest.setTermsVersion("2026-10-24-draft");
+        stubSuccessfulRegister();
+
+        java.time.LocalDateTime before = java.time.LocalDateTime.now();
+        userService.register(registerRequest);
+
+        org.mockito.ArgumentCaptor<User> saved = org.mockito.ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(saved.capture());
+        User user = saved.getValue();
+        assertEquals("+91", user.getMobileCountryCode());
+        assertEquals("9876543210", user.getMobileNumber());
+        assertEquals(com.stockmarket.userservice.entity.Gender.FEMALE, user.getGender());
+        assertEquals("IN", user.getCountry());
+        assertEquals("2026-10-24-draft", user.getTermsVersion());
+        assertNotNull(user.getTermsAcceptedAt(), "acceptance time is set by the server");
+        assertFalse(user.getTermsAcceptedAt().isBefore(before));
+    }
+
+    @Test
+    void register_WithoutProfileFields_StillWorksAndLeavesThemEmpty() {
+        stubSuccessfulRegister();
+
+        userService.register(registerRequest);
+
+        org.mockito.ArgumentCaptor<User> saved = org.mockito.ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(saved.capture());
+        User user = saved.getValue();
+        assertNull(user.getMobileNumber());
+        assertNull(user.getGender());
+        assertNull(user.getCountry());
+        assertNull(user.getTermsVersion());
+        assertNull(user.getTermsAcceptedAt(), "no terms version given, so no acceptance time");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void register_KafkaEventDoesNotCarryPersonalProfileFields() {
+        registerRequest.setMobileCountryCode("+91");
+        registerRequest.setMobileNumber("9876543210");
+        registerRequest.setGender("MALE");
+        registerRequest.setCountry("IN");
+        stubSuccessfulRegister();
+
+        userService.register(registerRequest);
+
+        org.mockito.ArgumentCaptor<Object> event = org.mockito.ArgumentCaptor.forClass(Object.class);
+        verify(kafkaTemplate).send(eq("user.registered"), eq("user-123"), event.capture());
+        java.util.Map<String, Object> map = (java.util.Map<String, Object>) event.getValue();
+        assertEquals(java.util.Set.of("userId", "email", "firstName", "lastName", "walletBalance"), map.keySet(),
+                "the user.registered contract is unchanged; mobile, gender and country are not published");
+    }
+
+    private void stubSuccessfulRegister() {
+        when(userRepository.existsByEmail(registerRequest.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            user.setId("user-123");
+            return user;
+        });
+        when(jwtService.generateAccessToken("user-123", "test@example.com", "USER")).thenReturn("mock-access-token");
+        when(jwtService.generateRefreshToken("user-123")).thenReturn("mock-refresh-token");
+    }
+
+    @Test
     void login_Success() {
         User user = new User();
         user.setId("user-123");
