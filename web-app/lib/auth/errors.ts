@@ -3,6 +3,7 @@
 export type AuthErrorCode =
   | "INVALID_CREDENTIALS" // wrong password (401) or unknown email (404): deliberately the same message
   | "EMAIL_TAKEN"
+  | "ACCOUNT_NOT_ACTIVE" // correct password, but the account is suspended, locked or similar
   | "INVALID_RESET_TOKEN" // the emailed link is wrong, used, expired or its account is blocked: one message for all
   | "VALIDATION"
   | "UNAUTHENTICATED"
@@ -24,6 +25,7 @@ export class AuthError extends Error {
 export const defaultMessages: Record<AuthErrorCode, string> = {
   INVALID_CREDENTIALS: "The email or password is incorrect.",
   EMAIL_TAKEN: "An account with this email already exists. Log in instead.",
+  ACCOUNT_NOT_ACTIVE: "This account is not active. Please contact support.",
   INVALID_RESET_TOKEN: "This reset link is invalid or has expired. Request a new one.",
   VALIDATION: "Please check the highlighted fields and try again.",
   UNAUTHENTICATED: "Your session has ended. Please log in again.",

@@ -181,6 +181,16 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 - **Mistakes caught on the way:** a shell command cut off (the known pitfall) so edits were moved into script files; two test selectors matched duplicate text (the subtitle repeats "Use at least 10 characters"); the Postman and docs edits were re-checked by regenerating (106 to 111 requests).
 - **Not verified:** MySQL (the tests use H2), Mailpit in Docker, the real gateway, Newman. No production email provider. Access tokens already issued survive a reset for up to 15 minutes. No rate limit on `/reset-password`. Expired reset tokens are never deleted.
 
+## 21. Push the password-reset branch, then login hardening (24 October)
+
+- **Request:** "go ahead with push and recommendation". `feature/password-reset` was pushed. My previous message had listed the open choices without picking one, so the recommendation was stated now: the **small login fix first**, because it closes two real security gaps found earlier (suspended users can still log in; login reveals which emails are registered) and is quick.
+- **Branch:** `feature/login-hardening` (cut from `feature/password-reset`; not pushed).
+- **user-service:** typed `InvalidCredentialsException` (401) and `AccountNotActiveException` (403) replace the message-text matching for login. Unknown email and wrong password give the same 401, and a dummy BCrypt comparison runs for an unknown email so timing does not reveal it. A blocking status is refused with 403 only after the correct password, so password guessing never reveals the status. Uses the existing `AccountPolicy`.
+- **Web app:** new `ACCOUNT_NOT_ACTIVE` code and message; the login route maps 403 to it. The mock gateway was updated to the real behaviour (unknown email now 401, blocked account 403 after the right password).
+- **Verified:** user-service **66 tests, 0 failures** (5 new); web app **39 of 39** browser checks (1 new); lint and build pass.
+- **Docs:** user-service README, technical documentation (two gap rows resolved), user manual, root `CLAUDE.md`, web-app README, changelog, plan (backend step 5 done; remaining MVP work 19 to 18 units), Postman 111 to 112 requests.
+- **Not verified:** MySQL, the real gateway, Newman. The change alters client-visible behaviour (unknown email is now 401, not 404). Blocking an account still leaves an issued access token valid for up to 15 minutes. No rate limiting on login.
+
 ## Open items after this session
 
 | Item | Where |

@@ -31,6 +31,7 @@ export async function mapUpstream(res: Response | null, context: "login" | "regi
   if (!res || res.status >= 500) return fail("UNAVAILABLE", 503);
   const body = (await res.json().catch(() => ({}))) as { message?: string };
   const text = String(body.message ?? "").toLowerCase();
+  if (context === "login" && res.status === 403) return fail("ACCOUNT_NOT_ACTIVE", 403); // only returned after a correct password
   if (context === "login" && (res.status === 401 || res.status === 404)) return fail("INVALID_CREDENTIALS", 401);
   if (context === "register" && res.status === 400 && /already|exist/.test(text)) return fail("EMAIL_TAKEN", 409);
   // The password is validated here before it is sent, so a 400 from the reset endpoint means the token was refused.

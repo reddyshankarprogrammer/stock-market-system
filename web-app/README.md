@@ -62,7 +62,7 @@ $env:API_GATEWAY_URL="http://localhost:8099"; npx next start -p 3100   # termina
 npm run e2e:auth                                                        # terminal 2: 25 browser checks, starts the mock gateway itself
 ```
 
-`e2e/mock-gateway.mjs` imitates the documented user-service behaviour (duplicate email 400, unknown email 404, wrong password 401, slow and failing gateways). For real use, run the whole system (`docker compose up -d`, `.\scripts\start-all.ps1`) and leave `API_GATEWAY_URL` at its default.
+`e2e/mock-gateway.mjs` imitates the documented user-service behaviour (duplicate email 400, unknown email and wrong password both 401, blocked account 403 after the correct password, slow and failing gateways). For real use, run the whole system (`docker compose up -d`, `.\scripts\start-all.ps1`) and leave `API_GATEWAY_URL` at its default.
 
 ## Not done yet
 

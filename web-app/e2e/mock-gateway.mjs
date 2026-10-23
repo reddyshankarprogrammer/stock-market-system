@@ -38,9 +38,10 @@ export function startMockGateway(port = 8099) {
     if (req.method === "POST" && req.url === "/api/v1/users/login") {
       if (body.email === "down@example.com") return send(500, { status: 500, message: "boom" });
       if (body.email === "slow@example.com") return setTimeout(() => send(200, {}), 9000);
-      if (body.email === "unknown@example.com") return send(404, { status: 404, message: `User not found: ${body.email}` });
+      if (body.email === "unknown@example.com") return send(401, { status: 401, message: "Invalid Credentials" }); // same as a wrong password
       if (passwords.has(body.email) && passwords.get(body.email) !== body.password) return send(401, { status: 401, message: "Invalid Credentials" });
       if (body.password === "WrongPass123") return send(401, { status: 401, message: "Invalid Credentials" });
+      if (body.email === "blocked-login@example.com") return send(403, { status: 403, message: "This account is not active" }); // only after the correct password
       return send(200, { userId: "u-1", email: body.email, firstName: "Test", lastName: "User", walletBalance: 10000, ...tokens(body.email) });
     }
     if (req.method === "POST" && req.url === "/api/v1/users/register") {

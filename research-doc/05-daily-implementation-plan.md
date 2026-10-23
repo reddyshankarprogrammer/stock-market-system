@@ -45,7 +45,7 @@ Follow `user-service/CLAUDE.md` and root `CLAUDE.md` section 5 (contract first; 
 | 2 | **DONE (24 Oct, branch `feature/refresh-token`; 43 user-service tests, 10 gateway tests, 31 web-app browser checks; not yet run on MySQL or the real gateway).** `POST /api/v1/users/refresh` (refresh token in the body, new access token out, same refresh token back), public path in the gateway `PUBLIC_PATHS`, typed 401 `Invalid refresh token`, blocked statuses refused. The web app renews the session itself and retries once. Not rotated and not revocable. | Without it a session ended after 15 minutes and "Remember me" had no effect. |
 | 3 | **DONE (24 Oct, branch `feature/password-reset`; 61 user-service tests, 38 web-app browser checks; not yet run on MySQL, with Mailpit in Docker, or through the real gateway).** `POST /api/v1/users/forgot-password` (always 202, same message, hash-only single-use token, 30 minutes, 60 s cooldown, background send) and `/reset-password` (one generic 400), `password_reset_tokens` table, `users.password_changed_at` so older refresh tokens end, Spring Mail with Mailpit in docker compose. **Open: a production email provider and the public web address** (`MAIL_HOST`, `MAIL_FROM`, `APP_BASE_URL` in `k8s/user-service/configmap.yaml`). | Forgot and Reset Password screens. |
 | 4 | Email verification: 6-digit code, verify and resend, attempt and rate limits. | Verify Email screen (pending). |
-| 5 | Return 401 instead of 404 for an unknown email at login (known limitation in `user-service/README.md`). | Stops revealing which emails are registered; the web app already hides it. |
+| 5 | **DONE (24 Oct, branch `feature/login-hardening`; 66 user-service tests, 39 web-app browser checks; not yet run on MySQL or the real gateway).** Unknown email and wrong password give the same 401 (typed exceptions, no message matching) with a dummy BCrypt check so timing does not leak; a blocking status is refused with 403 only after the correct password. | Stops revealing which emails are registered, and stops suspended users logging in. |
 | 6 | Profile and onboarding preferences endpoints (trading experience, broker preference, plan, completed flag). | Onboarding screens. |
 
 ### Remaining MVP work in the new order (estimates, in 2-hour units)
@@ -55,14 +55,14 @@ Follow `user-service/CLAUDE.md` and root `CLAUDE.md` section 5 (contract first; 
 | 1 | Decision log (launch market, billing provider, confirm the decisions above) and a short design check against the brand file | 1 |
 | 2 | ~~Backend step 1: profile fields and consent record; web app sends them~~ **done 24 Oct** (remaining: run it against MySQL and the gateway, then merge) | 0 (was 2) |
 | 3 | ~~Backend step 2: refresh endpoint; route handlers refresh on 401~~ **done 24 Oct** (remaining: run on MySQL and the real gateway, then merge) | 0 (was 2) |
-| 4 | ~~Backend step 3: forgot and reset password, email service, screens~~ **done 24 Oct**. Backend step 5 (401 instead of 404 for an unknown email at login, and a status check at login) remains | 1 (was 3) |
+| 4 | ~~Backend step 3: forgot and reset password, email service, screens~~ **done 24 Oct**. Backend step 5 (same 401 for an unknown email, status check at login) **also done 24 Oct** | 0 (was 3) |
 | 5 | Backend step 6 and Onboarding (4 steps) | 3 |
 | 6 | Web app deployment: Dockerfile, `k8s/web-app/`, Argo CD application, CI/CD lists, ingress (original unit 18) | 2 |
 | 7 | App shell and typed API client (original units 31–32) | 2 |
 | 8 | Settings screens and preferences (original units 33–36) | 4 |
 | 9 | Accounts, statement upload, trades, dashboard, portfolio, MVP demo (original units 37–40) | 4 |
 | 10 | Waitlist form on the landing page (original unit 23) | 2 |
-| | **Total** | **19** (25 before backend steps 1 to 3 were done) |
+| | **Total** | **18** (25 before backend steps 1 to 3 and 5 were done) |
 
 Moved to after the MVP: landing page clips 3–8, the hero video and "Watch Demo" modal, Verify Email (backend step 4), Keycloak with passkeys and social login (original units 6–16).
 
@@ -201,7 +201,7 @@ A block is five units, about 4 calendar days at this pace. Plan each block in de
 - **Weekend load:** 8 hours of weekend work after 10 hours on weekdays is heavy. Take one full free day every second week; that adds about one week to the end date.
 - Social providers Apple and LinkedIn need external approval; they are left out of units 1–40 and picked up when approved.
 - The Keycloak migration (units 11–14) is deferred. When it returns it touches the gateway and user-service, the most sensitive code; keep it on a branch until Newman passes.
-- **Refresh tokens are stateless** (not rotated, not revocable, no logout endpoint), and **login does not check the user status**: both need a decision (store token ids or a per-user token version; check status at login) before launch. No rate limiting on login or refresh.
+- **Refresh tokens are stateless** (not rotated, not revocable, no logout endpoint), and blocking an account leaves an issued access token valid for up to 15 minutes: both need a decision (store token ids or a per-user token version) before launch. No rate limiting on login, refresh or reset.
 - **Terms and Risk Disclaimer is a draft.** Acceptance (version and server time) is now stored per user, but counsel must review the text, and the stored version string must change whenever the text does.
 - The auth pages were tested against a mock gateway only (25 browser checks). Nothing has run against the real user-service, MySQL and Kafka yet; do that before relying on them.
 - **Choose a production email provider** (and the public web address for reset links) with the launch-market decision: until then reset emails only work locally through Mailpit. Verifying an email also needs it.

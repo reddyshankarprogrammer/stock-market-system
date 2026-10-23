@@ -88,6 +88,15 @@ await test("login: wrong password and unknown email give the same message", asyn
   const b = await alert.innerText();
   ok(/email or password is incorrect/i.test(a) && a === b, `"${a}" vs "${b}"`); await c.close();
 });
+await test("login: a blocked account sees its own message only after the correct password", async () => {
+  const c = await newCtx(); const p = await c.newPage();
+  await login(p, "blocked-login@example.com", "WrongPass123"); // wrong password: must NOT reveal the status
+  await p.locator("form [role=alert]").waitFor();
+  ok(/email or password is incorrect/i.test(await p.locator("form [role=alert]").innerText()), "status leaked to a wrong password");
+  await login(p, "blocked-login@example.com", "GoodPass123");
+  await p.getByText(/account is not active/i).waitFor();
+  ok(!(await c.cookies()).some((x) => x.name.startsWith("qv_")), "a blocked account must not get a session"); await c.close();
+});
 await test("login: gateway error (500) shows 'temporarily unavailable'", async () => {
   const c = await newCtx(); const p = await c.newPage(); await login(p, "down@example.com");
   await p.getByText(/temporarily unavailable/i).waitFor(); await c.close();
