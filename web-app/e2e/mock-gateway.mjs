@@ -21,6 +21,9 @@ export function startMockGateway(port = 8099) {
   const users = new Map(); // email -> {firstName, lastName}, so /me returns what was registered
   let lastRegister = null; // the last register body, so the test can check exactly what the web app forwarded
   let refreshCalls = 0;
+  const forgotRequests = []; // emails asked about, so the test can see the answer is the same for known and unknown
+  const resetTokens = new Map([["valid-reset-token-0123456789abcdef", "reset-me@example.com"], ["valid-reset-token-for-blocked-0123456789", "blocked@example.com"]]);
+  const passwords = new Map(); // email -> password set by a reset
   const tokens = (email) => ({ accessToken: jwt(email, "ACCESS", email === "shortlived@example.com" ? -5 : 900), refreshToken: jwt(email, "REFRESH", 7 * 86400), tokenType: "Bearer" });
 
   const server = createServer(async (req, res) => {
@@ -36,6 +39,7 @@ export function startMockGateway(port = 8099) {
       if (body.email === "down@example.com") return send(500, { status: 500, message: "boom" });
       if (body.email === "slow@example.com") return setTimeout(() => send(200, {}), 9000);
       if (body.email === "unknown@example.com") return send(404, { status: 404, message: `User not found: ${body.email}` });
+      if (passwords.has(body.email) && passwords.get(body.email) !== body.password) return send(401, { status: 401, message: "Invalid Credentials" });
       if (body.password === "WrongPass123") return send(401, { status: 401, message: "Invalid Credentials" });
       return send(200, { userId: "u-1", email: body.email, firstName: "Test", lastName: "User", walletBalance: 10000, ...tokens(body.email) });
     }
@@ -44,6 +48,18 @@ export function startMockGateway(port = 8099) {
       lastRegister = body;
       users.set(body.email, { firstName: body.firstName, lastName: body.lastName });
       return send(200, { userId: "u-2", email: body.email, firstName: body.firstName, lastName: body.lastName, walletBalance: 10000, ...tokens(body.email) });
+    }
+    if (req.method === "POST" && req.url === "/api/v1/users/forgot-password") {
+      forgotRequests.push(body.email);
+      if (body.email === "forgot-down@example.com") return send(500, { status: 500, message: "boom" });
+      return send(202, { message: "If an account exists for that email, a reset link has been sent" }); // identical for every email
+    }
+    if (req.method === "POST" && req.url === "/api/v1/users/reset-password") {
+      const email = resetTokens.get(body.token);
+      if (!email || email === "blocked@example.com") return send(400, { status: 400, message: "This reset link is invalid or has expired" });
+      resetTokens.delete(body.token); // single use
+      passwords.set(email, body.newPassword);
+      return send(200, { message: "Your password has been changed" });
     }
     if (req.method === "POST" && req.url === "/api/v1/users/refresh") {
       refreshCalls++;
@@ -59,7 +75,7 @@ export function startMockGateway(port = 8099) {
       return send(200, { id: c.sub, email: c.email, firstName: who.firstName, lastName: who.lastName, walletBalance: 10000, status: "ACTIVE", createdAt: "2026-10-24T00:00:00", role: c.role });
     }
     if (req.method === "GET" && req.url === "/__last-register") return send(200, lastRegister ?? {});
-    if (req.method === "GET" && req.url === "/__stats") return send(200, { refreshCalls });
+    if (req.method === "GET" && req.url === "/__stats") return send(200, { refreshCalls, forgotRequests, passwords: Object.fromEntries(passwords) });
     send(404, { message: "not found" });
   });
   return new Promise((resolve) => server.listen(port, () => resolve(server)));

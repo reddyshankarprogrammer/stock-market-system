@@ -27,12 +27,14 @@ export function fail(code: AuthErrorCode, status: number, message?: string) {
 }
 
 /** Translate a failed user-service response (or a missing one) into our error codes. Login hides whether an email exists. */
-export async function mapUpstream(res: Response | null, context: "login" | "register" | "me") {
+export async function mapUpstream(res: Response | null, context: "login" | "register" | "me" | "forgot" | "reset") {
   if (!res || res.status >= 500) return fail("UNAVAILABLE", 503);
   const body = (await res.json().catch(() => ({}))) as { message?: string };
   const text = String(body.message ?? "").toLowerCase();
   if (context === "login" && (res.status === 401 || res.status === 404)) return fail("INVALID_CREDENTIALS", 401);
   if (context === "register" && res.status === 400 && /already|exist/.test(text)) return fail("EMAIL_TAKEN", 409);
+  // The password is validated here before it is sent, so a 400 from the reset endpoint means the token was refused.
+  if (context === "reset" && res.status === 400) return fail("INVALID_RESET_TOKEN", 400);
   if (res.status === 400) return fail("VALIDATION", 400, body.message);
   if (res.status === 401 || res.status === 403) return fail("UNAUTHENTICATED", 401);
   return fail("UNKNOWN", 502);

@@ -1,5 +1,5 @@
 import { AuthError, defaultMessages, type AuthErrorCode } from "@/lib/auth/errors";
-import type { LoginValues, RegisterParsed } from "@/lib/auth/schemas";
+import type { ForgotValues, LoginValues, RegisterParsed, ResetValues } from "@/lib/auth/schemas";
 
 // Browser-side API for authentication. It talks only to our own route handlers (/api/auth/*, same origin),
 // which hold the tokens in httpOnly cookies and call user-service through the gateway. To move to another
@@ -36,6 +36,15 @@ export const authService = {
 
   logout: async (): Promise<void> => {
     await call("/api/auth/logout", { method: "POST", body: "{}" });
+  },
+
+  /** Always resolves the same way for any email, so the page cannot reveal whether an account exists. */
+  forgotPassword: async (v: ForgotValues): Promise<void> => {
+    await call("/api/auth/forgot-password", { method: "POST", body: JSON.stringify(v) });
+  },
+
+  resetPassword: async (v: ResetValues): Promise<void> => {
+    await call("/api/auth/reset-password", { method: "POST", body: JSON.stringify(v) });
   },
 
   me: async (): Promise<Profile> => (await call<{ user: Profile }>("/api/auth/me")).user,

@@ -23,12 +23,27 @@ export const loginSchema = z.object({
 export type LoginInput = z.input<typeof loginSchema>;
 export type LoginValues = z.output<typeof loginSchema>;
 
+export const forgotSchema = z.object({ email });
+export type ForgotValues = z.infer<typeof forgotSchema>;
+
 export const passwordRule = z
   .string()
   .min(10, "Use at least 10 characters")
   .max(72, "Use at most 72 characters")
   .refine((v) => /[A-Za-z]/.test(v), "Include at least one letter")
   .refine((v) => /\d/.test(v), "Include at least one number");
+
+// The reset token is 256 random bits, base64url (43 characters). Anything else is rejected before it reaches user-service.
+export const resetSchema = z
+  .object({
+    token: z.string().min(20, "This reset link is incomplete").max(200).regex(/^[A-Za-z0-9_-]+$/, "This reset link is invalid"),
+    password: passwordRule,
+    confirmPassword: z.string().min(1, "Confirm your password"),
+  })
+  .superRefine((v, ctx) => {
+    if (v.password !== v.confirmPassword) ctx.addIssue({ code: "custom", path: ["confirmPassword"], message: "Passwords do not match" });
+  });
+export type ResetValues = z.infer<typeof resetSchema>;
 
 // National number only; the dial code is chosen separately.
 const mobile = z

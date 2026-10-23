@@ -22,8 +22,9 @@ The work did not follow the unit order. The landing page, two clips and the sign
 | Landing page | Stages 1 and 2 built: header, hero, trust, platform, AI coach demo, solutions, pricing, security, FAQ, JSON-LD, placeholder legal pages. Two clips (P&L calendar, statement import) rendered with Playwright, 8.00 s each. Waitlist, hero video, clips 3–8 not done. | `web-app/`, [06-ai-prompt-library.md](06-ai-prompt-library.md), [07-feature-video-scripts.md](07-feature-video-scripts.md) |
 | Web app scaffold | Next.js 16, Tailwind 4, brand tokens (about half of unit 17). Dockerfile, `k8s/web-app/`, Argo CD and CI lists (unit 18) not done. | `web-app/README.md` |
 | Sign-up and login screens, stage A | Login, Register (9 required fields, read-to-the-end Terms and Risk Disclaimer), protected routes, dark and light mode, httpOnly session cookies, `auth-service.ts`, `auth-hooks.ts`, `auth-store.ts`. 25 browser checks pass against a mock gateway. | `web-app/lib/auth/`, `web-app/e2e/` |
-| Pending by request | Verify Email (6-digit OTP, verify, resend) and Send Reset Link. Their pages say "Not available yet". | `web-app/app/(auth)/` |
-| Not done | Design phase (Figma, decision log: units 1–5), Reset Password and Onboarding screens (stage B), everything on the backend listed below. | |
+| Forgot and Reset Password | Built (24 Oct, branch `feature/password-reset`): emailed single-use link (hash stored, 30 min), same answer for any email, older sessions end after a reset. Needs a production email provider. | `web-app/app/(auth)/`, `user-service` |
+| Pending by request | Verify Email (6-digit OTP, verify, resend). Its page says "Not available yet". | `web-app/app/(auth)/verify-email` |
+| Not done | Design phase (Figma, decision log: units 1–5), Onboarding screens, the other backend steps listed below. | |
 
 ### Decisions taken on 24 October
 
@@ -42,7 +43,7 @@ Follow `user-service/CLAUDE.md` and root `CLAUDE.md` section 5 (contract first; 
 |---|---|---|
 | 1 | **DONE (24 Oct, branch `feature/user-profile-fields`, 33 user-service tests pass, not yet run on MySQL).** Added nullable `mobile_country_code`, `mobile_number`, `gender`, `country`, `terms_version`, `terms_accepted_at` to `users`; optional validated fields on `RegisterRequest`; new fields last in `UserResponse`; the server sets the acceptance time. The `user.registered` Kafka map is **unchanged on purpose** (no personal data to consumers). The web app now forwards the fields and the "not saved" notice is gone. Postman, README, user manual, ER diagram and changelog updated. | Mandatory fields and the consent record are now stored. |
 | 2 | **DONE (24 Oct, branch `feature/refresh-token`; 43 user-service tests, 10 gateway tests, 31 web-app browser checks; not yet run on MySQL or the real gateway).** `POST /api/v1/users/refresh` (refresh token in the body, new access token out, same refresh token back), public path in the gateway `PUBLIC_PATHS`, typed 401 `Invalid refresh token`, blocked statuses refused. The web app renews the session itself and retries once. Not rotated and not revocable. | Without it a session ended after 15 minutes and "Remember me" had no effect. |
-| 3 | `POST /api/v1/users/forgot-password` and `/reset-password` (reset token table with expiry, one use), and an email service (Mailpit in development). Always answer the same way whether the email exists. | Forgot and Reset Password screens. |
+| 3 | **DONE (24 Oct, branch `feature/password-reset`; 61 user-service tests, 38 web-app browser checks; not yet run on MySQL, with Mailpit in Docker, or through the real gateway).** `POST /api/v1/users/forgot-password` (always 202, same message, hash-only single-use token, 30 minutes, 60 s cooldown, background send) and `/reset-password` (one generic 400), `password_reset_tokens` table, `users.password_changed_at` so older refresh tokens end, Spring Mail with Mailpit in docker compose. **Open: a production email provider and the public web address** (`MAIL_HOST`, `MAIL_FROM`, `APP_BASE_URL` in `k8s/user-service/configmap.yaml`). | Forgot and Reset Password screens. |
 | 4 | Email verification: 6-digit code, verify and resend, attempt and rate limits. | Verify Email screen (pending). |
 | 5 | Return 401 instead of 404 for an unknown email at login (known limitation in `user-service/README.md`). | Stops revealing which emails are registered; the web app already hides it. |
 | 6 | Profile and onboarding preferences endpoints (trading experience, broker preference, plan, completed flag). | Onboarding screens. |
@@ -54,14 +55,14 @@ Follow `user-service/CLAUDE.md` and root `CLAUDE.md` section 5 (contract first; 
 | 1 | Decision log (launch market, billing provider, confirm the decisions above) and a short design check against the brand file | 1 |
 | 2 | ~~Backend step 1: profile fields and consent record; web app sends them~~ **done 24 Oct** (remaining: run it against MySQL and the gateway, then merge) | 0 (was 2) |
 | 3 | ~~Backend step 2: refresh endpoint; route handlers refresh on 401~~ **done 24 Oct** (remaining: run on MySQL and the real gateway, then merge) | 0 (was 2) |
-| 4 | Backend steps 3 and 5: forgot and reset password, email service; Forgot and Reset Password screens | 3 |
+| 4 | ~~Backend step 3: forgot and reset password, email service, screens~~ **done 24 Oct**. Backend step 5 (401 instead of 404 for an unknown email at login, and a status check at login) remains | 1 (was 3) |
 | 5 | Backend step 6 and Onboarding (4 steps) | 3 |
 | 6 | Web app deployment: Dockerfile, `k8s/web-app/`, Argo CD application, CI/CD lists, ingress (original unit 18) | 2 |
 | 7 | App shell and typed API client (original units 31–32) | 2 |
 | 8 | Settings screens and preferences (original units 33–36) | 4 |
 | 9 | Accounts, statement upload, trades, dashboard, portfolio, MVP demo (original units 37–40) | 4 |
 | 10 | Waitlist form on the landing page (original unit 23) | 2 |
-| | **Total** | **21** (25 before backend steps 1 and 2 were done) |
+| | **Total** | **19** (25 before backend steps 1 to 3 were done) |
 
 Moved to after the MVP: landing page clips 3–8, the hero video and "Watch Demo" modal, Verify Email (backend step 4), Keycloak with passkeys and social login (original units 6–16).
 
@@ -203,6 +204,6 @@ A block is five units, about 4 calendar days at this pace. Plan each block in de
 - **Refresh tokens are stateless** (not rotated, not revocable, no logout endpoint), and **login does not check the user status**: both need a decision (store token ids or a per-user token version; check status at login) before launch. No rate limiting on login or refresh.
 - **Terms and Risk Disclaimer is a draft.** Acceptance (version and server time) is now stored per user, but counsel must review the text, and the stored version string must change whenever the text does.
 - The auth pages were tested against a mock gateway only (25 browser checks). Nothing has run against the real user-service, MySQL and Kafka yet; do that before relying on them.
-- Resetting a password and verifying an email need an email provider; choose one with the launch-market decision.
+- **Choose a production email provider** (and the public web address for reset links) with the launch-market decision: until then reset emails only work locally through Mailpit. Verifying an email also needs it.
 - Launch-market and billing decisions (unit 1) change blocks 24–27 and the real price source in block 16.
 - Only unit 20 is a buffer. Missed days push every later date.

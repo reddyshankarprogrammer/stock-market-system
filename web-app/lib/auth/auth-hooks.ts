@@ -52,6 +52,14 @@ export function useRegister() {
   });
 }
 
+export function useForgotPassword() {
+  return useMutation({ mutationFn: authService.forgotPassword });
+}
+
+export function useResetPassword() {
+  return useMutation({ mutationFn: authService.resetPassword });
+}
+
 export function useLogout() {
   const qc = useQueryClient();
   const router = useRouter();

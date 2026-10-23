@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
-import { PendingPage } from "@/components/auth/PendingPage";
+import { Suspense } from "react";
+import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 
-export const metadata: Metadata = { title: "Reset password", robots: { index: false } };
+export const metadata: Metadata = { title: "Reset password", robots: { index: false, follow: false } };
 
+// useSearchParams (the ?token= from the emailed link) needs a Suspense boundary.
 export default function Page() {
-  return <PendingPage title="Reset password" why="Choosing a new password needs a reset link, which depends on the pending forgot-password step. This screen is planned for the next stage." />;
+  return (
+    <Suspense fallback={<p role="status">Loading…</p>}>
+      <ResetPasswordForm />
+    </Suspense>
+  );
 }

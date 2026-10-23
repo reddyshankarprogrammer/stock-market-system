@@ -34,7 +34,7 @@ Clips so far: `calendar`, `import`. The page plays them with `components/Feature
 
 ## Authentication (interim, on user-service)
 
-Pages: `/login`, `/register` (all 9 fields, Terms and Risk Disclaimer you must scroll to the end to accept), `/dashboard` (protected placeholder). `/forgot-password`, `/reset-password` and `/verify-email` are honest "Not available yet" pages: user-service has no such endpoints. `/signup` redirects to `/register`.
+Pages: `/login`, `/register` (all 9 fields, Terms and Risk Disclaimer you must scroll to the end to accept), `/dashboard` (protected placeholder). `/forgot-password` and `/reset-password` work against user-service (the confirmation is identical for every email; the emailed link is single-use and expires in 30 minutes; locally the email arrives in Mailpit at http://localhost:8025). `/verify-email` is an honest "Not available yet" page: there is no verification backend. `/signup` redirects to `/register`.
 
 How it works:
 

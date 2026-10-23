@@ -172,6 +172,70 @@ await test("refresh cookie: a session cookie without Remember me, 7 days with it
   ok(!(await pb.evaluate(() => document.cookie)).includes("qv_"), "cookie visible to scripts"); await b.close();
 });
 
+// ---- forgot and reset password ----
+const fullStats = async () => (await fetch("http://localhost:8099/__stats")).json();
+const VALID_TOKEN = "valid-reset-token-0123456789abcdef";
+
+await test("forgot password: validation, and the same confirmation for a known and an unknown email", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await p.goto(`${BASE}/forgot-password`);
+  await p.getByRole("button", { name: "Send Reset Link" }).click(); await p.getByText("Email is required").waitFor();
+  await p.getByLabel("Email", { exact: true }).fill("nope"); await p.getByRole("button", { name: "Send Reset Link" }).click(); await p.getByText("Enter a valid email address").waitFor();
+  const seen = [];
+  for (const email of ["known@example.com", "nobody-at-all@example.com"]) {
+    await p.goto(`${BASE}/forgot-password`); await p.getByLabel("Email", { exact: true }).fill(email);
+    await p.getByRole("button", { name: "Send Reset Link" }).click(); await p.getByText("Check your email").waitFor();
+    seen.push((await p.locator("main").innerText()).replace(email, "<email>"));
+  }
+  ok(seen[0] === seen[1], "the screen differs between a known and an unknown email");
+  ok(/If an account exists/.test(seen[0]) && !/not registered|no account|not found/i.test(seen[0]), seen[0]);
+  const asked = (await fullStats()).forgotRequests; ok(asked.includes("known@example.com") && asked.includes("nobody-at-all@example.com"), "requests did not reach the gateway"); await c.close();
+});
+await test("forgot password: an unreachable service is reported (nothing was sent)", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await p.goto(`${BASE}/forgot-password`);
+  await p.getByLabel("Email", { exact: true }).fill("forgot-down@example.com"); await p.getByRole("button", { name: "Send Reset Link" }).click();
+  await p.getByText(/temporarily unavailable/i).waitFor(); await c.close();
+});
+await test("reset: the token is read once and removed from the address bar; the page sends no referrer and is not cached", async () => {
+  const c = await newCtx(); const p = await c.newPage();
+  const res = await p.goto(`${BASE}/reset-password?token=${VALID_TOKEN}`); await p.getByRole("heading", { name: "Choose a new password" }).waitFor();
+  await p.waitForFunction(() => !location.search.includes("token"));
+  ok(!p.url().includes("token"), `token still in the URL: ${p.url()}`);
+  const h = res.headers(); ok(h["referrer-policy"] === "no-referrer" && /no-store/.test(h["cache-control"] ?? ""), `headers: ${h["referrer-policy"]} | ${h["cache-control"]}`); await c.close();
+});
+await test("reset: without a token the page says so and offers a new link", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await p.goto(`${BASE}/reset-password`);
+  await p.getByText("This reset link is incomplete").waitFor(); await p.getByRole("link", { name: "Request a new link" }).waitFor(); await c.close();
+});
+await test("reset: password rules and mismatch are checked before anything is sent", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await p.goto(`${BASE}/reset-password?token=${VALID_TOKEN}`);
+  await p.getByLabel("New password", { exact: true }).fill("short"); await p.getByLabel("Confirm new password").fill("different1");
+  await p.getByRole("button", { name: "Change Password" }).click();
+  await p.locator("#password-error").filter({ hasText: "Use at least 10 characters" }).waitFor(); await p.locator("#confirmPassword-error").filter({ hasText: "Passwords do not match" }).waitFor(); await c.close();
+});
+await test("reset: an invalid or blocked token shows one message with a link to ask again", async () => {
+  for (const token of ["this-token-does-not-exist-0123456789", "valid-reset-token-for-blocked-0123456789"]) {
+    const c = await newCtx(); const p = await c.newPage(); await p.goto(`${BASE}/reset-password?token=${token}`);
+    await p.getByLabel("New password", { exact: true }).fill("BrandNewPass9"); await p.getByLabel("Confirm new password").fill("BrandNewPass9");
+    await p.getByRole("button", { name: "Change Password" }).click();
+    await p.getByText("This reset link is invalid or has expired").first().waitFor(); await p.getByRole("link", { name: "Request a new link" }).waitFor(); await c.close();
+  }
+});
+await test("reset: a valid token changes the password once; the new password logs in and the old one does not", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await p.goto(`${BASE}/reset-password?token=${VALID_TOKEN}`);
+  await p.getByLabel("New password", { exact: true }).fill("BrandNewPass9"); await p.getByLabel("Confirm new password").fill("BrandNewPass9");
+  await p.getByRole("button", { name: "Change Password" }).click(); await p.getByText("Your password has been changed").first().waitFor();
+  ok((await fullStats()).passwords["reset-me@example.com"] === "BrandNewPass9", "gateway did not receive the new password");
+  ok(!(await c.cookies()).some((x) => x.name.startsWith("qv_")), "a reset must not sign anyone in");
+  // the same link cannot be used again
+  await p.goto(`${BASE}/reset-password?token=${VALID_TOKEN}`);
+  await p.getByLabel("New password", { exact: true }).fill("AnotherNewPass8"); await p.getByLabel("Confirm new password").fill("AnotherNewPass8");
+  await p.getByRole("button", { name: "Change Password" }).click(); await p.getByText("This reset link is invalid or has expired").first().waitFor();
+  // old password rejected, new accepted
+  await login(p, "reset-me@example.com", "GoodPass123"); await p.locator("form [role=alert]").waitFor();
+  ok(/email or password is incorrect/i.test(await p.locator("form [role=alert]").innerText()), "old password still works");
+  await login(p, "reset-me@example.com", "BrandNewPass9"); await p.waitForURL("**/dashboard"); await c.close();
+});
+
 // ---- register ----
 await test("register: empty submit lists the required fields", async () => {
   const c = await newCtx(); const p = await c.newPage(); await p.goto(`${BASE}/register`);
@@ -222,9 +286,9 @@ await test("register success: dashboard, no 'not saved' notice, and every profil
 });
 
 // ---- pending screens ----
-await test("pending pages are honest about what is not available", async () => {
+await test("verify-email is still pending and says so", async () => {
   const c = await newCtx(); const p = await c.newPage();
-  for (const path of ["forgot-password", "reset-password", "verify-email"]) { await p.goto(`${BASE}/${path}`); await p.getByText("Not available yet", { exact: true }).waitFor(); }
+  for (const path of ["verify-email"]) { await p.goto(`${BASE}/${path}`); await p.getByText("Not available yet", { exact: true }).waitFor(); }
   await c.close();
 });
 
