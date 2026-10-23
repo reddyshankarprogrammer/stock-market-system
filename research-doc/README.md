@@ -16,6 +16,8 @@ Research and analysis for the next stage of stock-market-system, whose product b
 | 4 | [04-product-technology-roadmap.md](04-product-technology-roadmap.md) | Latest technologies, landing page, sign-up and login, settings, responsive design, subscription plans, admin portal, AI models, phased roadmap |
 | 5 | [05-daily-implementation-plan.md](05-daily-implementation-plan.md) | Daily plan from 23 Oct 2026 (2 h weekdays, 4 h weekends): units 1–40 in detail (phases 0–3), blocks after that |
 | 6 | [06-ai-prompt-library.md](06-ai-prompt-library.md) | Landing page master prompt plus 30+ prompts for development, enterprise readiness, design and operations |
+| 7 | [07-feature-video-scripts.md](07-feature-video-scripts.md) | Eight 6–8 second landing page clip scripts: captions, UI actions, camera, end frames |
+| - | [../ai-command-history/](../ai-command-history/README.md) | Log of every request and step executed with the AI assistant, linking back to these files |
 | - | [roadmap.html](roadmap.html) | Local copy of the shareable team page (open in a browser) |
 | - | [branding/QUANTIVA_BRAND_IDENTITY.md](branding/QUANTIVA_BRAND_IDENTITY.md) | Brand identity; logo files in `branding/logo/` (icon 16-1024 px, primary logo 350/700/1400 px) |
 | - | [Landing page-html/Main.dc.html](Landing%20page-html/Main.dc.html) · [Quantiva Landing Page.pdf](Quantiva%20Landing%20Page.pdf) | Landing page mockup rebranded as Quantiva (quantiva.ai) and its PDF export |
@@ -31,10 +33,12 @@ Research and analysis for the next stage of stock-market-system, whose product b
 | 5 | Latest technologies, landing page with short videos, login options (user ID/password, Google, PIN), registration with email verification, AI model choice, roadmap | Next.js 16 + Keycloak + passkeys + Claude models + nine-phase roadmap. Doc 4. |
 | 6 | Shareable page for the team | Published as a private artifact (link above). No repo changes. |
 | 7 | Save everything to `research-doc/` | This folder. |
-| 8 | Registration fields, standard/social/future login, TradingView-style settings, responsive targets, five subscription plans, admin portal, revenue dashboard | Doc 4 updated (sections 3–7, roadmap phases 0–9, risks, decisions). `roadmap.html` and the shared artifact not yet refreshed. |
+| 8 | Registration fields, standard/social/future login, TradingView-style settings, responsive targets, five subscription plans, admin portal, revenue dashboard | Doc 4 updated (sections 3–7, roadmap phases 0–9, risks, decisions). `roadmap.html` refreshed in step 12; the shared artifact is not yet refreshed. |
 | 9 | Daily two-hour implementation plan | Doc 5. |
 | 10 | Start from today, more time at weekends | Doc 5 rewritten: starts 23 Oct 2026, 2 h weekdays and 4 h weekends (18 h a week), MVP on 22 Nov 2026, everything by late March 2027. |
 | 11 | Landing page prompt saved, more prompts for development and enterprise customers | Doc 6. The landing page itself is not built. |
+| 12 | Update roadmap.html with the new plan | Added settings, responsive design, plans, admin and revenue, daily schedule; updated sign-up, phases 0–9, risks and decisions. |
+| 13 | Landing page mockup review (prompt A2) and eight feature clip scripts (prompt A3) | Review given in chat only (24 findings); scripts saved as doc 7. |
 
 ## Key decisions still open
 

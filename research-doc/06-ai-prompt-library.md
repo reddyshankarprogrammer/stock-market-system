@@ -19,7 +19,7 @@ portfolio, notification, account services), Kafka, MySQL, Redis, K3s, Argo CD. P
 app, Keycloak identity, Python FastAPI ai-service, Claude models.
 Brand colours only: #0B1F3A navy, #146EF5 electric blue, #00C878 growth green, #1E293B graphite,
 #DCE3EA silver, #FFFFFF white. Fonts: Inter (primary), Manrope (secondary).
-Company: Sesami. Audience: retail and professional traders, portfolio managers, hedge funds,
+Audience: retail and professional traders, portfolio managers, hedge funds,
 advisors, institutions.
 Rules: money is BigDecimal; identity only from gateway headers; Kafka fields are add-only;
 no secrets in Git; no claims we cannot prove.

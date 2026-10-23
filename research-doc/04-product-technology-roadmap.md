@@ -57,7 +57,7 @@ Sections:
 6. Pricing, FAQ, final call to action.
 
 Making the clips:
-- **Remotion:** videos written as React code, always matching the real UI. Free license covers individuals and very small companies; Sesami may need a company license.
+- **Remotion:** videos written as React code, always matching the real UI. Free license covers individuals and very small companies; a company license may be needed.
 - **Screen Studio** or Playwright recordings for quick real captures.
 - **Rive / Lottie** for small animated icons.
 

@@ -158,8 +158,13 @@ html { scroll-behavior: smooth; }
       <li><a href="#stack">Technology stack</a></li>
       <li><a href="#landing">Landing page</a></li>
       <li><a href="#auth">Sign-up and login</a></li>
+      <li><a href="#settings">Settings</a></li>
+      <li><a href="#responsive">Responsive design</a></li>
+      <li><a href="#plans">Subscription plans</a></li>
+      <li><a href="#admin">Admin and revenue</a></li>
       <li><a href="#ai">AI models</a></li>
       <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#schedule">Daily schedule</a></li>
       <li><a href="#licenses">References and licenses</a></li>
       <li><a href="#risks">Risks and compliance</a></li>
       <li><a href="#decisions">Decisions needed</a></li>
@@ -170,10 +175,10 @@ html { scroll-behavior: smooth; }
     <header class="doc">
       <p class="eyebrow">Quantiva · quantiva.ai · product and technology plan</p>
       <h1>A trading journal and trading platform our users will want to open every day</h1>
-      <p class="lede">This plan takes our existing Java microservices to a full product in the class of TraderSync and TradeZella: a polished web app, a landing page that shows every feature in short video clips, modern sign-in, and AI coaching on top of each trader's own history.</p>
+      <p class="lede">This plan takes our existing Java microservices to a full product in the class of TraderSync and TradeZella: a polished web app, a landing page that shows every feature in short video clips, modern sign-in, a settings module, five subscription plans, an admin portal with a revenue dashboard, and AI coaching on top of each trader's own history. A day-by-day schedule starts on 23 October 2026.</p>
       <div class="meta">
         <span>Owner <b>Shanker Reddy</b></span>
-        <span>Date <b>22 October 2026</b></span>
+        <span>Updated <b>23 October 2026</b></span>
         <span class="pill">Proposal: nothing implemented yet</span>
       </div>
     </header>
@@ -218,9 +223,11 @@ html { scroll-behavior: smooth; }
             <tr><td>Analytics charts</td><td>Recharts</td><td class="why">Equity curve, P&amp;L calendar heatmap, win/loss breakdowns.</td></tr>
             <tr><td>Data and forms</td><td>TanStack Query, Zustand, react-hook-form with zod</td><td class="why">Cached server data, small app state, validated forms.</td></tr>
             <tr><td>Journal editor</td><td>TipTap</td><td class="why">Rich text notes with pasted screenshots.</td></tr>
-            <tr><td>Identity</td><td>Keycloak 26, self-hosted on K3s</td><td class="why">Password login, Google sign-in, email verification, password reset, passkeys, authenticator codes and refresh tokens out of the box. Java-based, like the rest of our stack.</td></tr>
+            <tr><td>Identity</td><td>Keycloak 26, self-hosted on K3s</td><td class="why">Email and password login, remember me, forgot password, social login (Google, Microsoft, Apple, GitHub, LinkedIn), email verification, passkeys, authenticator codes and refresh tokens. Java-based, like the rest of our stack.</td></tr>
             <tr><td>Email</td><td>Amazon SES, Resend or Brevo (paid service); React Email for templates</td><td class="why">Reliable delivery for verification links and alerts.</td></tr>
-            <tr><td>SMS codes</td><td>MSG91 for India or Twilio Verify (paid service)</td><td class="why">Mobile number verification. India requires DLT template registration.</td></tr>
+            <tr><td>SMS</td><td>MSG91 for India or Twilio Verify (paid service)</td><td class="why">Not needed for sign-up: the mobile number is stored without an OTP. Only for SMS alerts or a later verification step. India requires DLT template registration.</td></tr>
+            <tr><td>Billing</td><td>Stripe Billing or Razorpay (paid service)</td><td class="why">Five plans, upgrades, invoices, and the data behind the revenue dashboard. Provider depends on the launch market.</td></tr>
+            <tr><td>Feature switches</td><td>Own feature-flag table, or Unleash</td><td class="why">The admin turns features on or off globally or per plan.</td></tr>
             <tr><td>Bot protection</td><td>Cloudflare Turnstile</td><td class="why">Free, invisible check on sign-up and login forms.</td></tr>
             <tr><td>Backend baseline</td><td>Java 25 LTS, Spring Boot 4 everywhere, OpenTelemetry</td><td class="why">Virtual threads, one framework version across services, end-to-end tracing.</td></tr>
             <tr><td>AI service</td><td>Python 3.12 with FastAPI</td><td class="why">The AI models are Python-first. Java services stay as they are.</td></tr>
@@ -291,7 +298,7 @@ flowchart LR
 
       <h3>How we make and serve the clips</h3>
       <ul class="plain">
-        <li><b>Remotion</b> renders clips from React code, so they match the real UI and can be re-rendered after each redesign. Its free license covers individuals and very small companies; Sesami likely needs a company license.</li>
+        <li><b>Remotion</b> renders clips from React code, so they match the real UI and can be re-rendered after each redesign. Its free license covers individuals and very small companies; a company license is likely needed.</li>
         <li><b>Screen Studio</b> or Playwright recordings for quick real captures. <b>Rive</b> or <b>Lottie</b> for small animated icons.</li>
         <li>WebM (AV1) with an MP4 fallback, autoplay muted and looping, a still poster frame first, loaded only when scrolled into view, served from a CDN.</li>
         <li>Respect the browser's reduce-motion setting by showing the poster frame instead of the clip.</li>
@@ -300,29 +307,131 @@ flowchart LR
 
     <section id="auth">
       <h2>Sign-up and login</h2>
-      <p class="sub">Keycloak handles every flow below. We style its screens to match the app.</p>
+      <p class="sub">Keycloak handles every flow below. We style its screens to match the app. The email address is the user ID.</p>
+      <h3>Registration form</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Field</th><th>Rule</th></tr></thead>
+          <tbody>
+            <tr><td>Email address (user ID)</td><td class="why">Unique; verified by a link</td></tr>
+            <tr><td>Password and confirm password</td><td class="why">Strength meter, breached-password check, both must match</td></tr>
+            <tr><td>Mobile number</td><td class="why">Format check only; <b>no OTP required</b></td></tr>
+            <tr><td>Gender</td><td class="why">Male or Female (see the open decision about a third option)</td></tr>
+            <tr><td>Country</td><td class="why">Drop-down; drives compliance rules</td></tr>
+            <tr><td>Accept Terms &amp; Conditions</td><td class="why">Required; version and time stored as a consent record</td></tr>
+            <tr><td>Accept Privacy Policy</td><td class="why">Required; version and time stored as a consent record</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Flow: form, Turnstile check, verification email (account active only after the link is clicked), first login.</p>
+      <h3>Login options</h3>
       <div class="flows">
         <div class="panel">
-          <h3>Create an account</h3>
+          <h3>Standard</h3>
           <ol class="steps">
-            <li><span>User enters a user ID, password and confirmation, mobile number and email.</span></li>
-            <li><span>Password strength meter and a breached-password check run as the user types.</span></li>
-            <li><span>Turnstile confirms a real person is signing up.</span></li>
-            <li><span>Keycloak sends a verification email. The account is active only after the link is clicked.</span></li>
-            <li><span>Optional: a 6-digit SMS code verifies the mobile number.</span></li>
+            <li><span><b>Email ID and password.</b></span></li>
+            <li><span><b>Remember me</b> keeps the session longer on this device.</span></li>
+            <li><span><b>Forgot password</b> by email link.</span></li>
+            <li><span><b>Authenticator code</b> as a second step for trading and money actions.</span></li>
           </ol>
         </div>
         <div class="panel">
-          <h3>Sign in</h3>
+          <h3>Social</h3>
           <ol class="steps">
-            <li><span><b>User ID or email with password.</b></span></li>
-            <li><span><b>Continue with Google</b> for any Gmail or Google Workspace account.</span></li>
-            <li><span><b>Passkey</b> for fast login with fingerprint, face or the device's own PIN.</span></li>
-            <li><span><b>Authenticator code</b> as a second step for trading and money actions.</span></li>
+            <li><span><b>Google</b>, <b>Microsoft</b> and <b>GitHub</b> first.</span></li>
+            <li><span><b>Apple</b> and <b>LinkedIn</b> when their developer approvals arrive.</span></li>
+            <li><span>Accounts link by verified email, so nobody gets two accounts.</span></li>
+            <li><span>Apple's rules require "Sign in with Apple" in the iOS app once any social login is offered.</span></li>
+          </ol>
+        </div>
+        <div class="panel">
+          <h3>Future: biometric</h3>
+          <ol class="steps">
+            <li><span><b>Passkeys</b> from phase 1: fingerprint, face or device PIN, phishing-proof.</span></li>
+            <li><span><b>Face ID</b> and <b>fingerprint</b> work through passkeys on supporting devices, and natively in the Expo app (phase 7).</span></li>
           </ol>
         </div>
       </div>
       <div class="callout"><b>About a custom app PIN.</b> Passkeys give the same one-tap login and cannot be phished, so we recommend them first. If we also offer a 4–6 digit app PIN, it must be set up after a full login on that device, work on that device only, and lock after about five wrong attempts. A PIN alone must never place trades, move money, or change the password or email; those always ask for the password or passkey again.</div>
+    </section>
+
+    <section id="settings">
+      <h2>Settings module</h2>
+      <p class="sub">A TradingView-style screen with a category list on the left. The supplied list keeps the numbering of the original screenshot, so categories 2–4, 6 and 8 are still to be defined.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>#</th><th>Category</th><th>Options</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>General</td><td class="why">Theme (System, Dark, Light) · Language (English)</td></tr>
+            <tr><td>5</td><td>Notifications</td><td class="why">In-app · Push · Email alerts</td></tr>
+            <tr><td>7</td><td>Security</td><td class="why">Change password · Two-factor authentication · Face login · Fingerprint login · Session management · Device management · Login history</td></tr>
+            <tr><td>9</td><td>Downloads</td><td class="why">Download location · Export format (CSV, Excel, PDF, JSON)</td></tr>
+            <tr><td>10</td><td>About</td><td class="why">Version · Release notes · License · Privacy policy · Terms &amp; conditions · Contact support</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="plain" style="margin-top:16px">
+        <li>Preferences are stored on the server so they follow the user across devices.</li>
+        <li>Sessions, devices and login history come from Keycloak.</li>
+        <li>"Face login" and "Fingerprint login" mean registering a passkey on that device.</li>
+        <li>"Download location" is only a real setting in the desktop or mobile app.</li>
+        <li>An admin can hide or disable any setting or feature (see Admin and revenue).</li>
+      </ul>
+    </section>
+
+    <section id="responsive">
+      <h2>Responsive design</h2>
+      <p class="sub">One responsive web app, also installable as a PWA, mobile first.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Class</th><th>Targets</th><th>Layout</th></tr></thead>
+          <tbody>
+            <tr><td>Desktop</td><td class="why">1920×1080, 2560×1440, 4K, multi-monitor</td><td class="why">Wide-screen grid, charts scale with the window, pop-out chart windows for a second monitor</td></tr>
+            <tr><td>Laptop</td><td class="why">13", 14", 15", 16"</td><td class="why">Standard dashboard with a collapsible sidebar</td></tr>
+            <tr><td>Tablet</td><td class="why">iPad, Android tablets, Surface Pro</td><td class="why">Two columns, touch targets of 44 px or more, no hover-only actions</td></tr>
+            <tr><td>Mobile</td><td class="why">iPhone, Samsung Galaxy, Google Pixel, OnePlus, Huawei</td><td class="why">Single column, bottom navigation, tables become cards</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout"><b>Huawei phones</b> without Google services may not support Google sign-in or Google push. Email and password and Microsoft login must work there.</div>
+    </section>
+
+    <section id="plans">
+      <h2>Subscription plans</h2>
+      <p class="sub">Plan names come from the requirement; the content column is a proposal. Prices and limits are not decided.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Plan</th><th>For</th><th>Suggested content</th></tr></thead>
+          <tbody>
+            <tr><td>Free</td><td class="why">New traders</td><td class="why">Manual trades, limited imports, basic dashboard, one account</td></tr>
+            <tr><td>Pro</td><td class="why">Active traders</td><td class="why">Unlimited imports and accounts, full journal and reports</td></tr>
+            <tr><td>AI Pro</td><td class="why">Traders who want coaching</td><td class="why">Pro plus AI trade coach, auto-tagging, CSV mapping</td></tr>
+            <tr><td>Quant Pro</td><td class="why">Systematic traders</td><td class="why">AI Pro plus price forecasts, back-tests, API access</td></tr>
+            <tr><td>Enterprise</td><td class="why">Teams, prop firms, brokers</td><td class="why">Quant Pro plus team workspaces, SSO, audit export, support SLA</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Plans are data, not code: what a plan includes changes without a release. One entitlement check enforces limits, AI calls and exports are metered, and billing-provider webhooks keep subscription status current.</p>
+    </section>
+
+    <section id="admin">
+      <h2>Admin portal and revenue dashboard</h2>
+      <p class="sub">Admin-only area. Every action is written to the audit log.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Module</th><th>What the admin can do</th></tr></thead>
+          <tbody>
+            <tr><td>User management</td><td class="why">Search, suspend, force password reset, sign out sessions, change role</td></tr>
+            <tr><td>Subscription management</td><td class="why">Change a plan, grant trials or credits, refunds</td></tr>
+            <tr><td>Broker management</td><td class="why">Enable or disable broker integrations and statement formats; see import failures</td></tr>
+            <tr><td>Market data management</td><td class="why">Data sources, symbol list, refresh status, simulated or real feed</td></tr>
+            <tr><td>AI model management</td><td class="why">Model per feature, versions, usage and cost, kill switch</td></tr>
+            <tr><td>Audit logs</td><td class="why">Who did what, when, from where; filter and export</td></tr>
+            <tr><td>Feature management</td><td class="why">Enable or disable features globally or per plan</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><b>Revenue dashboard:</b> MRR and ARR, new, churned and upgraded subscriptions, revenue by plan and country, ARPU, trial-to-paid conversion, failed payments, and AI cost against AI-plan revenue.</p>
     </section>
 
     <section id="ai">
@@ -345,28 +454,28 @@ flowchart LR
 
     <section id="roadmap">
       <h2>Roadmap</h2>
-      <p class="sub">Nine phases in order. Phases 0 to 3 give us a usable product on today's APIs; later phases add new services.</p>
+      <p class="sub">Ten phases in order. Phases 0 to 3 give us a usable MVP; later phases add new services.</p>
       <div class="legend"><span><i></i>Uses existing backend</span><span><i class="h"></i>Needs new backend work</span></div>
       <div class="ledger">
         <div class="phase"><div class="candle"><span class="body">0</span></div><div>
           <h3>Design</h3><p class="goal">Agree how the product looks before writing UI code.</p>
-          <div class="chips"><span class="chip key">Figma design system</span><span class="chip">Colors, type, components</span><span class="chip">Brand and logo</span><span class="chip">Landing and app wireframes</span></div>
-          <p class="done-when"><b>Done when</b> the team signs off the design system and the five main screens.</p>
+          <div class="chips"><span class="chip key">Figma design system</span><span class="chip">Colors, type, components</span><span class="chip">Brand and logo</span><span class="chip">Landing, app, settings and admin wireframes</span><span class="chip">Responsive breakpoints</span></div>
+          <p class="done-when"><b>Done when</b> the team signs off the design system and the five main screens at phone, tablet and desktop widths.</p>
         </div></div>
         <div class="phase"><div class="candle"><span class="body hollow">1</span></div><div>
           <h3>Identity</h3><p class="goal">Modern, secure sign-up and login for every later phase.</p>
-          <div class="chips"><span class="chip key">Keycloak on K3s</span><span class="chip">Email verification</span><span class="chip">Google sign-in</span><span class="chip">Passkeys</span><span class="chip">Authenticator codes</span><span class="chip">Gateway on Keycloak tokens</span></div>
-          <p class="done-when"><b>Done when</b> a new user can register, verify email, and sign in all four ways.</p>
+          <div class="chips"><span class="chip key">Keycloak on K3s</span><span class="chip">Registration form with consent</span><span class="chip">Email verification</span><span class="chip">Remember me, forgot password</span><span class="chip">Google, Microsoft, GitHub</span><span class="chip">Apple, LinkedIn when approved</span><span class="chip">Passkeys</span><span class="chip">Authenticator codes</span><span class="chip">Gateway on Keycloak tokens</span></div>
+          <p class="done-when"><b>Done when</b> a new user can register, verify email, and sign in by password, social login and passkey.</p>
         </div></div>
         <div class="phase"><div class="candle"><span class="body">2</span></div><div>
           <h3>Landing page</h3><p class="goal">Start collecting sign-ups while the app is being built.</p>
-          <div class="chips"><span class="chip key">Next.js marketing site</span><span class="chip">Feature clips</span><span class="chip">SEO</span><span class="chip">PostHog analytics</span><span class="chip">Waitlist</span></div>
+          <div class="chips"><span class="chip key">Next.js marketing site</span><span class="chip">Feature clips</span><span class="chip">SEO</span><span class="chip">PostHog analytics</span><span class="chip">Waitlist</span><span class="chip">Pricing with five plans</span></div>
           <p class="done-when"><b>Done when</b> the site is live and loads in under 2.5 seconds on a mid-range phone.</p>
         </div></div>
         <div class="phase"><div class="candle"><span class="body">3</span></div><div>
           <h3>App core (MVP)</h3><p class="goal">A usable journal built on our existing account-service APIs.</p>
-          <div class="chips"><span class="chip key">Dashboard</span><span class="chip">Accounts</span><span class="chip">Statement import</span><span class="chip">Trades table and filters</span><span class="chip">P&amp;L calendar</span><span class="chip">Portfolio with live prices</span></div>
-          <p class="done-when"><b>Done when</b> a trader can import a broker statement and review their month.</p>
+          <div class="chips"><span class="chip key">Dashboard</span><span class="chip">Accounts</span><span class="chip">Statement import</span><span class="chip">Trades table and filters</span><span class="chip">P&amp;L calendar</span><span class="chip">Portfolio with live prices</span><span class="chip key">Settings module</span></div>
+          <p class="done-when"><b>Done when</b> a trader can import a broker statement, review their month, and change theme, notification and security settings.</p>
         </div></div>
         <div class="phase"><div class="candle"><span class="body hollow">4</span></div><div>
           <h3>Journaling</h3><p class="goal">The habits that make traders come back daily.</p>
@@ -384,16 +493,57 @@ flowchart LR
           <p class="done-when"><b>Done when</b> the coach's insights are checked against real trade data for 20 test accounts.</p>
         </div></div>
         <div class="phase"><div class="candle"><span class="body">7</span></div><div>
-          <h3>Mobile and growth</h3><p class="goal">Reach traders on their phones and start earning.</p>
-          <div class="chips"><span class="chip key">Installable web app</span><span class="chip">Expo app</span><span class="chip">Push notifications</span><span class="chip">Subscriptions and billing</span><span class="chip">Share a trade</span></div>
-          <p class="done-when"><b>Done when</b> the mobile app is in both stores and paid plans are live.</p>
+          <h3>Mobile, plans and growth</h3><p class="goal">Reach traders on their phones and start earning.</p>
+          <div class="chips"><span class="chip key">Installable web app</span><span class="chip">Expo app with Face ID and fingerprint</span><span class="chip">Push notifications</span><span class="chip key">Free, Pro, AI Pro, Quant Pro, Enterprise</span><span class="chip">Billing</span><span class="chip">Feature switches</span><span class="chip">Share a trade</span></div>
+          <p class="done-when"><b>Done when</b> the mobile app is in both stores, paid plans are live and plan limits are enforced.</p>
         </div></div>
-        <div class="phase"><div class="candle"><span class="body">8</span></div><div>
+        <div class="phase"><div class="candle"><span class="body hollow">8</span></div><div>
+          <h3>Admin portal and revenue</h3><p class="goal">Run the product without database access.</p>
+          <div class="chips"><span class="chip key">User, subscription, broker management</span><span class="chip">Market data and AI model management</span><span class="chip">Audit logs</span><span class="chip">Revenue dashboard</span></div>
+          <p class="done-when"><b>Done when</b> an admin can run the product without database access and revenue figures match the billing provider.</p>
+        </div></div>
+        <div class="phase"><div class="candle"><span class="body">9</span></div><div>
           <h3>Hardening</h3><p class="goal">Ready for real money and real scale.</p>
           <div class="chips"><span class="chip key">Security review</span><span class="chip">Penetration test</span><span class="chip">Load test</span><span class="chip">Backup and recovery drills</span><span class="chip">Compliance review</span></div>
           <p class="done-when"><b>Done when</b> the penetration test has no open high-severity findings.</p>
         </div></div>
       </div>
+    </section>
+
+    <section id="schedule">
+      <h2>Daily schedule</h2>
+      <p class="sub">Starts Friday 23 October 2026. Weekdays 2 hours, Saturday and Sunday 4 hours each: 18 hours a week. The 4-hour weekend figure is an assumption.</p>
+      <p>Work is cut into 2-hour units: a weekday holds one, a weekend day holds two. Units 1–40 are planned one by one and finish on <b>Sunday 22 November 2026</b> with the MVP demo. The whole roadmap is about 200 units (400 hours), finishing around <b>late March 2027</b> if no day is missed.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Dates</th><th>Units</th><th>Focus</th></tr></thead>
+          <tbody>
+            <tr><td>23–25 Oct</td><td class="num">1–5</td><td class="why">Phase 0: decisions, design tokens, components, wireframes, sign-off</td></tr>
+            <tr><td>26–30 Oct</td><td class="num">6–10</td><td class="why">Phase 1: Keycloak locally (realm, attributes, social login, passkeys)</td></tr>
+            <tr><td>31 Oct – 2 Nov</td><td class="num">11–15</td><td class="why">Phase 1: gateway and user-service on Keycloak tokens, Newman green</td></tr>
+            <tr><td>3–7 Nov</td><td class="num">16–20</td><td class="why">Keycloak on K3s, web app scaffold, CI/CD and ingress, buffer</td></tr>
+            <tr><td>7–10 Nov</td><td class="num">21–25</td><td class="why">Phase 2: landing page, pricing, clips, SEO</td></tr>
+            <tr><td>11–14 Nov</td><td class="num">26–30</td><td class="why">Sign-up and login screens, Turnstile, Playwright tests</td></tr>
+            <tr><td>14–17 Nov</td><td class="num">31–35</td><td class="why">Phase 3: app shell, typed API client, preferences, settings screens</td></tr>
+            <tr><td>18–22 Nov</td><td class="num">36–40</td><td class="why">Downloads and About, statement upload, trades, dashboard, portfolio, MVP demo</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>After the MVP (blocks of five units)</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Phase</th><th>Estimated end</th></tr></thead>
+          <tbody>
+            <tr><td>4. Journaling</td><td class="num">Mon 7 Dec 2026</td></tr>
+            <tr><td>5. Analytics and charts</td><td class="num">Sun 27 Dec 2026</td></tr>
+            <tr><td>6. AI</td><td class="num">Tue 19 Jan 2027</td></tr>
+            <tr><td>7. Mobile, plans and growth</td><td class="num">Sat 20 Feb 2027</td></tr>
+            <tr><td>8. Admin portal and revenue</td><td class="num">Sun 14 Mar 2027</td></tr>
+            <tr><td>9. Hardening</td><td class="num">Sat 27 Mar 2027</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout"><b>Heavy weekends.</b> Eight weekend hours after ten weekday hours is a lot. Taking one free day every second week adds about a week to the end date. Only unit 20 is a buffer, so missed days push every later date.</div>
     </section>
 
     <section id="licenses">
@@ -418,7 +568,10 @@ flowchart LR
     <section id="risks">
       <h2>Risks and compliance</h2>
       <ul class="plain">
-        <li><b>Personal data.</b> Email and mobile numbers fall under India's DPDP Act. We need consent text, a privacy policy and a deletion process.</li>
+        <li><b>Personal data.</b> Email, mobile, gender and country fall under India's DPDP Act. We need consent text, a privacy policy and a deletion process. The mobile number is collected without verification, so it cannot be trusted for recovery or alerts yet.</li>
+        <li><b>Payments and tax.</b> Subscriptions need a payment provider agreement, GST or VAT handling and refund rules.</li>
+        <li><b>Social login.</b> Apple, LinkedIn, Microsoft, GitHub and Google each have their own app review and terms; plan lead time.</li>
+        <li><b>Admin portal.</b> The most privileged area: authenticator-code login, IP allow-list or VPN, and every action audited.</li>
         <li><b>Trading and advice.</b> Live trading, or AI output that reads as a buy or sell signal, may fall under SEBI rules. Keep AI labelled as educational until legal review.</li>
         <li><b>Market data.</b> Forecasts and replay need real historical prices. Simulated data makes both meaningless.</li>
         <li><b>Third-party AI.</b> Sending trade history to an external API needs to be disclosed to users.</li>
@@ -428,7 +581,7 @@ flowchart LR
 
     <section id="decisions">
       <h2>Decisions needed</h2>
-      <p class="sub">Open questions for the team before phase 1 starts.</p>
+      <p class="sub">Open questions for the team. Launch market, Keycloak hosting, billing provider and passkeys vs PIN are decided in unit 1 of the schedule (23 October).</p>
       <div class="decisions">
         <div class="decision"><p>Which market do we launch in first: India, US, or both?</p><span class="owner">Product</span><p class="rec">Drives SMS provider, compliance work and which brokers we import first.</p></div>
         <div class="decision"><p>Passkeys only for fast login, or passkeys plus a device-bound app PIN?</p><span class="owner">Product, security</span><p class="rec">Recommendation: passkeys first; add a PIN only if users ask for it.</p></div>
@@ -436,6 +589,10 @@ flowchart LR
         <div class="decision"><p>Which Claude model tier for each AI feature?</p><span class="owner">Product, finance</span><p class="rec">Recommendation: Opus 5.5 for the coach; decide on Sonnet or Haiku for high-volume tasks after measuring quality.</p></div>
         <div class="decision"><p>Buy a Remotion company license, or record clips by hand?</p><span class="owner">Marketing</span><p class="rec">Remotion keeps clips in sync with the UI; hand recording is cheaper to start.</p></div>
         <div class="decision"><p>Where does real price history come from?</p><span class="owner">Engineering</span><p class="rec">Needed for trade replay and Kronos forecasts; the provider choice depends on the launch market.</p></div>
+        <div class="decision"><p>What do the five plans contain, what do they cost, and which billing provider?</p><span class="owner">Product, finance</span><p class="rec">Recommendation: Free and Pro public first; AI Pro, Quant Pro and Enterprise on a waitlist until the AI features exist. Razorpay for India, Stripe otherwise.</p></div>
+        <div class="decision"><p>Gender field: add "Prefer not to say", or make it optional?</p><span class="owner">Product, legal</span><p class="rec">Data minimisation under the DPDP Act points to optional or a third value.</p></div>
+        <div class="decision"><p>Which settings categories are 2–4, 6 and 8?</p><span class="owner">Product</span><p class="rec">Not in the supplied list; define from the original screenshot.</p></div>
+        <div class="decision"><p>Feature switches: own table or Unleash?</p><span class="owner">Engineering</span><p class="rec">Own table first; Unleash if per-user targeting is needed.</p></div>
       </div>
     </section>
 
@@ -451,7 +608,7 @@ flowchart LR
       </ul>
     </section>
 
-    <footer>Prepared for the Sesami team. Product brand: Quantiva (quantiva.ai). This is a plan only; no code in stock-market-system has been changed.</footer>
+    <footer>Prepared for the Quantiva team. Product brand: Quantiva (quantiva.ai). This is a plan only; no code in stock-market-system has been changed.</footer>
   </main>
 </div>
 
