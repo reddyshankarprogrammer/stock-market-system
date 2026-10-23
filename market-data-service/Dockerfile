@@ -29,7 +29,7 @@ FROM gcr.io/distroless/java21-debian12:nonroot AS runtime
 ARG BUILD_VERSION=dev
 ARG BUILD_REVISION=unknown
 ARG BUILD_DATE=unknown
-LABEL org.opencontainers.image.title="market-data-service"       org.opencontainers.image.description="Stock Market System - market-data-service"       org.opencontainers.image.source="https://github.com/reddyshankarprogrammer/stock-market-system"       org.opencontainers.image.vendor="Sesami"       org.opencontainers.image.authors="Shanker Reddy"       org.opencontainers.image.version="${BUILD_VERSION}"       org.opencontainers.image.revision="${BUILD_REVISION}"       org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.title="market-data-service"       org.opencontainers.image.description="Stock Market System - market-data-service"       org.opencontainers.image.source="https://github.com/reddyshankarprogrammer/stock-market-system"       org.opencontainers.image.vendor="Quantiva"       org.opencontainers.image.authors="Shanker Reddy"       org.opencontainers.image.version="${BUILD_VERSION}"       org.opencontainers.image.revision="${BUILD_REVISION}"       org.opencontainers.image.created="${BUILD_DATE}"
 
 WORKDIR /application
 COPY --from=extract --chown=65532:65532 /extract/layers/dependencies/ ./
