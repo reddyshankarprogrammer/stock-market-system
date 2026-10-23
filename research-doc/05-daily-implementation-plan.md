@@ -11,6 +11,62 @@
 - Units 1–40 are planned one by one and cover roadmap phases 0–3 (design, identity, landing page, settings, MVP). They finish on **Sunday 22 November 2026**. Later phases are planned in blocks of five units (10 hours), because they depend on what the first 40 units deliver.
 - Total scope is about 200 units (400 hours): roughly **22 weeks, finishing late March 2027**, if no day is missed. Public holidays and sick days push the dates; the order does not change.
 
+## Progress and plan change (24 October 2026)
+
+The work did not follow the unit order. The landing page, two clips and the sign-up and login screens were built first, and the web app now signs people in through the **existing user-service**. **Keycloak is deferred** (see the Keycloak decision below). The unit tables further down are kept as the original baseline and marked where they changed; unit numbers no longer map to dates, so use the table in "Remaining MVP work" instead.
+
+### Done so far
+
+| Area | Status | Where |
+|---|---|---|
+| Landing page | Stages 1 and 2 built: header, hero, trust, platform, AI coach demo, solutions, pricing, security, FAQ, JSON-LD, placeholder legal pages. Two clips (P&L calendar, statement import) rendered with Playwright, 8.00 s each. Waitlist, hero video, clips 3–8 not done. | `web-app/`, [06-ai-prompt-library.md](06-ai-prompt-library.md), [07-feature-video-scripts.md](07-feature-video-scripts.md) |
+| Web app scaffold | Next.js 16, Tailwind 4, brand tokens (about half of unit 17). Dockerfile, `k8s/web-app/`, Argo CD and CI lists (unit 18) not done. | `web-app/README.md` |
+| Sign-up and login screens, stage A | Login, Register (9 required fields, read-to-the-end Terms and Risk Disclaimer), protected routes, dark and light mode, httpOnly session cookies, `auth-service.ts`, `auth-hooks.ts`, `auth-store.ts`. 25 browser checks pass against a mock gateway. | `web-app/lib/auth/`, `web-app/e2e/` |
+| Pending by request | Verify Email (6-digit OTP, verify, resend) and Send Reset Link. Their pages say "Not available yet". | `web-app/app/(auth)/` |
+| Not done | Design phase (Figma, decision log: units 1–5), Reset Password and Onboarding screens (stage B), everything on the backend listed below. | |
+
+### Decisions taken on 24 October
+
+| Decision | Choice | Why |
+|---|---|---|
+| Session storage | httpOnly cookies set by Next.js route handlers, not `localStorage` | A script injected into the page cannot read the token; route protection works on the server. Matches [04-product-technology-roadmap.md](04-product-technology-roadmap.md) (browser never holds raw tokens). |
+| Identity system | **Interim: user-service. Keycloak later.** | The pages work today. `auth-service.ts` and the route handlers are the only code that knows the API, so Keycloak can replace them later. Units 6–15 and the Keycloak part of unit 16 are deferred (not dropped). |
+| New register fields (mobile, gender, country, consent) | Extend user-service in a separate step | The UI validates all of them but only sends what the API stores today; the dashboard tells the user what was not saved. |
+| Build order | Stage A first (Login, Register), then Reset Password and Onboarding | Review before the larger second stage. |
+
+### Backend step for the auth pages (user-service, in this order)
+
+Follow `user-service/CLAUDE.md` and root `CLAUDE.md` section 5 (contract first; add fields, never rename; new paths in the gateway lists and `JwtAuthFilterTest`; tests, Postman requests, README, `docs/changelog.md`).
+
+| # | Change | Why |
+|---|---|---|
+| 1 | Add `mobile` (dial code and number), `gender`, `country`, `terms_version`, `terms_accepted_at` to `users` (Hibernate `update`: new NOT NULL columns need a DB default); extend `RegisterRequest` and `UserResponse`; add them to the `user.registered` Kafka map (add only). Then the web app removes `NOT_SAVED_YET` in `app/api/auth/register/route.ts`. | Mandatory fields and the consent record are not stored today. |
+| 2 | `POST /api/v1/users/refresh` (refresh token in, new access token out), public path in the gateway `PUBLIC_PATHS`. The route handlers refresh on a 401. | Without it a session ends after 15 minutes and "Remember me" has no effect. |
+| 3 | `POST /api/v1/users/forgot-password` and `/reset-password` (reset token table with expiry, one use), and an email service (Mailpit in development). Always answer the same way whether the email exists. | Forgot and Reset Password screens. |
+| 4 | Email verification: 6-digit code, verify and resend, attempt and rate limits. | Verify Email screen (pending). |
+| 5 | Return 401 instead of 404 for an unknown email at login (known limitation in `user-service/README.md`). | Stops revealing which emails are registered; the web app already hides it. |
+| 6 | Profile and onboarding preferences endpoints (trading experience, broker preference, plan, completed flag). | Onboarding screens. |
+
+### Remaining MVP work in the new order (estimates, in 2-hour units)
+
+| # | Work | Units |
+|---|---|---|
+| 1 | Decision log (launch market, billing provider, confirm the decisions above) and a short design check against the brand file | 1 |
+| 2 | Backend step 1: profile fields and consent record; web app sends them | 2 |
+| 3 | Backend step 2: refresh endpoint; route handlers refresh on 401 | 2 |
+| 4 | Backend steps 3 and 5: forgot and reset password, email service; Forgot and Reset Password screens | 3 |
+| 5 | Backend step 6 and Onboarding (4 steps) | 3 |
+| 6 | Web app deployment: Dockerfile, `k8s/web-app/`, Argo CD application, CI/CD lists, ingress (original unit 18) | 2 |
+| 7 | App shell and typed API client (original units 31–32) | 2 |
+| 8 | Settings screens and preferences (original units 33–36) | 4 |
+| 9 | Accounts, statement upload, trades, dashboard, portfolio, MVP demo (original units 37–40) | 4 |
+| 10 | Waitlist form on the landing page (original unit 23) | 2 |
+| | **Total** | **25** |
+
+Moved to after the MVP: landing page clips 3–8, the hero video and "Watch Demo" modal, Verify Email (backend step 4), Keycloak with passkeys and social login (original units 6–16).
+
+At 9 units a week from Monday 26 October, 25 units end around **mid to late November 2026**, close to the original MVP date of Sunday 22 November, because about 11 units of Keycloak work leave the MVP and about 12 units of backend and auth work come in. These are estimates, not commitments; the Figma design phase (units 1–5) was skipped and only the short design check above is planned.
+
 ## Session routine
 
 | Session | Steps |
@@ -47,7 +103,7 @@ Rules: a unit that does not finish moves to the next session; do not start a sec
 | 4 | Landing page wireframe, reusing `Landing page-html/Main.dc.html`; pricing section with the five plans; register, login, forgot password and verify-email screens | Desktop and mobile frames match the field table in doc 4 section 3 |
 | 5 | Dashboard, trades table, settings (5 categories) and admin portal wireframes; mobile versions of dashboard and settings. Sign-off | Five main screens approved at phone, tablet and desktop widths |
 
-### Phase 1: Keycloak running locally (units 6–10, 26–30 Oct)
+### Phase 1: Keycloak running locally (units 6–10, 26–30 Oct) — DEFERRED, see "Progress and plan change"
 
 | Unit | Goal (2 h) | Done when |
 |---|---|---|
@@ -57,7 +113,7 @@ Rules: a unit that does not finish moves to the next session; do not start a sec
 | 9 | Identity providers in dev: Google, Microsoft, GitHub; link accounts by verified email | Each of the three logs a test user in |
 | 10 | Passkey (WebAuthn) and authenticator-code flows; export the realm JSON to the repo | Passkey registers in a browser; realm export committed |
 
-### Phase 1: gateway and services on Keycloak tokens (units 11–15, 31 Oct – 2 Nov)
+### Phase 1: gateway and services on Keycloak tokens (units 11–15, 31 Oct – 2 Nov) — DEFERRED
 
 | Unit | Goal (2 h) | Done when |
 |---|---|---|
@@ -67,7 +123,7 @@ Rules: a unit that does not finish moves to the next session; do not start a sec
 | 14 | Remove or isolate the old password login path; fix the fallback secrets from root `CLAUDE.md` section 7 | No default `jwt.secret` or DB password left in code |
 | 15 | Postman collection updates; run Newman end to end | Collection passes on the new auth |
 
-### Phase 1/2: Keycloak on K3s, web app scaffold (units 16–20, 3–7 Nov)
+### Phase 1/2: Keycloak on K3s, web app scaffold (units 16–20, 3–7 Nov) — Keycloak part (16) deferred; scaffold (17) done; deployment (18–19) still to do
 
 | Unit | Goal (2 h) | Done when |
 |---|---|---|
@@ -77,7 +133,7 @@ Rules: a unit that does not finish moves to the next session; do not start a sec
 | 19 | Ingress: web app and `/api` on one host (no CORS); `/ws` route for live prices | Browser calls the API from the same origin |
 | 20 | Buffer: finish unfinished items from units 6–19 (Saturday, first half) | Identity and scaffold checklist complete |
 
-### Phase 2: landing page (units 21–25, 7–10 Nov)
+### Phase 2: landing page (units 21–25, 7–10 Nov) — mostly done; waitlist, hero clip and clips 3–8 remain
 
 | Unit | Goal (2 h) | Done when |
 |---|---|---|
@@ -87,7 +143,7 @@ Rules: a unit that does not finish moves to the next session; do not start a sec
 | 24 | Hero clip and two feature clips (Screen Studio or Playwright recording); WebM and MP4, lazy loaded, reduced-motion respected | Clips play on scroll |
 | 25 | SEO (metadata, sitemap, OpenGraph), PostHog, Lighthouse run | Loads under 2.5 s on a mid-range phone profile |
 
-### Phase 1/3: sign-up and login screens (units 26–30, 11–14 Nov)
+### Phase 1/3: sign-up and login screens (units 26–30, 11–14 Nov) — Login and Register done on user-service (httpOnly cookies, not Keycloak OIDC); Reset Password, Onboarding, Verify Email pending
 
 | Unit | Goal (2 h) | Done when |
 |---|---|---|
@@ -135,7 +191,7 @@ A block is five units, about 4 calendar days at this pace. Plan each block in de
 | After | Date | Check |
 |---|---|---|
 | Unit 5 | Sun 25 Oct | Design signed off; decisions logged |
-| Unit 15 | Mon 2 Nov | Users register and log in through Keycloak; gateway, user-service and Newman green |
+| Unit 15 | Mon 2 Nov | ~~Users register and log in through Keycloak~~ Changed: users register and log in through the web app on user-service; profile fields saved, refresh endpoint working; user-service, gateway and Newman green |
 | Unit 25 | Tue 10 Nov | Landing page live with waitlist |
 | Unit 40 | Sun 22 Nov | MVP demo; revisit launch market, billing provider and price source before phase 4 |
 
@@ -143,6 +199,10 @@ A block is five units, about 4 calendar days at this pace. Plan each block in de
 
 - **Weekend load:** 8 hours of weekend work after 10 hours on weekdays is heavy. Take one full free day every second week; that adds about one week to the end date.
 - Social providers Apple and LinkedIn need external approval; they are left out of units 1–40 and picked up when approved.
-- The Keycloak migration (units 11–14) touches the gateway and user-service, the most sensitive code; keep it on a branch until Newman passes.
+- The Keycloak migration (units 11–14) is deferred. When it returns it touches the gateway and user-service, the most sensitive code; keep it on a branch until Newman passes.
+- **Sessions last 15 minutes** until the refresh endpoint exists (backend step 2); users log in again after that.
+- **Terms and Risk Disclaimer is a draft** and consent is not stored server-side until backend step 1. Counsel must review the text before launch.
+- The auth pages were tested against a mock gateway only (25 browser checks). Nothing has run against the real user-service, MySQL and Kafka yet; do that before relying on them.
+- Resetting a password and verifying an email need an email provider; choose one with the launch-market decision.
 - Launch-market and billing decisions (unit 1) change blocks 24–27 and the real price source in block 16.
 - Only unit 20 is a buffer. Missed days push every later date.

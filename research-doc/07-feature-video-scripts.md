@@ -141,3 +141,19 @@ Source prompt: A3 in [06-ai-prompt-library.md](06-ai-prompt-library.md). Where t
 - **Playwright:** record the real `web-app` screens once they exist, with seeded data, then add captions and the badge in Remotion.
 - **Accessibility:** each `<video>` is muted, looping, `playsinline`, with a poster, a short text alternative and a visible pause control. Reduced motion shows the poster only.
 - **Truth labels:** everything is sample data. Clips 7 and 8 are explicit concepts. Clips 1–5 show features that are still being built (the coach is planned for phase 6); check clip 2's sample file against a real statement format before publishing.
+
+## Implementation status (24 October 2026)
+
+| Clip | Status |
+|---|---|
+| 1. P&L calendar | Built and rendered with Playwright (8.00 s, 30 fps, VP9 WebM, about 167 KB) |
+| 2. Statement import | Built and rendered with Playwright (8.00 s, 30 fps, VP9 WebM, about 119 KB) |
+| 3–8 | Scripts only, not built |
+
+How: scenes live in `web-app/components/clips/` and `web-app/app/clips/` (noindex); `web-app/scripts/record-clips.mjs` steps the animation clock frame by frame, so each clip starts on its first frame and is exactly 8 seconds. See [web-app/README.md](../web-app/README.md). The clips play on the page in the "See it working" section.
+
+Differences from the scripts above:
+- The caption stays visible to the end frame (instead of fading out 0.5 s early) so the poster equals the end frame.
+- Week totals fade in instead of counting up; the import "Import 212 trades" button is visible from the start and is pressed at 6.6 s.
+- Output is VP9 WebM only: Playwright's bundled ffmpeg has no H.264 or VP8 encoder, so there is no MP4 fallback. Browsers without VP9 WebM show the poster.
+- On phone widths the 1280×720 scene is scaled down and its in-clip text is small; a phone-specific crop is a possible follow-up.

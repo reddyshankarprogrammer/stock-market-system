@@ -205,6 +205,8 @@ The admin portal's audit log and feature switches are needed earlier than phase 
 
 Phases 0, 2, 3 and 9 run on the existing backend; phases 1, 4, 5, 6, 7 and 8 need new backend work.
 
+**Plan change (24 October 2026):** phase 1 now starts with an interim identity on the existing **user-service** (login and register screens, httpOnly session cookies set by Next.js route handlers, extra user-service fields and endpoints), and **Keycloak moves later**. The browser still never holds raw tokens. Details, order and estimates are in [05-daily-implementation-plan.md](05-daily-implementation-plan.md) ("Progress and plan change").
+
 ## 10. References and licenses
 
 | Project | License | Use |

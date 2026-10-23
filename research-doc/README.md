@@ -39,6 +39,7 @@ Research and analysis for the next stage of stock-market-system, whose product b
 | 11 | Landing page prompt saved, more prompts for development and enterprise customers | Doc 6. The landing page itself is not built. |
 | 12 | Update roadmap.html with the new plan | Added settings, responsive design, plans, admin and revenue, daily schedule; updated sign-up, phases 0–9, risks and decisions. |
 | 13 | Landing page mockup review (prompt A2) and eight feature clip scripts (prompt A3) | Review given in chat only (24 findings); scripts saved as doc 7. |
+| 14 | Authentication pages (login, register with read-to-the-end disclaimer, protected routes, dark/light mode) on user-service, and update the daily plan | Built in `web-app/` (stage A) with httpOnly cookies; Keycloak deferred; Verify Email and Send Reset Link pending as asked. Doc 5 has a new "Progress and plan change" section; doc 4 has a note. |
 
 ## Key decisions still open
 
