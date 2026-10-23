@@ -23,7 +23,7 @@ export function Section({ id, tone = "light", eyebrow, title, intro, children }:
         {(eyebrow || title || intro) && (
           <header className="mb-10 max-w-3xl">
             {eyebrow && (
-              <p className={`text-sm font-semibold uppercase tracking-widest ${tone === "navy" ? "text-growth" : "text-electric"}`}>
+              <p className={`text-sm font-bold uppercase tracking-widest ${tone === "navy" ? "text-growth" : "text-navy"}`}>
                 {eyebrow}
               </p>
             )}

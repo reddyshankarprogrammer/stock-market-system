@@ -21,6 +21,7 @@ export function Hero() {
         </div>
         <div className="min-w-0">
           <HeroDashboard />
+          <p className="mt-3 text-xs text-silver">Sample data. Not investment advice. Trading involves risk.</p>
         </div>
       </div>
     </section>

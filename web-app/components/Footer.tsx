@@ -18,10 +18,10 @@ export function Footer() {
           {footer.columns.map((c) => (
             <nav key={c.title} aria-label={c.title}>
               <h2 className="text-sm font-bold uppercase tracking-wide text-white">{c.title}</h2>
-              <ul className="mt-3 grid gap-2 text-sm">
+              <ul className="mt-1 grid text-sm">
                 {c.links.map((l) => (
                   <li key={l.label}>
-                    <a href={l.href} className="transition-colors hover:text-white">
+                    <a href={l.href} className="inline-flex min-h-11 items-center transition-colors hover:text-white">
                       {l.label}
                     </a>
                   </li>

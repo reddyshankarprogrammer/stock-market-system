@@ -21,6 +21,12 @@
   --font-sans: var(--font-inter);
   --font-display: var(--font-manrope);
 
+  /* Shadows use navy, not black, so the page stays inside the brand palette */
+  --shadow-sm: 0 1px 2px 0 rgb(11 31 58 / 0.15);
+  --shadow-lg: 0 10px 15px -3px rgb(11 31 58 / 0.2), 0 4px 6px -4px rgb(11 31 58 / 0.2);
+  --shadow-xl: 0 20px 25px -5px rgb(11 31 58 / 0.25), 0 8px 10px -6px rgb(11 31 58 / 0.25);
+  --shadow-2xl: 0 25px 50px -12px rgb(11 31 58 / 0.4);
+
   /* One radius and one section spacing shared by every button, card and section */
   --radius-brand: 0.5rem;
   --spacing-section: 5rem;
@@ -49,6 +55,24 @@ h3 {
   outline: 2px solid var(--quantiva-blue);
   outline-offset: 2px;
 }
+
+/* Illustrations play once (no loops, so no pause control is needed) and end on their final state.
+   Under reduced motion the rule below shortens them to 0.01ms, so the final state shows at once. */
+@keyframes qv-draw {
+  from { stroke-dashoffset: 400; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes qv-grow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes qv-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.qv-draw { stroke-dasharray: 400; animation: qv-draw 2.2s ease-out both; }
+.qv-grow { transform-box: fill-box; transform-origin: 50% 100%; animation: qv-grow 1.2s ease-out both; }
+.qv-rise { animation: qv-rise 0.8s ease-out both; }
 
 @media (prefers-reduced-motion: reduce) {
   html {
