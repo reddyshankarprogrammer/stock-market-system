@@ -462,7 +462,7 @@ await test("shell: every nav item opens its page, is marked current, and has a 4
 });
 await test("shell: page skeletons say plainly that the screen is not built yet", async () => {
   const c = await newCtx(); const p = await c.newPage(); await login(p); await p.waitForURL(/\/dashboard/);
-  await p.goto(`${BASE}/trades`); await p.getByRole("heading", { name: "Trades" }).waitFor(); await p.getByText(/planned/).waitFor(); await c.close();
+  await p.goto(`${BASE}/portfolio`); await p.getByRole("heading", { name: "Portfolio" }).waitFor(); await p.getByText(/planned/).waitFor(); await c.close();
 });
 
 // ---- typed account API (BFF /api/gw) and the Accounts page ----
@@ -655,6 +655,72 @@ await test("statements: uploads through the BFF need the same origin and an allo
   ok(other.status() === 415, `multipart elsewhere ${other.status()}`);
   const good = await c.request.post(`${BASE}/api/gw/api/v1/accounts/a-2/statements/upload`, { headers: { Origin: BASE }, multipart: form });
   ok(good.status() === 201, `upload ${good.status()}`); await c.close();
+});
+
+// ---- trades ----
+const bigCsv = (n) => "symbol,trade_date,trade_type,quantity,price,trade_id\n" + Array.from({ length: n }, (_, i) => `${i % 2 ? "TCS" : "INFY"},2026-09-${String((i % 28) + 1).padStart(2, "0")},buy,${i + 1},${1000 + i},big${i}`).join("\n") + "\n";
+const tradeRows = (p) => p.locator("tbody tr");
+await test("trades: the table lists the account's trades with the realised profit of the view", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "t1@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/trades`); await p.getByRole("heading", { name: "Trades", level: 1 }).waitFor();
+  await p.getByRole("region", { name: "Trades table" }).waitFor(); ok((await tradeRows(p).count()) === 2, "two rows");
+  await p.getByText(/2 trades\. Realised profit in this view: \+\$80\.00/).waitFor();
+  ok((await p.getByLabel("Account").locator("option").count()) === 2, "account picker"); await c.close();
+});
+await test("trades: filters (dates go to the API, symbol and side narrow the list) and Clear filters", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "t2@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/trades`); await tradeRows(p).first().waitFor();
+  await p.getByLabel("Side").selectOption("SELL"); await p.getByText(/1 trade match your filters/).waitFor(); ok((await tradeRows(p).count()) === 1, "sell only");
+  await p.getByLabel("Side").selectOption(""); await p.getByLabel("From").fill("2026-10-04"); await p.getByText(/1 trade match your filters/).waitFor();
+  ok((await tradeRows(p).first().innerText()).includes("Sell"), "date filter should keep only the sell");
+  await p.getByLabel("Symbol").fill("zzz"); await p.getByText("No trades match").waitFor();
+  await p.getByRole("button", { name: "Clear filters" }).click(); await p.getByText(/2 trades\./).waitFor(); ok((await p.getByLabel("From").inputValue()) === "", "from not cleared"); await c.close();
+});
+await test("trades: sorting by a column header toggles direction and says so (aria-sort)", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "t3@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/trades`); await tradeRows(p).first().waitFor();
+  const date = p.getByRole("columnheader", { name: /Date/ });
+  ok((await date.getAttribute("aria-sort")) === "descending" && (await tradeRows(p).first().innerText()).includes("Sell"), "newest first by default");
+  await date.getByRole("button").click(); await p.waitForFunction(() => document.querySelector("th[aria-sort=ascending]"));
+  ok((await tradeRows(p).first().innerText()).includes("Buy"), "oldest first after the click");
+  await p.getByRole("columnheader", { name: /Realised profit/ }).getByRole("button").click();
+  await p.waitForFunction(() => document.querySelector("th[aria-sort=descending]")?.textContent?.includes("Realised profit"));
+  ok((await p.getByRole("columnheader", { name: /Realised profit/ }).getAttribute("aria-sort")) === "descending" && (await tradeRows(p).first().innerText()).includes("+$80.00"), "by profit"); await c.close();
+});
+await test("trades: 20 imported trades are paged 15 + 5, the page survives a reload and Previous is disabled on page 1", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "t4@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/accounts/a-2`); await p.getByLabel("Upload a Zerodha statement").setInputFiles(csv("big.csv", bigCsv(20))); await p.getByText("Statement imported").waitFor({ timeout: 20000 });
+  await p.goto(`${BASE}/trades?account=a-2`); await p.getByText("Showing 1 to 15 of 20").waitFor(); ok((await tradeRows(p).count()) === 15, "15 rows");
+  ok(await p.getByRole("button", { name: "Previous" }).isDisabled(), "previous on page 1");
+  await p.getByRole("button", { name: "Next" }).click(); await p.getByText("Showing 16 to 20 of 20").waitFor(); ok((await tradeRows(p).count()) === 5, "5 rows"); ok(p.url().includes("page=2"), "page in the URL");
+  await p.reload(); await p.getByText("Showing 16 to 20 of 20").waitFor(); ok(await p.getByRole("button", { name: "Next" }).isDisabled(), "next on the last page"); await c.close();
+});
+await test("trades: a trade opens its detail page with the figures and a way back", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "t5@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/trades`); await tradeRows(p).filter({ hasText: "Sell" }).getByRole("link").click(); await p.waitForURL(/\/trades\/t-/);
+  await p.getByRole("heading", { name: "Sell AAPL", level: 1 }).waitFor(); await p.locator("dd", { hasText: "+$80.00" }).waitFor(); await p.locator("dd", { hasText: "Quantiva platform" }).waitFor();
+  await p.getByRole("link", { name: "← All trades" }).click(); await p.waitForURL(/\/trades\?account=a-1/); await c.close();
+});
+await test("trades: record a trade by hand (validated) on a tracking account and trade at the market price on a platform account", async () => {
+  const c = await newCtx(); const p = await c.newPage(); const form = () => p.getByRole("form", { name: "Record a trade" }); await login(p, "t6@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/trades?account=a-2`); await p.getByRole("button", { name: "Record a trade" }).click();
+  await p.getByRole("button", { name: "Record trade" }).click(); await p.getByText("Enter the symbol").waitFor(); await p.getByText("Enter a price above zero").waitFor();
+  await form().getByLabel("Symbol").fill("tcs"); await form().getByLabel("Quantity").fill("3"); await form().getByLabel("Price").fill("3600"); await form().getByLabel("Trade date").fill("2999-01-01");
+  await p.getByRole("button", { name: "Record trade" }).click(); await p.getByText("The date cannot be in the future").waitFor();
+  await form().getByLabel("Trade date").fill("2026-10-10"); await p.getByRole("button", { name: "Record trade" }).click();
+  await p.getByRole("cell", { name: "TCS", exact: true }).waitFor({ timeout: 15000 }); await p.getByText("₹3,600.00").waitFor();
+  await p.goto(`${BASE}/trades?account=a-1`); await p.getByRole("button", { name: "Record a trade" }).click();
+  await form().getByLabel("Symbol").fill("MSFT"); await form().getByLabel("Shares").fill("2"); await p.getByRole("button", { name: "Place trade" }).click();
+  await p.getByRole("cell", { name: "MSFT", exact: true }).waitFor({ timeout: 15000 }); await p.getByText("$400.00").first().waitFor();
+  await p.getByRole("button", { name: "Record a trade" }).click(); await form().getByLabel("Side").selectOption("SELL"); await form().getByLabel("Symbol").fill("MSFT"); await form().getByLabel("Shares").fill("99");
+  await p.getByRole("button", { name: "Place trade" }).click(); await p.getByText("Insufficient shares to sell").waitFor({ timeout: 15000 }); await c.close();
+});
+await test("trades: the table scrolls inside itself on a phone (no page overflow) and has no small targets", async () => {
+  const c = await newCtx({ viewport: { width: 360, height: 800 } }); const p = await c.newPage(); await login(p, "t7@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/trades`); await tradeRows(p).first().waitFor();
+  const r = await p.evaluate(() => ({ overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    small: [...document.querySelectorAll("main a, main button, main input, main select")].filter((e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height < 43.5; }).map((e) => (e.textContent || e.id).trim().slice(0, 20)) }));
+  ok(!r.overflow, "page overflows"); ok(r.small.length === 0, `small targets: ${r.small}`); await c.close();
 });
 
 await browser.close();

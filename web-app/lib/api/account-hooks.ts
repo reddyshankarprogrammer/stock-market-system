@@ -79,6 +79,17 @@ export function useRecordTrade() {
   return useMutation({ mutationFn: (body: ManualTrade) => accountApi.recordTrade(body), onSuccess: (_t, body) => body.accountId && invalidateAccount(qc, body.accountId) });
 }
 
+export function usePlatformTrade() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (o: { side: "BUY" | "SELL"; accountId: string; symbol: string; quantity: number }) => (o.side === "BUY" ? accountApi.buy(o) : accountApi.sell(o)),
+    onSuccess: (_t, o) => {
+      invalidateAccount(qc, o.accountId);
+      qc.invalidateQueries({ queryKey: ["accounts"] }); // the cash balance on the list changed
+    },
+  });
+}
+
 export function useUploadStatement(accountId: string) {
   const qc = useQueryClient();
   // A rejected file (bad format, duplicate) still creates a statement record with its import result, so refresh either way.

@@ -138,6 +138,19 @@ export function createAccountMock() {
       const t = mine.flatMap((a) => trades.get(K(a.id)) ?? []).find((x) => x.id === m[1]);
       return (t ? send(200, t) : send(404, { status: 404, error: "Not Found", message: "Trade not found" })), true;
     }
+    if (req.method === "POST" && (url === "/api/v1/trades/buy" || url === "/api/v1/trades/sell")) {
+      const a = own(body.accountId); if (!a) return deny(), true;
+      const side = url.endsWith("buy") ? "BUY" : "SELL", px = PRICES[body.symbol];
+      if (!px) return send(400, { status: 400, message: `No price for ${body.symbol}` }), true;
+      const held = holdingsOf(a.id).find((h) => h.symbol === body.symbol)?.quantity ?? 0;
+      if (side === "SELL" && held < body.quantity) return send(400, { status: 400, message: "Insufficient shares to sell" }), true;
+      if (side === "BUY" && a.balance < body.quantity * px) return send(400, { status: 400, message: "Insufficient funds" }), true;
+      const avg = holdingsOf(a.id).find((h) => h.symbol === body.symbol)?.averagePrice ?? px;
+      const t = mkTrade(a.id, body.symbol, side, body.quantity, px, "2026-10-24T09:30:00", side === "SELL" ? round((px - avg) * body.quantity) : 0);
+      a.balance = round(a.balance + (side === "SELL" ? 1 : -1) * body.quantity * px);
+      trades.set(K(a.id), [...(trades.get(K(a.id)) ?? []), t]);
+      return send(201, t), true;
+    }
     if (req.method === "POST" && url === "/api/v1/trades") {
       const a = own(body.accountId); if (!a) return deny(), true;
       if (a.brokerName === "PLATFORM" || a.brokerName === "PAPER") return send(400, { status: 400, message: "Use /trades/buy or /trades/sell for platform accounts" }), true;

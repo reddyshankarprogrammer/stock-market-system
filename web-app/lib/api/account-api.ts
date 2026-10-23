@@ -28,6 +28,8 @@ export const accountApi = {
   trades: (accountId: string, range: { from?: string; to?: string } = {}) =>
     unwrap(client.GET("/api/v1/trades/account/{accountId}", { params: { path: { accountId }, query: range } })),
   trade: (id: string) => unwrap(client.GET("/api/v1/trades/{id}", { params: { path: { id } } })),
+  buy: (body: components["schemas"]["BuyTradeRequest"]) => unwrap(client.POST("/api/v1/trades/buy", { body })),
+  sell: (body: components["schemas"]["SellTradeRequest"]) => unwrap(client.POST("/api/v1/trades/sell", { body })),
   recordTrade: (body: ManualTrade) => unwrap(client.POST("/api/v1/trades", { body })),
 
   holdings: (accountId: string) => unwrap(client.GET("/api/v1/holdings/account/{accountId}", { params: { path: { accountId } } })),
