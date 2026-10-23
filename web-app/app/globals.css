@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/* Quantiva brand tokens: the only colours the site may use (research-doc/branding/QUANTIVA_BRAND_IDENTITY.md).
+   One look for every visitor: the logo wordmark is navy, so the page does not switch with the OS theme. */
+:root {
+  --quantiva-navy: #0b1f3a;
+  --quantiva-blue: #146ef5;
+  --quantiva-green: #00c878;
+  --quantiva-graphite: #1e293b;
+  --quantiva-silver: #dce3ea;
+  --quantiva-white: #ffffff;
+}
+
+@theme inline {
+  --color-navy: var(--quantiva-navy);
+  --color-electric: var(--quantiva-blue);
+  --color-growth: var(--quantiva-green);
+  --color-graphite: var(--quantiva-graphite);
+  --color-silver: var(--quantiva-silver);
+
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-manrope);
+
+  /* One radius and one section spacing shared by every button, card and section */
+  --radius-brand: 0.5rem;
+  --spacing-section: 5rem;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem; /* sticky header height */
+}
+
+body {
+  background: var(--quantiva-white);
+  color: var(--quantiva-navy);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  overflow-x: clip; /* no horizontal scrolling at any width */
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2px solid var(--quantiva-blue);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
