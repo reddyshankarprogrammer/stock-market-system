@@ -256,7 +256,8 @@ public class UserServiceImpl implements UserService {
                 user.getGender(),
                 user.getCountry(),
                 user.getTermsVersion(),
-                user.getTermsAcceptedAt()
+                user.getTermsAcceptedAt(),
+                user.getOnboardingCompletedAt()
         );
     }
 }

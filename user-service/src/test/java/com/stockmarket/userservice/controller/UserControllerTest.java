@@ -26,6 +26,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,6 +45,9 @@ class UserControllerTest {
 
     @MockitoBean
     private com.stockmarket.userservice.service.PasswordResetService passwordResetService;
+
+    @MockitoBean
+    private com.stockmarket.userservice.service.OnboardingService onboardingService;
 
     @Test
     void register_ValidRequest_ReturnsCreated() throws Exception {
@@ -200,6 +204,63 @@ class UserControllerTest {
         verifyNoInteractions(passwordResetService);
     }
 
+    private com.stockmarket.userservice.dto.OnboardingResponse onboarding() {
+        return new com.stockmarket.userservice.dto.OnboardingResponse("ADVANCED", java.util.List.of("GROWW", "ZERODHA"), "PRO", false, null);
+    }
+
+    @Test
+    void onboarding_get_usesTheGatewayHeader_notAnythingElse() throws Exception {
+        when(onboardingService.get("user-1")).thenReturn(onboarding());
+
+        mockMvc.perform(get("/api/v1/users/me/onboarding").header("X-User-Id", "user-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tradingExperience").value("ADVANCED"))
+                .andExpect(jsonPath("$.brokerPreferences[1]").value("ZERODHA"))
+                .andExpect(jsonPath("$.completed").value(false));
+
+        mockMvc.perform(get("/api/v1/users/me/onboarding")).andExpect(status().isUnauthorized()); // no header, no identity
+    }
+
+    @Test
+    void onboarding_put_savesForTheCaller_andIgnoresAUserIdInTheBody() throws Exception {
+        when(onboardingService.save(eq("user-1"), any())).thenReturn(onboarding());
+
+        mockMvc.perform(put("/api/v1/users/me/onboarding").header("X-User-Id", "user-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"tradingExperience\":\"ADVANCED\",\"brokerPreferences\":[\"GROWW\",\"ZERODHA\"],\"plan\":\"PRO\",\"userId\":\"someone-else\"}"))
+                .andExpect(status().isOk());
+
+        org.mockito.Mockito.verify(onboardingService).save(eq("user-1"), any()); // never "someone-else"
+    }
+
+    @Test
+    void onboarding_put_rejectsBadValues() throws Exception {
+        for (String body : new String[] {
+                "{\"tradingExperience\":\"GURU\"}",
+                "{\"plan\":\"PLATINUM\"}",
+                "{\"brokerPreferences\":[\"MADEUP\"]}",
+                "{\"brokerPreferences\":[\"GROWW\",\"ZERODHA\",\"BINANCE\",\"EXNESS\",\"OTHER\",\"NONE\",\"GROWW\"]}" }) {
+            mockMvc.perform(put("/api/v1/users/me/onboarding").header("X-User-Id", "user-1")
+                            .contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
+        }
+        org.mockito.Mockito.verifyNoInteractions(onboardingService);
+    }
+
+    @Test
+    void onboarding_complete_andItsRulesComeBackAs400() throws Exception {
+        when(onboardingService.complete("user-1")).thenReturn(onboarding());
+        mockMvc.perform(post("/api/v1/users/me/onboarding/complete").header("X-User-Id", "user-1")).andExpect(status().isOk());
+
+        when(onboardingService.complete("user-2")).thenThrow(new IllegalArgumentException("Choose your trading experience, your brokers and a plan first"));
+        mockMvc.perform(post("/api/v1/users/me/onboarding/complete").header("X-User-Id", "user-2"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Choose your trading experience, your brokers and a plan first"));
+
+        when(onboardingService.get("ghost")).thenThrow(new com.stockmarket.userservice.exception.UserNotFoundException());
+        mockMvc.perform(get("/api/v1/users/me/onboarding").header("X-User-Id", "ghost")).andExpect(status().isNotFound());
+    }
+
     @Test
     void login_BadCredentials_Returns401_WithOneMessage() throws Exception {
         when(userService.login(any(LoginRequest.class))).thenThrow(new com.stockmarket.userservice.exception.InvalidCredentialsException());
@@ -245,7 +306,7 @@ class UserControllerTest {
 
     @Test
     void getUserById_ReturnsOk() throws Exception {
-        UserResponse response = new UserResponse("user-1", "user@example.com", "John", "Doe", BigDecimal.valueOf(5000), UserStatus.ACTIVE, LocalDateTime.now(), Role.USER, null, null, null, null, null, null);
+        UserResponse response = new UserResponse("user-1", "user@example.com", "John", "Doe", BigDecimal.valueOf(5000), UserStatus.ACTIVE, LocalDateTime.now(), Role.USER, null, null, null, null, null, null, null);
 
         when(userService.getUserById("user-1")).thenReturn(response);
 
@@ -265,7 +326,7 @@ class UserControllerTest {
 
     @Test
     void getUserById_OtherUserAsAdmin_ReturnsOk() throws Exception {
-        UserResponse response = new UserResponse("user-2", "other@example.com", "Jane", "Roe", BigDecimal.valueOf(100), UserStatus.ACTIVE, LocalDateTime.now(), Role.USER, null, null, null, null, null, null);
+        UserResponse response = new UserResponse("user-2", "other@example.com", "Jane", "Roe", BigDecimal.valueOf(100), UserStatus.ACTIVE, LocalDateTime.now(), Role.USER, null, null, null, null, null, null, null);
         when(userService.getUserById("user-2")).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/users/user-2").header("X-User-Id", "admin-1").header("X-User-Role", "ADMIN"))
@@ -281,7 +342,7 @@ class UserControllerTest {
 
     @Test
     void addFunds_ReturnsOk() throws Exception {
-        UserResponse response = new UserResponse("user-1", "user@example.com", "John", "Doe", BigDecimal.valueOf(6000), UserStatus.ACTIVE, LocalDateTime.now(), Role.USER, null, null, null, null, null, null);
+        UserResponse response = new UserResponse("user-1", "user@example.com", "John", "Doe", BigDecimal.valueOf(6000), UserStatus.ACTIVE, LocalDateTime.now(), Role.USER, null, null, null, null, null, null, null);
 
         when(userService.addFunds(eq("user-1"), any(BigDecimal.class))).thenReturn(response);
 

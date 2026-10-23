@@ -178,6 +178,9 @@ All paths are relative to `http://localhost:8080`. 🔒 means a token is require
 | POST | `/api/v1/users/refresh` | public | Exchange a refresh token for a new access token |
 | POST | `/api/v1/users/forgot-password` | public | Ask for a password-reset link by email |
 | POST | `/api/v1/users/reset-password` | public | Choose a new password with the emailed token |
+| GET | `/api/v1/users/me/onboarding` | 🔒 | Your onboarding answers |
+| PUT | `/api/v1/users/me/onboarding` | 🔒 | Save onboarding answers (one step or several) |
+| POST | `/api/v1/users/me/onboarding/complete` | 🔒 | Finish onboarding |
 | GET | `/api/v1/users/me` | 🔒 | Your profile and wallet balance |
 | GET | `/api/v1/users/{userId}` | 🔒 | A profile by id (only your own) |
 | POST | `/api/v1/users/{userId}/funds/add?amount=` | 🔒 | Add money to your wallet (only your own) |
@@ -230,6 +233,14 @@ Always returns `202 Accepted` with `If an account exists for that email, a reset
 ```
 
 `200 OK` and the new password works at once. The password must be 6 to 72 characters. An unknown, used or expired token (or a blocked account) gives `400` with `This reset link is invalid or has expired`. Resetting also ends every login session that started before it (refresh tokens); an access token already issued stays valid for up to 15 minutes.
+
+**Onboarding** `GET`, `PUT` and `POST .../complete` on `/api/v1/users/me/onboarding`
+
+```json
+{ "tradingExperience": "ADVANCED", "brokerPreferences": ["GROWW", "ZERODHA"], "plan": "PRO" }
+```
+
+Always about **you**: the user is the one in your token, never something in the URL or body. `PUT` saves only the fields you send, so you can save one step at a time. Experience is `BEGINNER`, `INTERMEDIATE`, `ADVANCED` or `PROFESSIONAL`; brokers are 1 to 6 of `GROWW`, `ZERODHA`, `BINANCE`, `EXNESS`, `OTHER` or `NONE` (no broker yet, which cannot be combined with the others); the plan is `FREE`, `PRO`, `AI_PRO`, `QUANT_PRO` or `ENTERPRISE` and records your interest only, because billing is not set up yet. Anything else is `400`. `POST .../complete` needs all three answers (otherwise `400`) and sets `onboardingCompletedAt` on your profile; the web app sends people with no completion time to the setup wizard.
 
 **My profile** `GET /api/v1/users/me` 🔒
 

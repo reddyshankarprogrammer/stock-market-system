@@ -376,6 +376,10 @@ erDiagram
         varchar terms_version "nullable"
         datetime terms_accepted_at "nullable, server time"
         datetime password_changed_at "nullable, set by a reset"
+        varchar trading_experience "nullable, onboarding"
+        varchar broker_preferences "nullable, CSV"
+        varchar selected_plan "nullable, interest only"
+        datetime onboarding_completed_at "nullable"
     }
     password_reset_tokens {
         varchar id PK "UUID"

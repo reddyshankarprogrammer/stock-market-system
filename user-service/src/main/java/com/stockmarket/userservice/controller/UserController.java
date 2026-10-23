@@ -6,6 +6,9 @@ import com.stockmarket.userservice.dto.ForgotPasswordRequest;
 import com.stockmarket.userservice.dto.MessageResponse;
 import com.stockmarket.userservice.dto.RefreshRequest;
 import com.stockmarket.userservice.dto.ResetPasswordRequest;
+import com.stockmarket.userservice.dto.OnboardingRequest;
+import com.stockmarket.userservice.dto.OnboardingResponse;
+import com.stockmarket.userservice.service.OnboardingService;
 import com.stockmarket.userservice.service.PasswordResetService;
 import com.stockmarket.userservice.dto.RegisterRequest;
 import com.stockmarket.userservice.dto.UserResponse;
@@ -28,6 +31,7 @@ public class UserController {
 
     private final UserService userService;
     private final PasswordResetService passwordResetService;
+    private final OnboardingService onboardingService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(
@@ -76,6 +80,31 @@ public class UserController {
 
         passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
         return ResponseEntity.ok(new MessageResponse("Your password has been changed"));
+    }
+
+    /** Own onboarding answers. Identity comes from the gateway header, never from the URL or body. */
+    @GetMapping("/me/onboarding")
+    public ResponseEntity<OnboardingResponse> getOnboarding(
+            @RequestHeader("X-User-Id") String userId) {
+
+        return ResponseEntity.ok(onboardingService.get(userId));
+    }
+
+    /** Save one step or several; only the fields sent are changed. */
+    @PutMapping("/me/onboarding")
+    public ResponseEntity<OnboardingResponse> saveOnboarding(
+            @RequestHeader("X-User-Id") String userId,
+            @Valid @RequestBody OnboardingRequest request) {
+
+        return ResponseEntity.ok(onboardingService.save(userId, request));
+    }
+
+    /** Finish onboarding. Needs experience, brokers and plan to be saved first. */
+    @PostMapping("/me/onboarding/complete")
+    public ResponseEntity<OnboardingResponse> completeOnboarding(
+            @RequestHeader("X-User-Id") String userId) {
+
+        return ResponseEntity.ok(onboardingService.complete(userId));
     }
 
     @GetMapping("/me")

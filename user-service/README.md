@@ -15,7 +15,7 @@ Accounts of people: registration, login, JWT issuing, profile, role and the wall
 
 ```powershell
 .\mvnw.cmd spring-boot:run        # from user-service/, needs MySQL + Kafka (docker compose up -d)
-.\mvnw.cmd test                   # 66 tests, no infrastructure (H2, mocks, an in-process SMTP server)
+.\mvnw.cmd test                   # 76 tests, no infrastructure (H2, mocks, an in-process SMTP server)
 ```
 
 ## Package layout
@@ -31,6 +31,7 @@ com.stockmarket.userservice
 ├── repository/UserRepository      findByEmail, existsByEmail
 ├── security/JwtService            issue/parse access + refresh tokens (HS256)
 ├── service/PasswordResetService   forgot and reset password (hashed single-use tokens)
+├── service/OnboardingService      the answers of the onboarding wizard (saved step by step)
 ├── service/MailService, impl/SmtpMailService   outgoing email; failures are logged, never thrown
 └── service/UserService, impl/UserServiceImpl
 ```
@@ -44,6 +45,9 @@ com.stockmarket.userservice
 | POST | `/refresh` | public | Body `{refreshToken}`. Returns a new access token and the same refresh token (not rotated). Bad, expired, tampered or access token, unknown user, or a blocked status (INACTIVE, SUSPENDED, DELETED, BLOCKED, BANNED, ACCOUNT_LOCKED/EXPIRED/DISABLED) → 401 `Invalid refresh token`. Public because the access token has already expired; the gateway rejects refresh tokens on every other path |
 | POST | `/forgot-password` | public | Body `{email}`. **Always 202** with the same message, whether or not the email is registered. If it is (and the account is not blocked), a single-use link is emailed. Asking again within 60 s sends nothing new; asking later voids the older link |
 | POST | `/reset-password` | public | Body `{token, newPassword}` (6–72 characters). 200 and the new password works; the token is spent and any other pending links are voided. Unknown, used, expired or blocked-account token → 400 `This reset link is invalid or has expired` (one message for all) |
+| GET | `/me/onboarding` | X-User-Id | Own onboarding answers: `{tradingExperience, brokerPreferences[], plan, completed, completedAt}` (all empty for a new user). The user id is the gateway header, never the URL or body |
+| PUT | `/me/onboarding` | X-User-Id | Save one step or several; **only the fields sent change**, so a half-finished onboarding can be resumed. `tradingExperience` BEGINNER, INTERMEDIATE, ADVANCED or PROFESSIONAL; `brokerPreferences` (1 to 6 of GROWW, ZERODHA, BINANCE, EXNESS, OTHER, NONE; duplicates removed; NONE cannot be combined); `plan` FREE, PRO, AI_PRO, QUANT_PRO or ENTERPRISE (an interest only: billing does not exist yet). Bad values → 400 |
+| POST | `/me/onboarding/complete` | X-User-Id | Marks onboarding done (needs experience, brokers and plan saved first, else 400). Completing again keeps the first time. `UserResponse.onboardingCompletedAt` then becomes non-null |
 | GET | `/me` | X-User-Id | Own profile |
 | GET | `/{userId}` | X-User-Id (+ X-User-Role) | Own profile, or any profile for ADMIN; else 403 |
 | POST | `/{userId}/funds/add?amount=` | X-User-Id | Owner only; amount > 0 |
@@ -60,7 +64,7 @@ com.stockmarket.userservice
 | `country` | 2-letter uppercase ISO code, e.g. `IN` |
 | `termsVersion` | Version of the Terms and Risk Disclaimer accepted (max 50 characters). The server sets `termsAcceptedAt` itself; a client-sent time is never used |
 
-Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, accessToken, refreshToken, tokenType}`, `UserResponse {id, email, firstName, lastName, walletBalance, status, createdAt, role, mobileCountryCode, mobileNumber, gender, country, termsVersion, termsAcceptedAt}` (the new fields are `null` for users who registered before they existed).
+Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, accessToken, refreshToken, tokenType}`, `UserResponse {id, email, firstName, lastName, walletBalance, status, createdAt, role, mobileCountryCode, mobileNumber, gender, country, termsVersion, termsAcceptedAt, onboardingCompletedAt}` (the new fields are `null` for users who registered before they existed).
 
 ## Data model: `users`
 
@@ -77,6 +81,8 @@ Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, acc
 | mobile_country_code, mobile_number, gender, country | nullable profile fields (`varchar`; `gender` is `MALE`/`FEMALE`); existing users have none |
 | terms_version, terms_accepted_at | nullable; set together at registration, time from the server clock |
 | password_changed_at | nullable; set by a password reset. Refresh tokens issued before it are refused |
+| trading_experience, broker_preferences, selected_plan | nullable onboarding answers (`broker_preferences` is comma-separated, sorted, e.g. `GROWW,ZERODHA`); existing users have none |
+| onboarding_completed_at | nullable; set once, at microsecond precision (what MySQL stores) |
 
 ### Table `password_reset_tokens`
 

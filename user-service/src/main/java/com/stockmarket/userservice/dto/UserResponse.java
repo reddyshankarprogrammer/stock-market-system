@@ -34,4 +34,6 @@ public class UserResponse {
     private String country;
     private String termsVersion;
     private LocalDateTime termsAcceptedAt;
+    /** Null until the user finishes onboarding; the web app sends users with null to the onboarding wizard. */
+    private LocalDateTime onboardingCompletedAt;
 }

@@ -2,6 +2,37 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: onboarding wizard (trading experience, brokers, plan, complete) with saved answers
+
+### Features
+
+| Feature | Where |
+|---|---|
+| `GET` / `PUT /api/v1/users/me/onboarding` and `POST /api/v1/users/me/onboarding/complete`. The user is the caller's token (gateway `X-User-Id`), never the URL or body. `PUT` saves only the fields sent (one step at a time, resumable); experience BEGINNER to PROFESSIONAL; 1 to 6 brokers (GROWW, ZERODHA, BINANCE, EXNESS, OTHER, NONE, de-duplicated, NONE exclusive); plan FREE to ENTERPRISE (an interest only, billing does not exist). `complete` needs all three answers and keeps its first time. | `user-service` `OnboardingService`, `UserController` |
+| New nullable columns on `users`: `trading_experience`, `broker_preferences` (CSV), `selected_plan`, `onboarding_completed_at`. `UserResponse` gets `onboardingCompletedAt` (last). | `entity/User`, `dto/UserResponse` |
+| Web app: `/onboarding` four-step wizard with a progress bar and "Step n of 4", focus moved to each step's heading, native radios and checkboxes (44 px), "I do not use a broker yet" excluding the others, a summary with Change links, resume at the first unanswered step, and "Skip for now" (this browser session only). Paid plans say plainly that they are not available yet and that everyone starts on Free. | `web-app` `components/onboarding/OnboardingWizard.tsx`, `/api/onboarding` routes |
+| The dashboard sends users whose profile has no completion time to the wizard (every existing account, once). | `DashboardView` |
+| `callAsUser` in `lib/auth/server.ts`: one place that calls user-service as the signed-in user, renewing the session from the refresh cookie when needed (the profile and onboarding routes share it). | `web-app` |
+
+### Bugs found by testing and fixed
+
+| Bug | Fix |
+|---|---|
+| After "Complete setup" the dashboard bounced straight back to the wizard: **each layout created its own data cache** and Next keeps visited pages in memory, so the "done" update never reached the dashboard's cache | One shared `QueryClient` in the browser (`components/Providers.tsx`) |
+| Login and register seeded the profile cache with an answer that has no onboarding status, which the dashboard then trusted | They now clear the cached profile instead, so the dashboard fetches the full one |
+| `completedAt` showed 7 fractional digits the first time and 6 afterwards (in-memory nanoseconds vs what MySQL stores) | Truncated to microseconds when set, with a unit test |
+| `scripts/stop-all.ps1` left orphan JVMs: on this machine `java` is a launcher shim that starts the real JVM as a child, and only the shim's pid is recorded; the orphan kept the jar locked and broke the next build | Uses `taskkill /T /F` to stop the whole process tree |
+
+### Compatibility
+
+- Additive: new endpoints, nullable columns, one new response field. Nothing existing changed.
+- **Every existing account has no completion time**, so each is offered the wizard the next time it reaches the dashboard (skippable per session).
+- Selecting a paid plan records interest only: there is no billing, entitlement or price yet.
+
+### Tests
+
+user-service **76 tests pass** (10 new). Web app **46 of 46** browser checks on the mock gateway, three runs in a row (8 new for onboarding: step 1 start and missing-choice message, all four steps with focus and plan names, broker exclusivity, resume after reload, skip per session, finished user not sent back, session required and 44 px radios). **Real stack: 16 of 16** (`npm run e2e:auth:real`, now including the wizard writing to MySQL and a fresh browser going straight to the dashboard). Direct checks on the real service: all five bad values give 400, `complete` with nothing gives 400, partial saves keep earlier answers, brokers are sorted and de-duplicated, `complete` twice keeps one time, and a forged `X-User-Id` still returns the caller's own data. **Newman (Users & Auth folder, real stack): 24 requests, 41 assertions, 0 failures.** Postman 112 to 119 requests. The other Newman folders (market data, orders, portfolio, notifications, accounts, gateway security) were not run: their services are not started.
+
 ## 2026-10-24: authentication journey verified on the real local stack
 
 Everything from the profile fields, refresh endpoint, password reset and login hardening entries below was previously tested only with mocks and H2. It was run end to end on the real local stack: web app, api-gateway, user-service, MySQL, Kafka and Mailpit in Docker.

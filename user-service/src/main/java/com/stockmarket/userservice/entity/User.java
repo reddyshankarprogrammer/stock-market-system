@@ -72,6 +72,20 @@ public class User {
 
     /** Set by a password reset. Refresh tokens issued before this moment are refused. Null if never reset. */
     private LocalDateTime passwordChangedAt;
+
+    // Onboarding answers (all nullable: existing users have not been through it). Plan is an interest only, not an entitlement.
+    @Column(length = 20)
+    private String tradingExperience;
+
+    /** Comma-separated broker codes, for example "EXNESS,GROWW". */
+    @Column(length = 100)
+    private String brokerPreferences;
+
+    @Column(length = 20)
+    private String selectedPlan;
+
+    /** Set when onboarding is completed; null while it is not. */
+    private LocalDateTime onboardingCompletedAt;
 }
 
 
