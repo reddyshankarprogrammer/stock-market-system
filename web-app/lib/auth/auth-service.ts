@@ -1,5 +1,6 @@
 import { AuthError, defaultMessages, type AuthErrorCode } from "@/lib/auth/errors";
 import type { Onboarding, OnboardingInput } from "@/lib/onboarding";
+import type { ChangePasswordValues, Preferences, PreferencesInput } from "@/lib/settings";
 import type { ForgotValues, LoginValues, RegisterParsed, ResetValues } from "@/lib/auth/schemas";
 
 // Browser-side API for authentication. It talks only to our own route handlers (/api/auth/*, same origin),
@@ -54,6 +55,14 @@ export const authService = {
   saveOnboarding: (v: OnboardingInput): Promise<Onboarding> => call<Onboarding>("/api/onboarding", { method: "PUT", body: JSON.stringify(v) }),
 
   completeOnboarding: (): Promise<Onboarding> => call<Onboarding>("/api/onboarding/complete", { method: "POST", body: "{}" }),
+
+  getPreferences: (): Promise<Preferences> => call<Preferences>("/api/preferences"),
+
+  savePreferences: (v: PreferencesInput): Promise<Preferences> => call<Preferences>("/api/preferences", { method: "PUT", body: JSON.stringify(v) }),
+
+  changePassword: async (v: ChangePasswordValues): Promise<void> => {
+    await call("/api/auth/change-password", { method: "POST", body: JSON.stringify(v) });
+  },
 
   me: async (): Promise<Profile> => (await call<{ user: Profile }>("/api/auth/me")).user,
 };

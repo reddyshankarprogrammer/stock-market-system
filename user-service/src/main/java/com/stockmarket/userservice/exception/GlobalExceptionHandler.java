@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IncorrectPasswordException.class)
     public ResponseEntity<Map<String, Object>> handleIncorrectPassword(IncorrectPasswordException ex) {
         log.warn("Password change rejected: wrong current password");
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+        return buildErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
     }
 
     @ExceptionHandler(InvalidResetTokenException.class)

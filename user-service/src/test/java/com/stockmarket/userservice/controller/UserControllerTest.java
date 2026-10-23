@@ -399,13 +399,13 @@ class UserControllerTest {
     }
 
     @Test
-    void changePassword_wrongCurrentPassword_is400_not401_sotheSessionIsNotEnded() throws Exception {
+    void changePassword_wrongCurrentPassword_is422_not401_sotheSessionIsNotEnded() throws Exception {
         when(userService.changePassword(eq("user-1"), any())).thenThrow(new com.stockmarket.userservice.exception.IncorrectPasswordException());
 
         mockMvc.perform(post("/api/v1/users/me/password").header("X-User-Id", "user-1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"currentPassword\":\"wrong\",\"newPassword\":\"NewPass456\"}"))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.message").value("Your current password is incorrect"));
     }
 

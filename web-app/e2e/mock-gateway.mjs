@@ -21,7 +21,10 @@ export function startMockGateway(port = 8099) {
   const users = new Map(); // email -> {firstName, lastName}, so /me returns what was registered
   let lastRegister = null; // the last register body, so the test can check exactly what the web app forwarded
   let refreshCalls = 0;
+  let passwordChanges = 0;
   const accounts = new Map(); // email -> accounts
+  const preferences = new Map(); // email -> settings
+  let lastPrefsBody = null; // the last PUT /me/preferences body, to check what the web app forwarded
   // Onboarding answers per email. Users who logged in without registering count as already onboarded (so older tests
   // still reach the dashboard); a registered user starts blank, like a real new account.
   const onboarding = new Map();
@@ -131,8 +134,32 @@ export function startMockGateway(port = 8099) {
         return send(201, created);
       }
     }
+    // Settings and change password (user-service /me/preferences and /me/password). prefs-fail@ cannot save (500).
+    if (req.url === "/api/v1/users/me/preferences" || req.url === "/api/v1/users/me/password") {
+      const c = claimsOf((req.headers.authorization ?? "").replace("Bearer ", ""));
+      if (!c || c.tokenType !== "ACCESS" || c.exp < now()) return send(401, { status: 401, message: "Unauthorized" });
+      const prefs = preferences.get(c.email) ?? { theme: "SYSTEM", language: "en", notifyInApp: true, notifyPush: false, notifyEmail: false, exportFormat: "CSV" };
+      if (req.url === "/api/v1/users/me/preferences" && req.method === "GET") return send(200, prefs);
+      if (req.url === "/api/v1/users/me/preferences" && req.method === "PUT") {
+        lastPrefsBody = body;
+        if (c.email.startsWith("prefs-fail@")) return send(500, { status: 500, message: "boom" });
+        if ((body.theme !== undefined && !["SYSTEM", "DARK", "LIGHT"].includes(body.theme)) || (body.exportFormat !== undefined && !["CSV", "EXCEL", "PDF", "JSON"].includes(body.exportFormat))) return send(400, { status: 400, message: "Validation failed" });
+        const saved = { ...prefs, ...body };
+        preferences.set(c.email, saved);
+        return send(200, saved);
+      }
+      if (req.url === "/api/v1/users/me/password" && req.method === "POST") {
+        const current = passwords.get(c.email) ?? "GoodPass123";
+        if (body.currentPassword !== current && body.currentPassword !== "GoodPass123") return send(422, { status: 422, message: "Your current password is incorrect" });
+        if (body.currentPassword === body.newPassword) return send(400, { status: 400, message: "Choose a password that is different from the current one" });
+        passwords.set(c.email, body.newPassword);
+        passwordChanges++;
+        return send(200, { userId: c.sub, email: c.email, firstName: "Test", lastName: "User", walletBalance: 10000, ...tokens(c.email) });
+      }
+    }
+    if (req.method === "GET" && req.url === "/__last-prefs") return send(200, lastPrefsBody ?? {});
     if (req.method === "GET" && req.url === "/__last-register") return send(200, lastRegister ?? {});
-    if (req.method === "GET" && req.url === "/__stats") return send(200, { refreshCalls, forgotRequests, passwords: Object.fromEntries(passwords) });
+    if (req.method === "GET" && req.url === "/__stats") return send(200, { refreshCalls, passwordChanges, forgotRequests, passwords: Object.fromEntries(passwords) });
     send(404, { message: "not found" });
   });
   return new Promise((resolve) => server.listen(port, () => resolve(server)));

@@ -375,11 +375,21 @@ erDiagram
         varchar country "nullable, ISO 3166 alpha-2"
         varchar terms_version "nullable"
         datetime terms_accepted_at "nullable, server time"
-        datetime password_changed_at "nullable, set by a reset"
+        datetime password_changed_at "nullable, set by a reset or a change"
         varchar trading_experience "nullable, onboarding"
         varchar broker_preferences "nullable, CSV"
         varchar selected_plan "nullable, interest only"
         datetime onboarding_completed_at "nullable"
+    }
+    user_preferences {
+        varchar user_id PK "the user"
+        varchar theme "SYSTEM | DARK | LIGHT"
+        varchar language "en"
+        boolean notify_in_app "default true"
+        boolean notify_push "default false"
+        boolean notify_email "default false"
+        varchar export_format "CSV | EXCEL | PDF | JSON"
+        datetime updated_at
     }
     password_reset_tokens {
         varchar id PK "UUID"

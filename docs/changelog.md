@@ -2,6 +2,30 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: settings (General, Notifications, Security, Downloads, About) and change password
+
+### Features
+
+| Feature | Where |
+|---|---|
+| `GET` / `PUT /api/v1/users/me/preferences` (theme, language, notification channels, export format): partial saves, defaults without a row, new table `user_preferences` (created by Hibernate, nothing existing touched) | `user-service` |
+| `POST /api/v1/users/me/password`: checks the current password, sets `password_changed_at` so older sessions end, answers with fresh tokens so the session that changed it carries on. Wrong current password is **422**, so the web app does not mistake it for an ended session | `user-service` |
+| Settings screens: category list, General, Notifications, Security (change password; two-factor, passkeys, sessions and login history listed as not available yet), Downloads, About; server-saved theme that follows the user across devices | `web-app/app/(app)/settings/`, `web-app/components/settings/` |
+| 9 new browser checks on the mock (65 in total), `e2e:settings:real` (8 checks on the real stack), 7 new user-service tests (83), 6 new Postman requests | `web-app/e2e/`, `user-service`, `docs/postman` |
+
+### Bugs found by testing and fixed
+
+| Bug | Fix |
+|---|---|
+| The settings category row made the page 505 px wide on a 320 px phone (a grid item grows to its content) | `minmax(0,1fr)` column and `min-w-0` on the row, which now scrolls inside itself |
+| The shell's new settings query and the profile query both renewed an expired session at the same moment (two refresh calls) | The settings query waits for the profile query |
+| A controlled radio showed the old choice for a moment after a click (React restores it unless state changes in the same event) | The chosen value is kept in local state until the save settles |
+| A test looked for the text "Saved" and also matched descriptions containing "saved" | Exact text match |
+
+### Known limits
+
+Sessions and devices, two-factor, passkeys and login history need Keycloak and are not built. Push and email alert choices are stored, but nothing sends push or alert emails yet. After a password change the refresh cookie becomes a session cookie (the web app cannot tell whether Remember me was ticked). Refresh tokens are compared with the change time in whole seconds, so a session started in the same second as a password change survives it.
+
 ## 2026-10-24: app shell and typed API client
 
 ### Features

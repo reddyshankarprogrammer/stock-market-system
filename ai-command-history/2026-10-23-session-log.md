@@ -239,6 +239,19 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 - **Not done:** springdoc for the other services (user-service Boot 3 and five Boot 4 services) and their typed clients; statement upload through the BFF (multipart); creating accounts in the UI; nothing pushed; the real stack still runs (account-service on 8086 was started for this step and left running).
 - **Docs:** web-app README, changelog, cicd-pipeline, [plan 05](../research-doc/05-daily-implementation-plan.md) (total 13 to 11).
 
+## 26. Settings and preferences (24 October)
+
+- **Request:** "go ahead with item 8" (plan item 8: settings screens and preferences, original units 33 to 36).
+- **Branch:** `feature/settings` (cut from `feature/app-shell`).
+- **user-service:** `user_preferences` table and `PreferencesService`; `GET`/`PUT /me/preferences`; `POST /me/password` (verifies the current password, sets `password_changed_at`, returns fresh tokens so the changing session survives); typed `IncorrectPasswordException` answered with **422** so no message matching is needed and a wrong password is never confused with an ended session (401). 83 tests (7 new).
+- **Web app:** `/settings` with five categories, `/api/preferences` and `/api/auth/change-password` route handlers, hooks with optimistic saves and rollback, theme that follows the account (`PreferencesSync`, shell toggle saves), switches and radios, change-password form, honest "not available yet" for Keycloak-dependent security items and for Excel and PDF export, About page with version and legal links.
+- **Verified:** ESLint, `tsc`, build; 65 of 65 browser checks on the mock (9 new); `e2e:settings:real` 8 of 8 on the real stack (defaults, persistence in MySQL, a new browser gets the dark theme at login, bad values refused, wrong current password keeps the session, the changing device survives with only the new refresh token while a second device is signed out, old password stops working); `e2e:auth:real` 16 of 16 and `e2e:accounts:real` 8 of 8 still pass.
+- **Bugs found, fixed:** (1) 505 px wide settings page at 320 px (grid item sized to its content); (2) two parallel session renewals once the settings query joined the profile query (settings now wait for the profile); (3) a controlled radio looked unchanged right after a click (local state); (4) an ambiguous "Saved" text match in a test. `e2e:auth:real` failed 4 of 16 when pointed at a second web app port, because the emailed reset link carries `APP_BASE_URL` (port 3000): not a bug, so the web app on port 3000 was replaced by the new standalone build and the test passes there.
+- **Cleanup:** 5 test users, 2 accounts and 1 preferences row deleted by pattern `e2e-%@example.com` after counting; 19 users remain including the owner's own account.
+- **Process notes:** user-service was restarted with the new jar (pid in `logs/pids.txt`); the web app on http://localhost:3000 is now the standalone build of this branch; account-service on 8086 still runs.
+- **Not done:** sessions, devices, two-factor, passkeys, login history (need Keycloak); push and alert emails (stored only); Excel and PDF export; a successful password change is not in the Newman collection (it would end the collection's own session); other Newman folders; nothing pushed.
+- **Docs:** user-service README, user manual, technical documentation (ER), Postman generator, web-app README, changelog, cicd-pipeline, [plan 05](../research-doc/05-daily-implementation-plan.md) (total 11 to 7).
+
 ## Open items after this session
 
 | Item | Where |

@@ -181,6 +181,9 @@ All paths are relative to `http://localhost:8080`. 🔒 means a token is require
 | GET | `/api/v1/users/me/onboarding` | 🔒 | Your onboarding answers |
 | PUT | `/api/v1/users/me/onboarding` | 🔒 | Save onboarding answers (one step or several) |
 | POST | `/api/v1/users/me/onboarding/complete` | 🔒 | Finish onboarding |
+| GET | `/api/v1/users/me/preferences` | 🔒 | Your settings (theme, language, notifications, export format) |
+| PUT | `/api/v1/users/me/preferences` | 🔒 | Save one setting or several |
+| POST | `/api/v1/users/me/password` | 🔒 | Change your password (current and new) |
 | GET | `/api/v1/users/me` | 🔒 | Your profile and wallet balance |
 | GET | `/api/v1/users/{userId}` | 🔒 | A profile by id (only your own) |
 | POST | `/api/v1/users/{userId}/funds/add?amount=` | 🔒 | Add money to your wallet (only your own) |
@@ -241,6 +244,22 @@ Always returns `202 Accepted` with `If an account exists for that email, a reset
 ```
 
 Always about **you**: the user is the one in your token, never something in the URL or body. `PUT` saves only the fields you send, so you can save one step at a time. Experience is `BEGINNER`, `INTERMEDIATE`, `ADVANCED` or `PROFESSIONAL`; brokers are 1 to 6 of `GROWW`, `ZERODHA`, `BINANCE`, `EXNESS`, `OTHER` or `NONE` (no broker yet, which cannot be combined with the others); the plan is `FREE`, `PRO`, `AI_PRO`, `QUANT_PRO` or `ENTERPRISE` and records your interest only, because billing is not set up yet. Anything else is `400`. `POST .../complete` needs all three answers (otherwise `400`) and sets `onboardingCompletedAt` on your profile; the web app sends people with no completion time to the setup wizard.
+
+**Settings** `GET` and `PUT /api/v1/users/me/preferences` 🔒
+
+```json
+{ "theme": "DARK", "notifyPush": true, "exportFormat": "JSON" }
+```
+
+Always about **you**. `PUT` changes only the fields you send. `theme` is `SYSTEM`, `DARK` or `LIGHT`; `language` is `en`; `exportFormat` is `CSV`, `EXCEL`, `PDF` or `JSON` (the web app offers CSV and JSON for now); `notifyInApp`, `notifyPush` and `notifyEmail` are `true` or `false`. A user who never saved anything gets the defaults (system theme, in-app notifications on, push and email off, CSV). Anything else is `400`.
+
+**Change password** `POST /api/v1/users/me/password` 🔒
+
+```json
+{ "currentPassword": "OldPassword123", "newPassword": "NewPassword456" }
+```
+
+A wrong current password is `422` (the session stays valid), the same password again is `400`. On success every login session that started before the change can no longer be renewed, and the answer carries new tokens (the same shape as login) for the session that made the change.
 
 **My profile** `GET /api/v1/users/me` 🔒
 

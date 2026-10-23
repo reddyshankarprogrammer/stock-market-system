@@ -15,7 +15,7 @@ Accounts of people: registration, login, JWT issuing, profile, role and the wall
 
 ```powershell
 .\mvnw.cmd spring-boot:run        # from user-service/, needs MySQL + Kafka (docker compose up -d)
-.\mvnw.cmd test                   # 76 tests, no infrastructure (H2, mocks, an in-process SMTP server)
+.\mvnw.cmd test                   # 83 tests, no infrastructure (H2, mocks, an in-process SMTP server)
 ```
 
 ## Package layout
@@ -32,6 +32,7 @@ com.stockmarket.userservice
 ├── security/JwtService            issue/parse access + refresh tokens (HS256)
 ├── service/PasswordResetService   forgot and reset password (hashed single-use tokens)
 ├── service/OnboardingService      the answers of the onboarding wizard (saved step by step)
+├── service/PreferencesService     settings (theme, language, notifications, export format), partial saves
 ├── service/MailService, impl/SmtpMailService   outgoing email; failures are logged, never thrown
 └── service/UserService, impl/UserServiceImpl
 ```
@@ -48,6 +49,9 @@ com.stockmarket.userservice
 | GET | `/me/onboarding` | X-User-Id | Own onboarding answers: `{tradingExperience, brokerPreferences[], plan, completed, completedAt}` (all empty for a new user). The user id is the gateway header, never the URL or body |
 | PUT | `/me/onboarding` | X-User-Id | Save one step or several; **only the fields sent change**, so a half-finished onboarding can be resumed. `tradingExperience` BEGINNER, INTERMEDIATE, ADVANCED or PROFESSIONAL; `brokerPreferences` (1 to 6 of GROWW, ZERODHA, BINANCE, EXNESS, OTHER, NONE; duplicates removed; NONE cannot be combined); `plan` FREE, PRO, AI_PRO, QUANT_PRO or ENTERPRISE (an interest only: billing does not exist yet). Bad values → 400 |
 | POST | `/me/onboarding/complete` | X-User-Id | Marks onboarding done (needs experience, brokers and plan saved first, else 400). Completing again keeps the first time. `UserResponse.onboardingCompletedAt` then becomes non-null |
+| GET | `/me/preferences` | X-User-Id | Own settings `{theme, language, notifyInApp, notifyPush, notifyEmail, exportFormat}`; the defaults (SYSTEM, en, in-app on, push and email off, CSV) for a user who never saved any. Nothing is written by a read |
+| PUT | `/me/preferences` | X-User-Id | Save one setting or several; **only the fields sent change**. `theme` SYSTEM, DARK or LIGHT; `language` en; `exportFormat` CSV, EXCEL, PDF or JSON; the three notification fields are booleans. Bad values → 400 |
+| POST | `/me/password` | X-User-Id | Change the caller's own password: `{currentPassword, newPassword}` (6 to 72 characters). Wrong current password → **422** (never 401: the session is fine), same password → 400. Sets `password_changed_at`, so every session that started before it can no longer refresh, and answers with fresh tokens (`AuthResponse`) for the session that made the change |
 | GET | `/me` | X-User-Id | Own profile |
 | GET | `/{userId}` | X-User-Id (+ X-User-Role) | Own profile, or any profile for ADMIN; else 403 |
 | POST | `/{userId}/funds/add?amount=` | X-User-Id | Owner only; amount > 0 |
@@ -80,9 +84,22 @@ Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, acc
 | created_at | |
 | mobile_country_code, mobile_number, gender, country | nullable profile fields (`varchar`; `gender` is `MALE`/`FEMALE`); existing users have none |
 | terms_version, terms_accepted_at | nullable; set together at registration, time from the server clock |
-| password_changed_at | nullable; set by a password reset. Refresh tokens issued before it are refused |
+| password_changed_at | nullable; set by a password reset or a password change. Refresh tokens issued before it (compared in whole seconds) are refused |
 | trading_experience, broker_preferences, selected_plan | nullable onboarding answers (`broker_preferences` is comma-separated, sorted, e.g. `GROWW,ZERODHA`); existing users have none |
 | onboarding_completed_at | nullable; set once, at microsecond precision (what MySQL stores) |
+
+### Table `user_preferences`
+
+One row per user, created by the first save (a user without a row has the defaults). Created by Hibernate: no existing data is touched.
+
+| Column | Notes |
+|---|---|
+| user_id | primary key, the user's id |
+| theme | `SYSTEM` (default), `DARK`, `LIGHT` |
+| language | `en` |
+| notify_in_app, notify_push, notify_email | booleans; in-app defaults to on, push and email to **off** (opt-in) |
+| export_format | `CSV` (default), `EXCEL`, `PDF`, `JSON` |
+| updated_at | microsecond precision |
 
 ### Table `password_reset_tokens`
 

@@ -24,7 +24,8 @@ function subscribe(cb: () => void) {
     window.removeEventListener("storage", cb);
   };
 }
-function write(t: Theme) {
+/** Apply and remember a theme in this browser (localStorage and html[data-theme]). Does not touch the server. */
+export function applyTheme(t: Theme) {
   try {
     if (t === "system") localStorage.removeItem(THEME_KEY);
     else localStorage.setItem(THEME_KEY, t);
@@ -36,8 +37,16 @@ function write(t: Theme) {
   listeners.forEach((l) => l());
 }
 
-export function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribe, read, () => "system" as Theme);
+export type { Theme };
+
+/** The theme of this browser, kept in step with every other ThemeToggle and with applyTheme. */
+export function useTheme(): Theme {
+  return useSyncExternalStore(subscribe, read, () => "system" as Theme);
+}
+
+// onPick lets the signed-in shell save the choice to the account, so it follows the user to other devices.
+export function ThemeToggle({ onPick }: { onPick?: (t: Theme) => void }) {
+  const theme = useTheme();
   return (
     <div role="group" aria-label="Colour theme" className="inline-flex rounded-brand border border-line p-0.5">
       {(["system", "light", "dark"] as const).map((t) => (
@@ -45,7 +54,10 @@ export function ThemeToggle() {
           key={t}
           type="button"
           aria-pressed={theme === t}
-          onClick={() => write(t)}
+          onClick={() => {
+            applyTheme(t);
+            onPick?.(t);
+          }}
           className={`min-h-11 min-w-11 rounded-brand px-3 text-sm font-semibold capitalize transition-colors ${
             theme === t ? "bg-electric text-white" : "text-ink hover:bg-soft"
           }`}

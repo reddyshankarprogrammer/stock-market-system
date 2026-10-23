@@ -12,7 +12,8 @@
     "api:types": "openapi-typescript openapi/account-service.json -o lib/api/account-service.d.ts",
     "e2e:auth": "node e2e/auth.e2e.mjs",
     "e2e:auth:real": "node e2e/auth.real-stack.mjs",
-    "e2e:accounts:real": "node e2e/accounts.real-stack.mjs"
+    "e2e:accounts:real": "node e2e/accounts.real-stack.mjs",
+    "e2e:settings:real": "node e2e/settings.real-stack.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.2",

@@ -450,7 +450,7 @@ await test("shell: sidebar from 1024 px up, bottom navigation below; no overflow
 await test("shell: every nav item opens its page, is marked current, and has a 44 px target (phone and laptop)", async () => {
   for (const [w, label] of [[375, "bottom"], [1280, "sidebar"]]) {
     const c = await newCtx({ viewport: { width: w, height: 900 } }); const p = await c.newPage(); await login(p); await p.waitForURL(/\/dashboard/);
-    for (const [name, path] of [["Trades", "/trades"], ["Portfolio", "/portfolio"], ["Settings", "/settings"], ["Dashboard", "/dashboard"]]) {
+    for (const [name, path] of [["Trades", "/trades"], ["Portfolio", "/portfolio"], ["Settings", "/settings/general"], ["Dashboard", "/dashboard"]]) {
       const link = p.locator('nav[aria-label="Main"]:visible').getByRole("link", { name });
       const box = await link.boundingBox(); ok(box && box.height >= 43.5, `${label} ${name} target ${box?.height}`);
       await link.click(); await p.waitForURL(new RegExp(`${path}(\\?|$)`));
@@ -507,6 +507,100 @@ await test("accounts: an expired access cookie is renewed behind the scenes", as
 await test("accounts: a really ended session sends the page to /login", async () => {
   const c = await newCtx(); await c.addCookies([{ name: "qv_refresh", value: "garbage.value.here", url: BASE, httpOnly: true }]);
   const p = await c.newPage(); await p.goto(`${BASE}/accounts`); await p.waitForURL("**/login**"); await c.close();
+});
+
+// ---- settings ----
+const settingsPages = ["general", "notifications", "security", "downloads", "about"];
+const mockGet = async (path) => (await fetch(`http://localhost:8099${path}`)).json();
+await test("settings: /settings opens General; five categories, current one marked, 44 px targets, no overflow at 320 to 1920 px", async () => {
+  for (const w of [320, 375, 1280, 1920]) {
+    const c = await newCtx({ viewport: { width: w, height: 900 } }); const p = await c.newPage(); await login(p); await p.waitForURL(/\/dashboard/);
+    await p.goto(`${BASE}/settings`); await p.waitForURL("**/settings/general");
+    const nav = p.getByRole("navigation", { name: "Settings" });
+    for (const name of ["General", "Notifications", "Security", "Downloads", "About"]) await nav.getByRole("link", { name }).waitFor();
+    ok((await nav.getByRole("link", { name: "General" }).getAttribute("aria-current")) === "page", "current");
+    for (const slug of settingsPages) {
+      await p.goto(`${BASE}/settings/${slug}`); await p.getByRole("heading", { level: 1 }).first().waitFor();
+      const r = await p.evaluate(() => ({ overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        small: [...document.querySelectorAll("main a, main button, main input:not([type=radio]):not([type=checkbox]), main select")].filter((e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height < 43.5 && !e.closest(".sr-only"); }).map((e) => (e.textContent || e.id).trim().slice(0, 20)) }));
+      ok(!r.overflow, `${slug} overflows at ${w}px`); ok(r.small.length === 0, `${slug} small targets at ${w}px: ${r.small}`);
+    }
+    await c.close();
+  }
+});
+await test("settings: theme is applied at once and saved to the account; another browser gets it after login", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "theme-user@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/settings/general`); await p.getByLabel("Dark").check();
+  await p.waitForFunction(() => document.documentElement.dataset.theme === "dark"); await p.getByText("Saved", { exact: true }).waitFor();
+  ok((await mockGet("/__last-prefs")).theme === "DARK", "not saved to the account"); await c.close();
+  const c2 = await newCtx(); const p2 = await c2.newPage(); await login(p2, "theme-user@example.com"); await p2.waitForURL(/\/dashboard/);
+  await p2.waitForFunction(() => document.documentElement.dataset.theme === "dark", null, { timeout: 15000 }); await c2.close();
+});
+await test("settings: the shell's theme switch saves to the account too", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "theme-user2@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.locator('[aria-label="Colour theme"]:visible').getByRole("button", { name: "light" }).click();
+  await p.waitForFunction(async () => (await (await fetch("/api/preferences")).json()).theme === "LIGHT", null, { timeout: 15000 }); await c.close();
+});
+await test("settings: notifications start opt-in, save on each switch and persist", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "notify@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/settings/notifications`);
+  const inApp = p.getByRole("switch", { name: "In-app notifications" }), push = p.getByRole("switch", { name: "Push notifications" }), email = p.getByRole("switch", { name: "Email alerts" });
+  await inApp.waitFor();
+  ok((await inApp.getAttribute("aria-checked")) === "true" && (await push.getAttribute("aria-checked")) === "false" && (await email.getAttribute("aria-checked")) === "false", "defaults");
+  await push.click(); await p.getByText("Saved", { exact: true }).waitFor(); ok((await push.getAttribute("aria-checked")) === "true", "push on");
+  await p.reload(); await p.getByRole("switch", { name: "Push notifications" }).waitFor();
+  ok((await p.getByRole("switch", { name: "Push notifications" }).getAttribute("aria-checked")) === "true", "not persisted"); await c.close();
+});
+await test("settings: a failed save puts the switch back and says so", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "prefs-fail@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/settings/notifications`); const email = p.getByRole("switch", { name: "Email alerts" }); await email.waitFor();
+  await email.click(); await p.getByText("We could not save that").waitFor({ timeout: 15000 });
+  ok((await email.getAttribute("aria-checked")) === "false", "switch not put back"); await c.close();
+});
+await test("settings: export format offers CSV and JSON, Excel and PDF are visible but disabled", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "export@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/settings/downloads`); await p.getByLabel("CSV").waitFor();
+  ok(await p.getByLabel("CSV").isChecked(), "CSV default"); ok(await p.getByLabel(/^Excel/).isDisabled() && await p.getByLabel(/^PDF/).isDisabled(), "excel/pdf");
+  await p.getByLabel("JSON").check(); await p.getByText("Saved", { exact: true }).waitFor(); ok((await mockGet("/__last-prefs")).exportFormat === "JSON", "not saved");
+  await p.reload(); await p.getByLabel("JSON").waitFor(); ok(await p.getByLabel("JSON").isChecked(), "not persisted"); await c.close();
+});
+await test("settings: change password checks the form, refuses a wrong current password without ending the session, and keeps this device signed in", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "changer@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/settings/security`);
+  const fill = async (cur, next, conf) => { await p.getByLabel("Current password").fill(cur); await p.getByLabel("New password", { exact: true }).fill(next); await p.getByLabel("Confirm new password").fill(conf); await p.getByRole("button", { name: "Change Password" }).click(); };
+  await p.getByLabel("Current password").waitFor();
+  await fill("GoodPass123", "NewPassword789", "Different789"); await p.getByText("Passwords do not match").waitFor();
+  await fill("GoodPass123", "GoodPass123", "GoodPass123"); await p.getByText("different from the current one").waitFor();
+  await fill("GoodPass123", "short", "short"); await p.getByText("Use at least 10 characters").waitFor();
+  await fill("WrongPass123", "NewPassword789", "NewPassword789"); await p.getByText("Your current password is incorrect").first().waitFor({ timeout: 15000 });
+  ok((await mockGet("/__stats")).passwordChanges === 0, "wrong password changed something");
+  await p.goto(`${BASE}/dashboard`); await p.getByRole("heading", { level: 1 }).first().waitFor(); ok(!p.url().includes("/login"), "a wrong current password ended the session");
+  await p.goto(`${BASE}/settings/security`); await fill("GoodPass123", "NewPassword789", "NewPassword789");
+  await p.getByText("Your password has been changed").waitFor({ timeout: 15000 });
+  ok(await p.getByLabel("Current password").inputValue() === "", "form not cleared");
+  ok(!!(await cookieNamed(c, "qv_access")) && !!(await cookieNamed(c, "qv_refresh")), "cookies missing after the change");
+  await p.goto(`${BASE}/dashboard`); await p.getByRole("heading", { level: 1 }).first().waitFor(); ok(!p.url().includes("/login"), "this device was signed out");
+  await c.close();
+  const c2 = await newCtx(); const p2 = await c2.newPage(); await login(p2, "changer@example.com", "GoodPass123"); await p2.getByText("The email or password is incorrect").first().waitFor({ timeout: 15000 }); await c2.close();
+  const c3 = await newCtx(); const p3 = await c3.newPage(); await login(p3, "changer@example.com", "NewPassword789"); await p3.waitForURL(/\/dashboard/); await c3.close();
+});
+await test("settings: security lists what is not available yet; about shows the version and the legal links", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/settings/security`); await p.getByText("Two-factor authentication").waitFor();
+  ok((await p.getByText("Not available yet").count()) === 4, "four planned items");
+  await p.goto(`${BASE}/settings/about`); await p.getByText("Version").waitFor();
+  ok(/\d+\.\d+\.\d+/.test(await p.locator("dl").innerText()), "version number");
+  for (const name of ["Privacy policy", "Terms & conditions", "Risk disclaimer", "Contact support"]) await p.getByRole("link", { name }).waitFor();
+  await c.close();
+});
+await test("settings: the preferences route validates, ignores unknown fields, blocks other origins and refuses signed-out calls", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "bff@example.com"); await p.waitForURL(/\/dashboard/);
+  const put = (data, origin = BASE) => c.request.put(`${BASE}/api/preferences`, { headers: { "Content-Type": "application/json", Origin: origin }, data });
+  ok((await put({ exportFormat: "EXCEL" })).status() === 400, "EXCEL accepted"); ok((await put({ theme: "NEON" })).status() === 400, "NEON accepted");
+  ok((await put({ theme: "DARK", userId: "someone-else", role: "ADMIN" })).status() === 200, "valid save"); const sent = await mockGet("/__last-prefs");
+  ok(sent.theme === "DARK" && sent.userId === undefined && sent.role === undefined, `forwarded ${JSON.stringify(sent)}`);
+  ok((await put({ theme: "DARK" }, "https://evil.example")).status() === 403, "cross-origin");
+  const anon = await newCtx(); ok((await anon.request.get(`${BASE}/api/preferences`)).status() === 401, "signed out GET"); await anon.close(); await c.close();
 });
 
 await browser.close();

@@ -75,7 +75,21 @@ npm run e2e:auth                                                        # termin
 - **BFF pass-through:** the typed clients call `/api/gw/<gateway path>` (`app/api/gw/[...path]/route.ts`), which adds the session's access token (renewing it from the refresh cookie once, like the other handlers), forwards method, query and body, and relays only status and JSON. Only `api/v1/{accounts,trades,holdings,statements,fees,taxes,charges,dividends,interest}` is reachable; `..` and encoded slashes are refused; writes need a same-origin JSON request; the gateway still checks the token and blocks internal and admin paths.
 - **Accounts page:** the first screen on the typed client (read-only list with money formatting, empty, error and signed-out states). Creating an account and statement upload (multipart, not yet allowed through the BFF) come with the MVP screens.
 - **Other services:** only account-service has springdoc today. Adding it to the other services (user-service is Boot 3, the rest Boot 4) is still to do.
-- **Tests:** `npm run e2e:auth` (56 checks, mock gateway) and `npm run e2e:accounts:real` (8 checks on the real stack: two users, create and list accounts, foreign access 403, traversal, cross-origin, renewal). The real-stack test leaves two users and four accounts behind: delete them as the file header describes.
+- **Tests:** `npm run e2e:auth` (65 checks, mock gateway) and `npm run e2e:accounts:real` (8 checks on the real stack: two users, create and list accounts, foreign access 403, traversal, cross-origin, renewal). The real-stack test leaves two users and four accounts behind: delete them as the file header describes.
+
+## Settings
+
+`/settings` opens General; the category list is a column on laptops and a row of tabs on phones (the row scrolls, the page does not). The browser talks only to `/api/preferences` and `/api/auth/change-password`; user-service owns the data (`user_preferences`, so choices follow the user to other devices).
+
+| Category | What works | Not built (and said so on screen) |
+|---|---|---|
+| General | Theme System, Light, Dark; applied at once and saved. The account's theme wins at login on a new device (`PreferencesSync`); the theme switch in the shell saves too. Language shows English | More languages |
+| Notifications | In-app, push and email switches (real `role="switch"`), saved on each click, put back with an error message if the save fails. Push and email default to off | Push delivery (mobile app) and alert emails do not exist yet; the choice is only stored |
+| Security | Change password: current, new (same rule as sign-up) and confirm. A wrong current password (422) leaves the session alone; success replaces the cookies with the fresh tokens, so this device stays signed in and every other session ends. The refresh cookie becomes a session cookie (Remember me is not known here) | Two-factor, passkeys, Face and fingerprint, sessions and devices, login history (need Keycloak): listed as "Not available yet" |
+| Downloads | Export format CSV or JSON, saved | Excel and PDF are shown disabled; the download location exists only in desktop and mobile apps, so it is not shown |
+| About | Version (from `package.json` at build), legal links, contact | Release notes and licence are marked "Not published yet" |
+
+Notes: the settings queries wait for the profile query, so an expired access cookie is renewed once, not twice in parallel. Radios are updated at once from local state, because React puts a controlled radio back to its old value if state has not changed by the end of the click. `npm run e2e:settings:real` is the real-stack test (8 checks; it leaves one user and one preferences row, deletion SQL in the file header).
 
 ## Deployment (Docker, Kubernetes, CI)
 
