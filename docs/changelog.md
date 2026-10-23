@@ -2,6 +2,38 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: MVP screens (accounts, statement upload, trades, dashboard, portfolio)
+
+### Features
+
+| Feature | Where |
+|---|---|
+| Accounts: open an account, account page with summary figures, broker statement upload with the import result, delete a statement | `web-app/components/accounts/` |
+| Trades: table with date, symbol and side filters, sortable columns, paging, trade detail, trade entry (market price on platform accounts, manual on tracking accounts) | `web-app/components/trades/`, `web-app/lib/trades.ts` |
+| Dashboard: key figures and the profit and loss calendar (per day, month total, all-time total checked against the account's realised profit) | `web-app/components/dashboard/`, `web-app/lib/pnl.ts` |
+| Portfolio: open positions with prices, refresh every 10 seconds | `web-app/components/portfolio/` |
+| BFF: raw multipart relay for the statement upload path only (same origin, 60 s), `DELETE` without a JSON content type; ingress accepts 25 MB for `/api/gw` | `web-app/app/api/gw/`, `k8s/ingress/web-app-ingress.yaml` |
+| 17 new mock browser checks (82 in total) with a mock account-service, and `e2e:mvp:real` (9 checks against the real stack) | `web-app/e2e/` |
+
+### Bugs found by testing and fixed
+
+| Bug | Fix |
+|---|---|
+| **account-service: `GET /holdings` answered 409** ("changed by another request") when two reads overlapped (a polling page plus a refresh): the read stored the live price through the versioned entity | The price snapshot is stored by a version-free update (`HoldingRepository.updatePriceSnapshot`), the entity is detached first; 12 parallel reads all answer 200; unit test added (45 account-service tests pass) |
+| A date filter with only `from` made the Trades page empty: account-service answers 400 ("give both from and to, or neither") and the mock had accepted it | The page sends both ends or none and filters one-sided ranges itself; the mock now refuses a lone end like the real service |
+| The trade detail had no label for the real source value `IMPORT` (the mock had used `STATEMENT`) | Label for `IMPORT`; the mock uses the real value |
+| `DELETE` through the BFF was refused with 415 (it demanded a JSON content type, a DELETE has no body) | Only methods with a body need one |
+| A failed 10-second price refresh blanked the holdings table | The last prices stay on screen with a notice |
+| `usePathname` in the navigation broke the build for the dynamic route `/accounts/[id]` | Navigation wrapped in `Suspense` |
+| One test cleared the access cookie while the dashboard's own data requests were still running, so three parallel calls each renewed the session | The test waits for the page to settle; sequential renewal is by design (profile first) |
+| OpenAPI document: the upload's 400 and 409 are typed as a statement but are error bodies; `source` is `IMPORT`, not `STATEMENT` | Handled in the client; the spec is unchanged (noted for the springdoc clean-up) |
+
+### Known limits
+
+No websocket: prices are polled. The calendar is computed in the browser from the trades. Statement parsers have been exercised with a Zerodha tradebook only (the other brokers' layouts are still unconfirmed with real files). Money in the browser tests is compared as formatted text. Accounts cannot yet be renamed, closed or funded from the UI (deposit and withdraw exist in the API).
+
+Cleanup of the real-stack test data (counts first): users `e2e-mvp-%@example.com`, then their rows in `account_*` tables, `statement_import_history`, `account_audit_logs`, `user_preferences`, and the directories `account-service/uploads/statements/<account id>`.
+
 ## 2026-10-24: settings (General, Notifications, Security, Downloads, About) and change password
 
 ### Features

@@ -252,6 +252,17 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 - **Not done:** sessions, devices, two-factor, passkeys, login history (need Keycloak); push and alert emails (stored only); Excel and PDF export; a successful password change is not in the Newman collection (it would end the collection's own session); other Newman folders; nothing pushed.
 - **Docs:** user-service README, user manual, technical documentation (ER), Postman generator, web-app README, changelog, cicd-pipeline, [plan 05](../research-doc/05-daily-implementation-plan.md) (total 11 to 7).
 
+## 27. MVP screens (24 October)
+
+- **Request:** "go ahead with item 9", then (user going to sleep) "keep working automatically and complete all the tasks".
+- **Branch:** `feature/mvp-screens` (cut from `feature/settings`).
+- **Built, in this order, each committed:** accounts with an open-account form, account page with summary and statement upload (multipart relayed through the BFF for that one path); trades table (filters, sorting, paging, detail, entry); dashboard key figures with a profit and loss calendar; portfolio with polled prices; a mock account-service (`e2e/mock-accounts.mjs`) so CI needs no backend; `e2e:mvp:real`.
+- **Verified:** ESLint, `tsc`, build; 82 of 82 browser checks on the mock; `e2e:mvp:real` 9 of 9 on the real stack (real Zerodha parser: 4 trades imported and 1 row skipped, duplicate upload recognised, trades table and filters equal the API, calendar days and all-time total equal the API's realised profit, paper-account buy at the live market-data price, six screens free of sideways overflow at 360 px); account-service 45 tests pass.
+- **Real bugs found by the real-stack run:** (1) **account-service `GET /holdings` returned 409** when two reads overlapped (the read stored the price through the versioned entity): fixed in account-service with a version-free price update and a unit test, 12 parallel reads now all 200; (2) account-service answers 400 to a date filter with only `from`, which my mock had hidden: the page now sends both ends or none; (3) the real trade `source` is `IMPORT` (the mock said `STATEMENT`). Mock-side: a missing Suspense around `usePathname` broke the build of `/accounts/[id]`; DELETE through the BFF demanded a JSON content type.
+- **Cleanup:** 5 test users, 10 accounts and their rows in every `account_*` table, plus 5 stored statement files, deleted by pattern after counting; 19 users remain including the owner's own account. market-data-service (8082) was started for the paper-account check and left running.
+- **Not done:** websocket prices (polling instead); renaming, closing and funding accounts in the UI; statement layouts of Groww, Binance and Exness checked only by account-service's unit tests, not with real files; pushing.
+- **Docs:** web-app README, changelog, cicd-pipeline, [plan 05](../research-doc/05-daily-implementation-plan.md) (total 7 to 3).
+
 ## Open items after this session
 
 | Item | Where |

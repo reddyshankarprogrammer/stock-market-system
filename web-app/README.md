@@ -75,7 +75,22 @@ npm run e2e:auth                                                        # termin
 - **BFF pass-through:** the typed clients call `/api/gw/<gateway path>` (`app/api/gw/[...path]/route.ts`), which adds the session's access token (renewing it from the refresh cookie once, like the other handlers), forwards method, query and body, and relays only status and JSON. Only `api/v1/{accounts,trades,holdings,statements,fees,taxes,charges,dividends,interest}` is reachable; `..` and encoded slashes are refused; writes need a same-origin JSON request; the gateway still checks the token and blocks internal and admin paths.
 - **Accounts page:** the first screen on the typed client (read-only list with money formatting, empty, error and signed-out states). Creating an account and statement upload (multipart, not yet allowed through the BFF) come with the MVP screens.
 - **Other services:** only account-service has springdoc today. Adding it to the other services (user-service is Boot 3, the rest Boot 4) is still to do.
-- **Tests:** `npm run e2e:auth` (65 checks, mock gateway) and `npm run e2e:accounts:real` (8 checks on the real stack: two users, create and list accounts, foreign access 403, traversal, cross-origin, renewal). The real-stack test leaves two users and four accounts behind: delete them as the file header describes.
+- **Tests:** `npm run e2e:auth` (82 checks, mock gateway) and `npm run e2e:accounts:real` (8 checks on the real stack: two users, create and list accounts, foreign access 403, traversal, cross-origin, renewal). The real-stack test leaves two users and four accounts behind: delete them as the file header describes.
+
+## MVP screens (accounts, trades, dashboard, portfolio)
+
+All of them read account-service through the typed client and the `/api/gw` pass-through; every figure is shown as the service reports it (formatting only, no recalculation). Which account a screen shows is the `account` in the URL (default: the first), so links can be shared and a reload keeps the place. Data screens share `QueryState`: loading, a clear error with Try again, and a signed-out visitor is sent to `/login?next=`.
+
+| Screen | What it does |
+|---|---|
+| `/accounts` | List with links, **Open an account** (name, held at, type, currency; tracking accounts are explained as such) |
+| `/accounts/[id]` | Summary figures (equity, cash, market value, realised and unrealised profit, fees, taxes); for Groww, Zerodha, Binance and Exness accounts a **statement upload** (CSV, XLS, XLSX up to 20 MB, checked in the browser first), the import result of each statement (imported, already known, skipped, warnings, a failed import with its reason) and delete with a confirmation |
+| `/trades` | Table of one account: date filters (sent to account-service when both ends are given, otherwise applied in the page, because the service answers 400 to a lone `from`), symbol and side filters, sortable columns with `aria-sort`, 15 per page, all state in the URL; realised profit of the filtered view. **Record a trade**: at the market price on platform and paper accounts, by hand (symbol, quantity, price, date) on tracking accounts |
+| `/trades/[id]` | One trade with gross, fees, taxes, net, realised profit, average cost, source |
+| `/dashboard` | Key figures from summary and performance, and a **profit and loss calendar**: for each day the sum of the trades' own `realizedProfit`, month navigation, month total, all-time total. The all-time total equals the account's realised profit (the page says so if it ever does not) |
+| `/portfolio` | Open positions with average and current price, market value, unrealised profit in amount and percent; asks for new prices every 10 seconds and has **Refresh prices**; a failed refresh keeps the last prices and says so |
+
+Notes. There is no websocket: "live" means polling account-service, which takes prices from market-data-service. The calendar is built in the browser because account-service has no per-day endpoint; the tests compare it with the API. Colour is never the only signal: profits carry `+` and `-`. Tables scroll inside their own region on phones (keyboard focusable), so the page itself never scrolls sideways. `npm run e2e:mvp:real` (9 checks) is the real-stack walk-through: it registers, opens a Zerodha account, imports a tradebook through the real parser, compares the trades table, filters, dashboard, calendar and portfolio with account-service's own answers, trades on a paper account against live market-data prices, and checks six screens for sideways overflow at 360 px. It leaves a user, two accounts, a statement and its stored file behind (cleanup SQL in `docs/changelog.md`).
 
 ## Settings
 
