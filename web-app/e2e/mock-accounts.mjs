@@ -85,7 +85,7 @@ export function createAccountMock() {
       const prior = list.filter((t) => t.symbol === symbol && t.side === "BUY");
       const avgBuy = prior.length ? prior.reduce((s, t) => s + t.price * t.quantity, 0) / prior.reduce((s, t) => s + t.quantity, 0) : px;
       avgs.set(symbol, avgBuy);
-      list.push(mkTrade(accountId, symbol, side, qty, px, `${at(row, "trade_date")}T09:30:00`, side === "SELL" ? round((px - avgBuy) * qty) : 0, { externalTradeId: ext, source: "STATEMENT" }));
+      list.push(mkTrade(accountId, symbol, side, qty, px, `${at(row, "trade_date")}T09:30:00`, side === "SELL" ? round((px - avgBuy) * qty) : 0, { externalTradeId: ext, source: "IMPORT" }));
       imported++;
     });
     trades.set(K(accountId), list);
@@ -131,6 +131,7 @@ export function createAccountMock() {
     if ((m = url.match(/^\/api\/v1\/trades\/account\/([^/]+)$/))) {
       if (!own(m[1])) return deny(), true;
       const from = query.get("from"), to = query.get("to");
+      if (Boolean(from) !== Boolean(to)) return send(400, { status: 400, error: "Bad Request", message: "Give both 'from' and 'to', or neither" }), true; // like account-service
       const list = (trades.get(K(m[1])) ?? []).filter((t) => (!from || t.tradeDate.slice(0, 10) >= from) && (!to || t.tradeDate.slice(0, 10) <= to));
       return send(200, list), true;
     }

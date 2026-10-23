@@ -22,8 +22,10 @@ export function TradesView() {
   const dir: SortDir = url.get("dir") === "asc" ? "asc" : "desc";
   const page = Number(url.get("page")) || 1;
 
-  const trades = useTrades(selected?.id, from || undefined, to || undefined);
-  const filtered = filterTrades(trades.data ?? [], { symbol, side: side === "BUY" || side === "SELL" ? side : "" });
+  // account-service answers 400 to a one-sided range ("give both from and to, or neither"): send both ends or none.
+  const both = Boolean(from && to);
+  const trades = useTrades(selected?.id, both ? from : undefined, both ? to : undefined);
+  const filtered = filterTrades(trades.data ?? [], { symbol, side: side === "BUY" || side === "SELL" ? side : "", from, to });
   const sorted = sortTrades(filtered, sort, dir);
   const view = paginate(sorted, page);
   const cur = selected?.currency;

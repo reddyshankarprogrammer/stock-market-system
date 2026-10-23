@@ -42,7 +42,13 @@ export function PortfolioView() {
                 {holdings.isFetching ? "Refreshing…" : "Refresh prices"}
               </button>
             </div>
-            <QueryState query={holdings} what="the holdings" next="/portfolio">
+            {/* A failed refresh must not blank a table that was already loaded: keep the last prices and say so. */}
+            {holdings.isError && holdings.data && (
+              <p role="status" className="rounded-brand border border-line bg-soft p-3 text-sm">
+                The latest prices could not be loaded just now. Showing the last prices; this page will try again.
+              </p>
+            )}
+            <QueryState query={holdings.data ? [] : holdings} what="the holdings" next="/portfolio">
               {s && (
                 <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                   {[

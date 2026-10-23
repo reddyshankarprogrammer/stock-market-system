@@ -5,7 +5,7 @@ import { QueryState } from "@/components/ui/QueryState";
 import { useAccount, useTrade } from "@/lib/api/account-hooks";
 import { dateTime, money, quantity, signed } from "@/lib/format";
 
-const sourceLabel: Record<string, string> = { PLATFORM: "Quantiva platform", STATEMENT: "Imported from a statement", MANUAL: "Entered by hand" };
+const sourceLabel: Record<string, string> = { PLATFORM: "Quantiva platform", IMPORT: "Imported from a statement", MANUAL: "Entered by hand" };
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (

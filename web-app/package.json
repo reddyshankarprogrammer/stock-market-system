@@ -13,7 +13,8 @@
     "e2e:auth": "node e2e/auth.e2e.mjs",
     "e2e:auth:real": "node e2e/auth.real-stack.mjs",
     "e2e:accounts:real": "node e2e/accounts.real-stack.mjs",
-    "e2e:settings:real": "node e2e/settings.real-stack.mjs"
+    "e2e:settings:real": "node e2e/settings.real-stack.mjs",
+    "e2e:mvp:real": "node e2e/mvp.real-stack.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.2",

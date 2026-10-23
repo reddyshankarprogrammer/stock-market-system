@@ -16,11 +16,16 @@ export const SORT_COLUMNS: { key: SortKey; label: string; numeric?: boolean }[] 
   { key: "realizedProfit", label: "Realised profit", numeric: true },
 ];
 
-export type TradeFilter = { symbol?: string; side?: "BUY" | "SELL" | "" };
+export type TradeFilter = { symbol?: string; side?: "BUY" | "SELL" | ""; from?: string; to?: string };
 
 export function filterTrades(trades: Trade[], f: TradeFilter): Trade[] {
   const symbol = f.symbol?.trim().toUpperCase();
-  return trades.filter((t) => (!symbol || (t.symbol ?? "").toUpperCase().includes(symbol)) && (!f.side || t.side === f.side));
+  // Dates compare as written (yyyy-MM-dd of the trade date), inclusive. account-service filters only when it is given both
+  // ends, so a one-sided range is applied here; with both ends the API has already done it and this agrees with it.
+  return trades.filter((t) => {
+    const day = (t.tradeDate ?? "").slice(0, 10);
+    return (!symbol || (t.symbol ?? "").toUpperCase().includes(symbol)) && (!f.side || t.side === f.side) && (!f.from || day >= f.from) && (!f.to || day <= f.to);
+  });
 }
 
 export function sortTrades(trades: Trade[], key: SortKey, dir: SortDir): Trade[] {

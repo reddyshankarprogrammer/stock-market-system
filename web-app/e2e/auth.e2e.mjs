@@ -670,6 +670,9 @@ await test("trades: filters (dates go to the API, symbol and side narrow the lis
   await p.getByLabel("Side").selectOption("SELL"); await p.getByText(/1 trade match your filters/).waitFor(); ok((await tradeRows(p).count()) === 1, "sell only");
   await p.getByLabel("Side").selectOption(""); await p.getByLabel("From").fill("2026-10-04"); await p.getByText(/1 trade match your filters/).waitFor();
   ok((await tradeRows(p).first().innerText()).includes("Sell"), "date filter should keep only the sell");
+  await p.getByLabel("To").fill("2026-10-04"); await p.getByText(/0 trades match your filters/).waitFor(); await p.getByLabel("From").fill("2026-10-01"); await p.getByText(/1 trade match your filters/).waitFor();
+  ok((await tradeRows(p).first().innerText()).includes("Buy"), "both ends: only the buy lies in 1 to 4 October");
+  await p.getByLabel("To").fill(""); await p.getByLabel("From").fill("2026-10-04"); await p.getByText(/1 trade match your filters/).waitFor();
   await p.getByLabel("Symbol").fill("zzz"); await p.getByText("No trades match").waitFor();
   await p.getByRole("button", { name: "Clear filters" }).click(); await p.getByText(/2 trades\./).waitFor(); ok((await p.getByLabel("From").inputValue()) === "", "from not cleared"); await c.close();
 });
