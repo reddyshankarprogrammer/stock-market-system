@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { authService } from "@/lib/auth/auth-service";
+import { authService, type Profile } from "@/lib/auth/auth-service";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { AuthError } from "@/lib/auth/errors";
 
@@ -33,7 +33,9 @@ export function useLogin() {
     mutationFn: authService.login,
     onSuccess: (user) => {
       setUser(user);
-      qc.setQueryData(authKeys.me, user);
+      // Do NOT seed the profile cache with the login answer: it has no onboarding status, and the dashboard would trust it.
+      // Remove any old profile so the next screen fetches the full one.
+      qc.removeQueries({ queryKey: authKeys.me });
     },
   });
 }
@@ -47,7 +49,7 @@ export function useRegister() {
     onSuccess: ({ user, notSaved }) => {
       setUser(user);
       setNotice(notSaved);
-      qc.setQueryData(authKeys.me, user);
+      qc.removeQueries({ queryKey: authKeys.me }); // see useLogin: the dashboard must fetch the full profile
     },
   });
 }
@@ -58,6 +60,31 @@ export function useForgotPassword() {
 
 export function useResetPassword() {
   return useMutation({ mutationFn: authService.resetPassword });
+}
+
+export const onboardingKey = ["onboarding"] as const;
+
+export function useOnboarding() {
+  return useQuery({ queryKey: onboardingKey, queryFn: authService.getOnboarding, retry: false, staleTime: Infinity });
+}
+
+export function useSaveOnboarding() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: authService.saveOnboarding, onSuccess: (data) => qc.setQueryData(onboardingKey, data) });
+}
+
+export function useCompleteOnboarding() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: authService.completeOnboarding,
+    onSuccess: (data) => {
+      qc.setQueryData(onboardingKey, data);
+      // Update the cached profile at once: the dashboard acts on cached data before it refetches, and a stale
+      // "not completed" would send the user straight back to the wizard.
+      qc.setQueryData(authKeys.me, (old: Profile | undefined) => (old ? { ...old, onboardingCompleted: true } : old));
+      qc.invalidateQueries({ queryKey: authKeys.me });
+    },
+  });
 }
 
 export function useLogout() {

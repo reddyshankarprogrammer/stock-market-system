@@ -24,7 +24,8 @@ The work did not follow the unit order. The landing page, two clips and the sign
 | Sign-up and login screens, stage A | Login, Register (9 required fields, read-to-the-end Terms and Risk Disclaimer), protected routes, dark and light mode, httpOnly session cookies, `auth-service.ts`, `auth-hooks.ts`, `auth-store.ts`. 25 browser checks pass against a mock gateway. | `web-app/lib/auth/`, `web-app/e2e/` |
 | Forgot and Reset Password | Built (24 Oct, branch `feature/password-reset`): emailed single-use link (hash stored, 30 min), same answer for any email, older sessions end after a reset. Needs a production email provider. | `web-app/app/(auth)/`, `user-service` |
 | Pending by request | Verify Email (6-digit OTP, verify, resend). Its page says "Not available yet". | `web-app/app/(auth)/verify-email` |
-| Not done | Design phase (Figma, decision log: units 1–5), Onboarding screens, the other backend steps listed below. | |
+| Onboarding | Built (24 Oct, branch `feature/onboarding`): the four-step wizard and the preferences endpoints, resumable and verified on the real stack (see backend step 6). | `web-app/components/onboarding/`, `user-service` |
+| Not done | Design phase (Figma, decision log: units 1–5), the remaining backend step (email verification), everything after the auth screens. | |
 
 ### Decisions taken on 24 October
 
@@ -46,7 +47,7 @@ Follow `user-service/CLAUDE.md` and root `CLAUDE.md` section 5 (contract first; 
 | 3 | **DONE (24 Oct, branch `feature/password-reset`; 61 user-service tests, 38 web-app browser checks; verified on the real local stack 24 Oct (MySQL, gateway, Kafka, Mailpit in Docker; Newman not run).** `POST /api/v1/users/forgot-password` (always 202, same message, hash-only single-use token, 30 minutes, 60 s cooldown, background send) and `/reset-password` (one generic 400), `password_reset_tokens` table, `users.password_changed_at` so older refresh tokens end, Spring Mail with Mailpit in docker compose. **Open: a production email provider and the public web address** (`MAIL_HOST`, `MAIL_FROM`, `APP_BASE_URL` in `k8s/user-service/configmap.yaml`). | Forgot and Reset Password screens. |
 | 4 | Email verification: 6-digit code, verify and resend, attempt and rate limits. | Verify Email screen (pending). |
 | 5 | **DONE (24 Oct, branch `feature/login-hardening`; 66 user-service tests, 39 web-app browser checks; verified on the real local stack 24 Oct (MySQL, gateway, Kafka; Newman not run).** Unknown email and wrong password give the same 401 (typed exceptions, no message matching) with a dummy BCrypt check so timing does not leak; a blocking status is refused with 403 only after the correct password. | Stops revealing which emails are registered, and stops suspended users logging in. |
-| 6 | Profile and onboarding preferences endpoints (trading experience, broker preference, plan, completed flag). | Onboarding screens. |
+| 6 | **DONE (24 Oct, branch `feature/onboarding`; 76 user-service tests, 46 web-app browser checks on the mock, 16 on the real stack, Newman Users & Auth folder 24 requests / 41 assertions).** `GET`/`PUT /me/onboarding` and `POST /me/onboarding/complete` (partial saves, validated enums, brokers sorted and de-duplicated, NONE exclusive, identity from the token only). Plan is recorded as an interest: **no billing, entitlement or price exists yet.** | Onboarding screens. |
 
 ### Remaining MVP work in the new order (estimates, in 2-hour units)
 
@@ -56,13 +57,13 @@ Follow `user-service/CLAUDE.md` and root `CLAUDE.md` section 5 (contract first; 
 | 2 | ~~Backend step 1: profile fields and consent record; web app sends them~~ **done 24 Oct** (verified on the real stack; remaining: merge) | 0 (was 2) |
 | 3 | ~~Backend step 2: refresh endpoint; route handlers refresh on 401~~ **done 24 Oct** (verified on the real stack; remaining: merge) | 0 (was 2) |
 | 4 | ~~Backend step 3: forgot and reset password, email service, screens~~ **done 24 Oct**. Backend step 5 (same 401 for an unknown email, status check at login) **also done 24 Oct** | 0 (was 3) |
-| 5 | Backend step 6 and Onboarding (4 steps) | 3 |
+| 5 | ~~Backend step 6 and Onboarding (4 steps)~~ **done 24 Oct** | 0 (was 3) |
 | 6 | Web app deployment: Dockerfile, `k8s/web-app/`, Argo CD application, CI/CD lists, ingress (original unit 18) | 2 |
 | 7 | App shell and typed API client (original units 31–32) | 2 |
 | 8 | Settings screens and preferences (original units 33–36) | 4 |
 | 9 | Accounts, statement upload, trades, dashboard, portfolio, MVP demo (original units 37–40) | 4 |
 | 10 | Waitlist form on the landing page (original unit 23) | 2 |
-| | **Total** | **18** (25 before backend steps 1 to 3 and 5 were done) |
+| | **Total** | **15** (25 before backend steps 1 to 3, 5 and 6 and the onboarding screens were done) |
 
 Moved to after the MVP: landing page clips 3–8, the hero video and "Watch Demo" modal, Verify Email (backend step 4), Keycloak with passkeys and social login (original units 6–16).
 

@@ -70,9 +70,29 @@ await test("register through the real gateway and user-service, with every profi
   await p.getByRole("region", { name: /Terms and risk disclaimer text/ }).evaluate((el) => el.scrollTo(0, el.scrollHeight));
   await p.getByRole("button", { name: "I have read and accept" }).click();
   await p.getByRole("button", { name: "Create Account" }).click();
-  await p.waitForURL("**/dashboard?welcome=1", { timeout: 20000 });
-  await p.getByText("Welcome to Quantiva, Asha").waitFor();
+  await p.waitForURL("**/onboarding", { timeout: 20000 }); // a brand-new user is sent to the wizard
+  await p.getByRole("heading", { name: "What is your trading experience?" }).waitFor();
   ok((await p.getByText("Some details were not saved yet").count()) === 0, "unexpected 'not saved' notice");
+});
+
+await test("onboarding: all four steps against the real service, then the dashboard greets the new user", async () => {
+  await p.getByLabel("Advanced").check(); await p.getByRole("button", { name: "Continue" }).click();
+  await p.getByRole("heading", { name: "Which brokers do you use?" }).waitFor({ timeout: 15000 });
+  await p.getByLabel("Groww").check(); await p.getByLabel("Zerodha").check(); await p.getByRole("button", { name: "Continue" }).click();
+  await p.getByRole("heading", { name: "Which plan interests you?" }).waitFor({ timeout: 15000 });
+  await p.getByLabel(/^Pro /).check(); await p.getByRole("button", { name: "Continue" }).click();
+  await p.getByRole("heading", { name: "Check your answers" }).waitFor({ timeout: 15000 });
+  await p.getByRole("button", { name: "Complete setup" }).click();
+  await p.waitForURL("**/dashboard?welcome=1", { timeout: 20000 });
+  await p.getByText("Welcome to Quantiva, Asha").waitFor({ timeout: 15000 });
+  await p.waitForTimeout(800); ok(p.url().includes("/dashboard"), `bounced back to ${p.url()}`);
+});
+
+await test("onboarding answers are stored: a new browser logs in straight to the dashboard and /onboarding says it is complete", async () => {
+  const cx = await newCtx(); const px = await cx.newPage();
+  await login(px, email, PW1); await px.waitForURL("**/dashboard", { timeout: 15000 }); await px.getByText("Hello, Asha").waitFor({ timeout: 15000 });
+  await px.waitForTimeout(800); ok(px.url().includes("/dashboard"), `sent to ${px.url()}`);
+  await px.goto(`${BASE}/onboarding`); await px.getByText("Your setup is complete").waitFor({ timeout: 15000 }); await cx.close();
 });
 
 await test("the session cookies are httpOnly and the tokens are not visible to page scripts", async () => {

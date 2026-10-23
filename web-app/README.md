@@ -34,6 +34,8 @@ Clips so far: `calendar`, `import`. The page plays them with `components/Feature
 
 ## Authentication (interim, on user-service)
 
+Onboarding: after registering (and for any account that has not finished it) the dashboard sends the user to `/onboarding`, a four-step wizard (trading experience, brokers, plan of interest, check and complete). Answers are saved as you continue, so a reload resumes at the first unanswered step; "Skip for now" lasts for the browser session. The plan step records interest only: billing and prices do not exist yet. Data cache: the browser uses ONE shared TanStack `QueryClient` (`components/Providers.tsx`), because Next keeps visited pages in memory and a client per layout would let an update (such as "onboarding completed") miss the dashboard's cached profile; login and register clear the cached profile instead of seeding it.
+
 Pages: `/login`, `/register` (all 9 fields, Terms and Risk Disclaimer you must scroll to the end to accept), `/dashboard` (protected placeholder). `/forgot-password` and `/reset-password` work against user-service (the confirmation is identical for every email; the emailed link is single-use and expires in 30 minutes; locally the email arrives in Mailpit at http://localhost:8025). `/verify-email` is an honest "Not available yet" page: there is no verification backend. `/signup` redirects to `/register`.
 
 How it works:

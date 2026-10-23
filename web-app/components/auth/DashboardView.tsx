@@ -5,9 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormAlert } from "@/components/ui/form";
 import { useMe } from "@/lib/auth/auth-hooks";
 import { useAuthStore } from "@/lib/auth/auth-store";
+import { ONBOARDING_SKIPPED_KEY } from "@/lib/auth/constants";
 import { AuthError } from "@/lib/auth/errors";
 
 const fieldNames: Record<string, string> = { mobile: "mobile number", gender: "gender", country: "country", termsAcceptance: "your acceptance of the Terms" };
+
+function skippedThisSession() {
+  try {
+    return sessionStorage.getItem(ONBOARDING_SKIPPED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 // Placeholder for the real dashboard (daily plan, phase 3). It proves the session works end to end.
 export function DashboardView() {
@@ -21,7 +30,13 @@ export function DashboardView() {
     if (unauthenticated) router.replace("/login?next=/dashboard");
   }, [unauthenticated, router]);
 
-  if (me.isPending || unauthenticated) {
+  // Users who have not finished onboarding are sent to the wizard (unless they skipped it in this browser session).
+  const needsOnboarding = me.data?.onboardingCompleted === false && !skippedThisSession();
+  useEffect(() => {
+    if (needsOnboarding) router.replace("/onboarding");
+  }, [needsOnboarding, router]);
+
+  if (me.isPending || unauthenticated || needsOnboarding) {
     return (
       <p role="status" aria-busy="true" className="text-subtle">
         Loading your account…

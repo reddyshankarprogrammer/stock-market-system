@@ -1,10 +1,11 @@
 import { AuthError, defaultMessages, type AuthErrorCode } from "@/lib/auth/errors";
+import type { Onboarding, OnboardingInput } from "@/lib/onboarding";
 import type { ForgotValues, LoginValues, RegisterParsed, ResetValues } from "@/lib/auth/schemas";
 
 // Browser-side API for authentication. It talks only to our own route handlers (/api/auth/*, same origin),
 // which hold the tokens in httpOnly cookies and call user-service through the gateway. To move to another
 // identity system later (Keycloak), change the route handlers; pages and hooks keep using this file.
-export type Profile = { userId: string; email: string; firstName: string; lastName: string; role: "USER" | "ADMIN" };
+export type Profile = { userId: string; email: string; firstName: string; lastName: string; role: "USER" | "ADMIN"; onboardingCompleted?: boolean };
 export type RegisterResult = { user: Profile; notSaved: string[] };
 
 const CLIENT_TIMEOUT_MS = 10_000; // a little above the 8 s server-side limit
@@ -46,6 +47,13 @@ export const authService = {
   resetPassword: async (v: ResetValues): Promise<void> => {
     await call("/api/auth/reset-password", { method: "POST", body: JSON.stringify(v) });
   },
+
+  getOnboarding: (): Promise<Onboarding> => call<Onboarding>("/api/onboarding"),
+
+  /** Saves one step or several; only the fields sent change. */
+  saveOnboarding: (v: OnboardingInput): Promise<Onboarding> => call<Onboarding>("/api/onboarding", { method: "PUT", body: JSON.stringify(v) }),
+
+  completeOnboarding: (): Promise<Onboarding> => call<Onboarding>("/api/onboarding/complete", { method: "POST", body: "{}" }),
 
   me: async (): Promise<Profile> => (await call<{ user: Profile }>("/api/auth/me")).user,
 };

@@ -84,6 +84,51 @@ export async function refreshAccessToken(req: NextRequest): Promise<RefreshResul
   return body?.accessToken ? { status: "ok", accessToken: body.accessToken } : { status: "invalid" };
 }
 
+export type AsUser = { kind: "ok"; res: Response; renewed: string | null } | { kind: "response"; response: NextResponse };
+
+/**
+ * Call user-service as the signed-in user. Uses the access cookie; when it is missing or user-service answers 401 it
+ * exchanges the refresh cookie once and retries. Returns either a successful upstream response (plus the new access
+ * token, if one was issued, so the caller can set the cookie) or a ready-made error response: 401 with both cookies
+ * cleared when the session is really over, 503 when the service is unreachable (cookies kept: that is not a logout).
+ * A non-2xx answer from user-service (for example a 400) is returned as "ok" with that response, for the caller to map.
+ */
+export async function callAsUser(req: NextRequest, path: string, init: RequestInit = {}): Promise<AsUser> {
+  let token = req.cookies.get(ACCESS_COOKIE)?.value ?? null;
+  let renewed: string | null = null;
+
+  const call = (t: string) => gateway(path, { ...init, headers: { ...init.headers, Authorization: `Bearer ${t}` } });
+  const renew = async (): Promise<AsUser | null> => {
+    const r = await refreshAccessToken(req);
+    if (r.status === "unavailable") return { kind: "response", response: fail("UNAVAILABLE", 503) };
+    if (r.status === "invalid") {
+      const out = fail("UNAUTHENTICATED", 401);
+      clearSession(out);
+      return { kind: "response", response: out };
+    }
+    renewed = token = r.accessToken;
+    return null;
+  };
+
+  if (!token) {
+    const stop = await renew();
+    if (stop) return stop;
+  }
+  let res = await call(token!);
+  if (res?.status === 401 && !renewed) {
+    const stop = await renew();
+    if (stop) return stop;
+    res = await call(token!);
+  }
+  if (!res || res.status >= 500) return { kind: "response", response: fail("UNAVAILABLE", 503) };
+  if (res.status === 401) {
+    const out = fail("UNAUTHENTICATED", 401);
+    clearSession(out); // the session is really over: drop both cookies
+    return { kind: "response", response: out };
+  }
+  return { kind: "ok", res, renewed };
+}
+
 /** Set the session cookies. The refresh cookie lasts 7 days only if "remember me" is ticked; otherwise it ends with the browser session. */
 export function setSession(res: NextResponse, r: AuthResponse, remember: boolean) {
   const now = Math.floor(Date.now() / 1000);

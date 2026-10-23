@@ -21,6 +21,15 @@ export function startMockGateway(port = 8099) {
   const users = new Map(); // email -> {firstName, lastName}, so /me returns what was registered
   let lastRegister = null; // the last register body, so the test can check exactly what the web app forwarded
   let refreshCalls = 0;
+  // Onboarding answers per email. Users who logged in without registering count as already onboarded (so older tests
+  // still reach the dashboard); a registered user starts blank, like a real new account.
+  const onboarding = new Map();
+  const blank = () => ({ tradingExperience: null, brokerPreferences: [], plan: null, completedAt: null });
+  const onboardState = (email) => onboarding.get(email) ?? (users.has(email) ? blank() : { tradingExperience: "INTERMEDIATE", brokerPreferences: ["NONE"], plan: "FREE", completedAt: "2026-10-01T00:00:00" });
+  const view = (s) => ({ tradingExperience: s.tradingExperience, brokerPreferences: s.brokerPreferences, plan: s.plan, completed: !!s.completedAt, completedAt: s.completedAt });
+  const EXPERIENCE = ["BEGINNER", "INTERMEDIATE", "ADVANCED", "PROFESSIONAL"];
+  const BROKERS = ["GROWW", "ZERODHA", "BINANCE", "EXNESS", "OTHER", "NONE"];
+  const PLANS = ["FREE", "PRO", "AI_PRO", "QUANT_PRO", "ENTERPRISE"];
   const forgotRequests = []; // emails asked about, so the test can see the answer is the same for known and unknown
   const resetTokens = new Map([["valid-reset-token-0123456789abcdef", "reset-me@example.com"], ["valid-reset-token-for-blocked-0123456789", "blocked@example.com"]]);
   const passwords = new Map(); // email -> password set by a reset
@@ -34,6 +43,7 @@ export function startMockGateway(port = 8099) {
     let raw = "";
     for await (const c of req) raw += c;
     const body = raw ? JSON.parse(raw) : {};
+    if (process.env.MOCK_LOG) console.log("  [mock]", req.method, req.url, raw ? raw.slice(0, 60) : "");
 
     if (req.method === "POST" && req.url === "/api/v1/users/login") {
       if (body.email === "down@example.com") return send(500, { status: 500, message: "boom" });
@@ -48,6 +58,7 @@ export function startMockGateway(port = 8099) {
       if (body.email === "taken@example.com") return send(400, { status: 400, message: `Email already registered ${body.email}` });
       lastRegister = body;
       users.set(body.email, { firstName: body.firstName, lastName: body.lastName });
+      onboarding.set(body.email, blank());
       return send(200, { userId: "u-2", email: body.email, firstName: body.firstName, lastName: body.lastName, walletBalance: 10000, ...tokens(body.email) });
     }
     if (req.method === "POST" && req.url === "/api/v1/users/forgot-password") {
@@ -69,11 +80,36 @@ export function startMockGateway(port = 8099) {
       if (!c || c.tokenType !== "REFRESH" || c.exp < now() || c.email === "suspended@example.com") return send(401, { status: 401, message: "Invalid refresh token" });
       return send(200, { userId: c.sub, email: c.email, firstName: "Test", lastName: "User", walletBalance: 10000, accessToken: jwt(c.email, "ACCESS", 900), refreshToken: body.refreshToken, tokenType: "Bearer" });
     }
+    if (req.url.startsWith("/api/v1/users/me/onboarding")) {
+      const c = claimsOf((req.headers.authorization ?? "").replace("Bearer ", ""));
+      if (!c || c.tokenType !== "ACCESS" || c.exp < now()) return send(401, { status: 401, message: "Unauthorized" });
+      const s = onboardState(c.email);
+      if (req.method === "GET" && req.url === "/api/v1/users/me/onboarding") return send(200, view(s));
+      if (req.method === "PUT" && req.url === "/api/v1/users/me/onboarding") {
+        if (body.tradingExperience !== undefined && !EXPERIENCE.includes(body.tradingExperience)) return send(400, { status: 400, message: "Validation failed" });
+        if (body.plan !== undefined && !PLANS.includes(body.plan)) return send(400, { status: 400, message: "Validation failed" });
+        if (body.brokerPreferences !== undefined) {
+          const b = [...new Set(body.brokerPreferences)].sort();
+          if (!b.length || b.some((x) => !BROKERS.includes(x)) || (b.includes("NONE") && b.length > 1)) return send(400, { status: 400, message: "Choose at least one broker, or NONE" });
+          s.brokerPreferences = b;
+        }
+        if (body.tradingExperience !== undefined) s.tradingExperience = body.tradingExperience;
+        if (body.plan !== undefined) s.plan = body.plan;
+        onboarding.set(c.email, s);
+        return send(200, view(s));
+      }
+      if (req.method === "POST" && req.url === "/api/v1/users/me/onboarding/complete") {
+        if (!s.tradingExperience || !s.brokerPreferences.length || !s.plan) return send(400, { status: 400, message: "Choose your trading experience, your brokers and a plan first" });
+        s.completedAt ??= new Date().toISOString();
+        onboarding.set(c.email, s);
+        return send(200, view(s));
+      }
+    }
     if (req.method === "GET" && req.url === "/api/v1/users/me") {
       const c = claimsOf((req.headers.authorization ?? "").replace("Bearer ", ""));
       if (!c || c.tokenType !== "ACCESS" || c.exp < now()) return send(401, { status: 401, message: "Unauthorized" });
       const who = users.get(c.email) ?? { firstName: "Test", lastName: "User" };
-      return send(200, { id: c.sub, email: c.email, firstName: who.firstName, lastName: who.lastName, walletBalance: 10000, status: "ACTIVE", createdAt: "2026-10-24T00:00:00", role: c.role });
+      return send(200, { id: c.sub, email: c.email, firstName: who.firstName, lastName: who.lastName, walletBalance: 10000, status: "ACTIVE", createdAt: "2026-10-24T00:00:00", role: c.role, onboardingCompletedAt: onboardState(c.email).completedAt });
     }
     if (req.method === "GET" && req.url === "/__last-register") return send(200, lastRegister ?? {});
     if (req.method === "GET" && req.url === "/__stats") return send(200, { refreshCalls, forgotRequests, passwords: Object.fromEntries(passwords) });

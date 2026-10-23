@@ -8,12 +8,14 @@ import { startMockGateway } from "./mock-gateway.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3100";
 const results = [];
+const only = process.env.ONLY; // run just the tests whose name contains this text, e.g. ONLY="invalid refresh"
 const test = async (name, fn) => {
+  if (only && !name.includes(only)) return;
   try {
     await fn();
     results.push([true, name]);
   } catch (e) {
-    results.push([false, `${name}: ${String(e.message).split("\n")[0]}`]);
+    results.push([false, `${name}: ${String(e.message).split("\n").filter(Boolean).slice(0, 3).join(" | ")}`]);
   }
 };
 const ok = (cond, msg) => {
@@ -284,14 +286,84 @@ await test("register: duplicate email shows an error on the email field", async 
 });
 await test("register success: dashboard, no 'not saved' notice, and every profile field is forwarded to user-service", async () => {
   const c = await newCtx(); const p = await c.newPage(); await fillRegister(p); await acceptTerms(p);
-  await p.getByRole("button", { name: "Create Account" }).click(); await p.waitForURL("**/dashboard?welcome=1");
-  await p.getByText("Welcome to Quantiva, Asha").waitFor();
+  await p.getByRole("button", { name: "Create Account" }).click(); await p.waitForURL("**/onboarding"); // a new user goes to the wizard
+  await p.getByRole("heading", { name: "What is your trading experience?" }).waitFor();
   ok((await p.getByText("Some details were not saved yet").count()) === 0, "unexpected 'not saved' notice");
   const sent = await (await fetch("http://localhost:8099/__last-register")).json();
   const want = { firstName: "Asha", lastName: "Rao", email: "asha@example.com", mobileCountryCode: "+91", mobileNumber: "9876543210", gender: "FEMALE", country: "IN" };
   for (const [k, v] of Object.entries(want)) ok(sent[k] === v, `${k}: sent ${JSON.stringify(sent[k])}, expected ${JSON.stringify(v)}`);
   ok(/^\d{4}-\d{2}-\d{2}-draft$/.test(sent.termsVersion), `termsVersion ${sent.termsVersion}`);
   ok(!("confirmPassword" in sent) && !("termsAccepted" in sent) && !("dialCode" in sent), "internal form fields leaked to the API"); await c.close();
+});
+
+// ---- onboarding ----
+let nth = 0;
+const onboardEmail = () => `new-user-${Date.now()}-${++nth}@example.com`;
+async function registerNew(browserCtx) {
+  const page = await browserCtx.newPage();
+  await fillRegister(page, { email: onboardEmail() }); await acceptTerms(page);
+  await page.getByRole("button", { name: "Create Account" }).click(); await page.waitForURL("**/onboarding");
+  await page.getByRole("heading", { name: "What is your trading experience?" }).waitFor();
+  return page;
+}
+
+await test("onboarding: a new user starts at step 1; Continue without a choice explains what is missing", async () => {
+  const c = await newCtx(); const p = await registerNew(c);
+  await p.getByText("Step 1 of 4: Trading experience").waitFor();
+  ok((await p.locator("li[aria-current=step]").count()) === 1, "stepper must mark exactly one current step");
+  await p.getByRole("button", { name: "Continue" }).click();
+  await p.getByText("Choose your trading experience").waitFor(); await c.close();
+});
+await test("onboarding: all four steps, saved as you go, then the dashboard without a redirect loop", async () => {
+  const c = await newCtx(); const p = await registerNew(c);
+  await p.getByLabel("Intermediate").check(); await p.getByRole("button", { name: "Continue" }).click();
+  await p.getByRole("heading", { name: "Which brokers do you use?" }).waitFor();
+  ok(await p.evaluate(() => document.activeElement?.tagName === "H1"), "focus did not move to the new step's heading");
+  await p.getByRole("button", { name: "Continue" }).click(); await p.getByText("Choose at least one broker").waitFor();
+  await p.getByLabel("Groww").check(); await p.getByLabel("Zerodha").check(); await p.getByRole("button", { name: "Continue" }).click();
+  await p.getByRole("heading", { name: "Which plan interests you?" }).waitFor();
+  for (const name of ["Free", "Pro", "AI Pro", "Quant Pro", "Enterprise"]) await p.getByText(new RegExp(`^${name} `)).first().waitFor();
+  await p.getByText("price TBC").first().waitFor(); await p.getByText("Not available yet. Your interest is saved").first().waitFor();
+  await p.getByLabel(/^Pro /).check(); await p.getByRole("button", { name: "Continue" }).click();
+  await p.getByRole("heading", { name: "Check your answers" }).waitFor();
+  const summary = await p.locator("dl").innerText(); ok(/Intermediate/.test(summary) && /Groww, Zerodha/.test(summary) && /Pro/.test(summary), summary);
+  await p.getByRole("button", { name: "Complete setup" }).click(); await p.waitForURL("**/dashboard");
+  await p.getByText(/Hello|Welcome/).first().waitFor(); await p.waitForTimeout(800);
+  ok(p.url().includes("/dashboard"), `ended on ${p.url()}`); await c.close();
+});
+await test("onboarding: 'I do not use a broker yet' excludes the others, and picking a broker clears it", async () => {
+  const c = await newCtx(); const p = await registerNew(c);
+  await p.getByLabel("Beginner").check(); await p.getByRole("button", { name: "Continue" }).click(); await p.getByRole("heading", { name: "Which brokers do you use?" }).waitFor();
+  await p.getByLabel("Groww").check(); await p.getByLabel("I do not use a broker yet").check();
+  ok(!(await p.getByLabel("Groww").isChecked()), "Groww should be cleared by 'no broker'");
+  await p.getByLabel("Exness").check();
+  ok(!(await p.getByLabel("I do not use a broker yet").isChecked()), "'no broker' should be cleared by a broker"); await c.close();
+});
+await test("onboarding: progress is saved, so a reload resumes at the next step with the earlier answer kept", async () => {
+  const c = await newCtx(); const p = await registerNew(c);
+  await p.getByLabel("Advanced").check(); await p.getByRole("button", { name: "Continue" }).click(); await p.getByRole("heading", { name: "Which brokers do you use?" }).waitFor();
+  await p.reload(); await p.getByRole("heading", { name: "Which brokers do you use?" }).waitFor(); // resumed at step 2
+  await p.getByRole("button", { name: "Back" }).click(); await p.getByRole("heading", { name: "What is your trading experience?" }).waitFor();
+  ok(await p.getByLabel("Advanced").isChecked(), "the saved experience was lost"); await c.close();
+});
+await test("onboarding: skipping lasts for this browser session; a new session is asked again", async () => {
+  const c = await newCtx(); const p = await registerNew(c);
+  await p.getByRole("button", { name: "Skip for now" }).click(); await p.waitForURL("**/dashboard");
+  await p.getByText(/Hello|Welcome/).first().waitFor(); await p.reload(); await p.getByText(/Hello|Welcome/).first().waitFor();
+  ok(p.url().includes("/dashboard"), "skipped session was sent back to onboarding");
+  const cookies = await c.cookies(); await c.close();
+  const c2 = await newCtx(); await c2.addCookies(cookies); const p2 = await c2.newPage(); await p2.goto(`${BASE}/dashboard`);
+  await p2.waitForURL("**/onboarding"); await c2.close();
+});
+await test("onboarding: a finished user is not sent back, and /onboarding says the setup is complete", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p); await p.waitForURL("**/dashboard"); await p.getByText("Hello, Test").waitFor();
+  await p.goto(`${BASE}/onboarding`); await p.getByText("Your setup is complete").waitFor(); await c.close();
+});
+await test("onboarding: needs a session (redirects to login) and the wizard is keyboard and screen-reader friendly", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await p.goto(`${BASE}/onboarding`); ok(p.url().includes("/login?next=%2Fonboarding"), p.url()); await c.close();
+  const c2 = await newCtx(); const p2 = await registerNew(c2);
+  const radios = await p2.locator("input[type=radio]").evaluateAll((els) => els.filter((e) => e.offsetParent !== null).map((e) => ({ named: !!e.labels?.length, size: e.closest("label").getBoundingClientRect().height })));
+  ok(radios.length === 4 && radios.every((r) => r.named && r.size >= 44), JSON.stringify(radios)); await c2.close();
 });
 
 // ---- pending screens ----

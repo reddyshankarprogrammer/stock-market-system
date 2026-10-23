@@ -8,6 +8,8 @@ export const TERMS_VERSION = "2026-10-24-draft";
 
 export const REMEMBER_EMAIL_KEY = "qv-remember-email";
 export const THEME_KEY = "qv-theme";
+// "Skip for now" on the onboarding wizard lasts for this browser session only; the dashboard asks again next login.
+export const ONBOARDING_SKIPPED_KEY = "qv-onboarding-skipped";
 export const DEFAULT_AFTER_LOGIN = "/dashboard";
 
 // Only same-site relative paths are allowed as a post-login destination (blocks open redirects).
