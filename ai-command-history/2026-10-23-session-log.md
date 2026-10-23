@@ -191,6 +191,18 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 - **Docs:** user-service README, technical documentation (two gap rows resolved), user manual, root `CLAUDE.md`, web-app README, changelog, plan (backend step 5 done; remaining MVP work 19 to 18 units), Postman 111 to 112 requests.
 - **Not verified:** MySQL, the real gateway, Newman. The change alters client-visible behaviour (unknown email is now 401, not 404). Blocking an account still leaves an issued access token valid for up to 15 minutes. No rate limiting on login.
 
+## 22. Push, then run the code locally and verify it on the real stack (24 October)
+
+- **Request:** "push the code and run locally code". `feature/login-hardening` was pushed.
+- **Running locally:** Docker was running now and free memory was about 5.7 GB. MySQL, Redis, Kafka and Kafka UI were already up (healthy, started earlier by the user). Added **Mailpit** (`docker compose up -d mailpit`, image pulled, v1.32.0). Built and started only what the sign-in journey needs: **user-service (8081)** and **api-gateway (8080)** with a 384 MB heap each, and the **web app (3000)** from the existing production build. The other five services were not started (memory). Processes are tracked in `logs/pids.txt` (same format as `start-all.ps1`, so `scripts/stop-all.ps1` stops them).
+- **First real checks:** Hibernate `update` on the user's existing MySQL database added 7 nullable `users` columns and created `password_reset_tokens`; the 18 existing users were untouched; no errors in the user-service log.
+- **New script:** `web-app/e2e/auth.real-stack.mjs` (`npm run e2e:auth:real`): **14 of 14 pass**. My first version of its last check was mislabelled (it tested a new session renewing, not the old one being refused); it was rewritten so an old session is genuinely refused after a reset and a new one renews.
+- **Direct checks on the real system:** stored profile fields and consent, BCrypt passwords and 64-character token hashes in MySQL; the real Kafka `user.registered` message has only `firstName, lastName, walletBalance, userId, email`; a SUSPENDED user gets 403 (correct password), 401 (wrong password), 401 on refresh, and logs in again once reactivated.
+- **Cleanup:** the test users (`e2e-*@example.com`), their reset tokens and their Mailpit mail were deleted; users were back to the original 18. The two test registration events remain in the Kafka topic (cannot be removed).
+- **Docs:** changelog entry, plan (verification noted on backend steps 1, 2, 3 and 5, risk updated), web-app README.
+- **Not done:** Newman (the Postman collection), the other five services, any run in the cluster.
+- **Left running for the user:** web app http://localhost:3000, gateway 8080, user-service 8081, Mailpit http://localhost:8025, Kafka UI http://localhost:8090.
+
 ## Open items after this session
 
 | Item | Where |

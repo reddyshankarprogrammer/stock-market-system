@@ -2,6 +2,24 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: authentication journey verified on the real local stack
+
+Everything from the profile fields, refresh endpoint, password reset and login hardening entries below was previously tested only with mocks and H2. It was run end to end on the real local stack: web app, api-gateway, user-service, MySQL, Kafka and Mailpit in Docker.
+
+| Checked | Result |
+|---|---|
+| Hibernate `update` on the existing MySQL database | Added the 7 nullable `users` columns and created `password_reset_tokens`; the 18 existing users were untouched |
+| Register through the gateway with every profile field | Mobile, gender, country, terms version and a server-set acceptance time stored; passwords BCrypt |
+| Refresh through the real gateway | A deleted access cookie is renewed from the refresh cookie |
+| Wrong password vs unknown email | Both `401 Invalid Credentials` at the gateway and the same message in the web app |
+| Forgot password | A real email arrived in Mailpit with a working link; none for an unregistered address; a second request inside 60 s sent nothing |
+| Reset | Password changed; old password rejected, new one accepted; the same link refused the second time; the token stored only as a 64-character hash, all tokens used or voided |
+| Session cut-off | A session started before the reset can no longer renew; one started after can |
+| Blocked account (set to SUSPENDED in MySQL) | Correct password 403, wrong password 401, refresh 401; reactivated, login 200 |
+| Kafka `user.registered` on the real broker | Keys `firstName, lastName, walletBalance, userId, email` only: no mobile, gender, country or terms fields |
+
+New script `web-app/e2e/auth.real-stack.mjs` (`npm run e2e:auth:real`, 14 checks). It creates test users (`e2e-<timestamp>@example.com`) in the database it runs against; they were removed afterwards and the two registration events they produced remain in the Kafka topic. **Not done:** the Postman collection with Newman, the other five services, a run in the cluster.
+
 ## 2026-10-24: login hardening (no email enumeration, blocked accounts cannot log in)
 
 ### Fixes

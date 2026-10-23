@@ -62,6 +62,8 @@ $env:API_GATEWAY_URL="http://localhost:8099"; npx next start -p 3100   # termina
 npm run e2e:auth                                                        # terminal 2: 25 browser checks, starts the mock gateway itself
 ```
 
+**Against the real local stack** (no mocks): with `docker compose up -d` (MySQL, Kafka, Mailpit), user-service on 8081, api-gateway on 8080 and the web app on 3000 (started *without* `API_GATEWAY_URL`), run `npm run e2e:auth:real`. It registers a user, renews the session through the real refresh endpoint, checks that a wrong password and an unknown email look the same, requests a reset, reads the email from Mailpit (http://localhost:8025), resets the password, and proves the old session and the old link stop working. **It creates test users** (`e2e-<timestamp>@example.com`) in your local database and mail in Mailpit; remove them with `DELETE FROM password_reset_tokens WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'e2e-%@example.com'); DELETE FROM users WHERE email LIKE 'e2e-%@example.com';`.
+
 `e2e/mock-gateway.mjs` imitates the documented user-service behaviour (duplicate email 400, unknown email and wrong password both 401, blocked account 403 after the correct password, slow and failing gateways). For real use, run the whole system (`docker compose up -d`, `.\scripts\start-all.ps1`) and leave `API_GATEWAY_URL` at its default.
 
 ## Not done yet
