@@ -50,7 +50,7 @@ browser form (React Hook Form + Zod) → lib/auth/auth-service.ts → /api/auth/
 
 Known limits (also in [research-doc/05-daily-implementation-plan.md](../research-doc/05-daily-implementation-plan.md)):
 - Sessions last 15 minutes: user-service has no refresh endpoint.
-- Mobile, gender, country and the Terms acceptance are validated but **not saved**: user-service does not store them yet. The dashboard says so after registering.
+- Mobile, gender, country and the Terms version are forwarded to user-service, which stores them (the server records the acceptance time). The mobile number is not verified. Consent is stored per user, but the legal text itself is a draft. Accounts created before this change have these fields empty.
 - There is no rate limiting on the login route; add it at the gateway or ingress.
 - The disclaimer text is a draft and needs legal review before launch.
 

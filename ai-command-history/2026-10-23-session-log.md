@@ -143,6 +143,18 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 - **Not verified:** nothing ran against the real user-service, MySQL or Kafka (low free memory, and it needs `docker compose`); only Chromium; no screen reader test. Sessions last 15 minutes because there is no refresh endpoint. The disclaimer is a draft and needs legal review. The error colour is not in the brand palette, so errors use a bold badge, a thicker border and text.
 - **Not built (by decision):** Reset Password form, Onboarding (4 steps), Verify Email and Send Reset Link (pending), the user-service changes.
 
+## 18. Commit, then the user-service profile-fields step (24 October)
+
+- **Request:** "commit and follow the process as per your recommendation".
+- **Commit:** two commits on `feature/frontend-landing-page` (`1c8faec` web-app: clips and auth stage A; `26f5f20` docs and history). Checked first: Gmail identity, no build output or secrets in the tree, no former company name, largest file 168 KB. Not pushed.
+- **Interpretation:** the recommended order in [05-daily-implementation-plan.md](../research-doc/05-daily-implementation-plan.md) ("Remaining MVP work") starts with a decision log (needs the user's input on launch market and billing, so it was not started) and then backend step 1, which the user had already approved as a separate step. That step was done, on a new branch `feature/user-profile-fields` (cut from the frontend branch, because the web app change goes with it).
+- **user-service (Java, Boot 3.5.6), following `user-service/CLAUDE.md` "Add a field to the user profile":** `entity/Gender`; nullable columns on `User`; optional validated fields on `RegisterRequest` (gender as a pattern-checked string so a bad value gives a normal validation error instead of a parse error naming Java classes); `UserResponse` fields last; `UserServiceImpl` stores them and sets `termsAcceptedAt` from the server clock. The `user.registered` Kafka contract is unchanged on purpose.
+- **Tests:** 5 new (fields saved, acceptance time set by the server, old-style request still works, Kafka key set pinned, bad values give 400); the 3 `UserResponse` constructors in `UserControllerTest` updated. `.\mvnw.cmd test`: **33 tests, 0 failures** (the README said 23; corrected). The first quiet run hid the summary, so the counts were read from the Surefire reports.
+- **Web app:** the register route handler forwards `mobileCountryCode`, `mobileNumber`, `gender` (upper case), `country` and `termsVersion`; the "not saved yet" workaround is gone. The mock gateway records the last register body and the end-to-end test checks it field by field: **25 of 25 pass**.
+- **Docs updated (repo rules, root `CLAUDE.md` section 5):** `user-service/README.md`, `docs/user-manual.md`, ER diagram in `docs/technical-documentation.md`, Postman generator and regenerated collection (Register sends the fields; Get my profile asserts them), `docs/changelog.md`, web-app README, and the plan (step 1 marked done, remaining MVP work 25 → 23 units).
+- **Not verified:** nothing ran on MySQL (the Spring context test uses H2), through the real gateway, or via Newman (needs all services and Docker; free memory was about 2.6 GB). `ddl-auto: update` should add nullable columns safely, but it has not been seen on a real database.
+- **Not done:** the other backend steps (refresh endpoint, forgot and reset password, email verification, onboarding preferences, 401 for unknown email), the gateway needs no change (register is already public).
+
 ## Open items after this session
 
 | Item | Where |

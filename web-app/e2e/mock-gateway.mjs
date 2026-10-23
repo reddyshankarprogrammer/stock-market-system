@@ -8,6 +8,7 @@ const jwt = (email, role = "USER") => `${b64({ alg: "HS256" })}.${b64({ sub: "u-
 
 export function startMockGateway(port = 8099) {
   const users = new Map(); // email -> {firstName, lastName}, so /me returns what was registered
+  let lastRegister = null; // the last register body, so the test can check exactly what the web app forwarded
   const server = createServer(async (req, res) => {
     const send = (status, body) => {
       res.writeHead(status, { "Content-Type": "application/json" });
@@ -26,6 +27,7 @@ export function startMockGateway(port = 8099) {
     }
     if (req.method === "POST" && req.url === "/api/v1/users/register") {
       if (body.email === "taken@example.com") return send(400, { status: 400, message: `Email already registered ${body.email}` });
+      lastRegister = body;
       users.set(body.email, { firstName: body.firstName, lastName: body.lastName });
       return send(200, { userId: "u-2", email: body.email, firstName: body.firstName, lastName: body.lastName, walletBalance: 10000, accessToken: jwt(body.email), refreshToken: jwt(body.email), tokenType: "Bearer" });
     }
@@ -36,6 +38,7 @@ export function startMockGateway(port = 8099) {
       const who = users.get(claims.email) ?? { firstName: "Test", lastName: "User" };
       return send(200, { id: claims.sub, email: claims.email, firstName: who.firstName, lastName: who.lastName, walletBalance: 10000, status: "ACTIVE", createdAt: "2026-10-24T00:00:00", role: claims.role });
     }
+    if (req.method === "GET" && req.url === "/__last-register") return send(200, lastRegister ?? {});
     send(404, { message: "not found" });
   });
   return new Promise((resolve) => server.listen(port, () => resolve(server)));

@@ -166,11 +166,16 @@ await test("register: duplicate email shows an error on the email field", async 
   const c = await newCtx(); const p = await c.newPage(); await fillRegister(p, { email: "taken@example.com" }); await acceptTerms(p);
   await p.getByRole("button", { name: "Create Account" }).click(); await p.getByText(/already exists/i).waitFor(); await c.close();
 });
-await test("register success: dashboard with 'not saved yet' notice", async () => {
+await test("register success: dashboard, no 'not saved' notice, and every profile field is forwarded to user-service", async () => {
   const c = await newCtx(); const p = await c.newPage(); await fillRegister(p); await acceptTerms(p);
   await p.getByRole("button", { name: "Create Account" }).click(); await p.waitForURL("**/dashboard?welcome=1");
-  await p.getByText("Welcome to Quantiva, Asha").waitFor(); await p.getByText("Some details were not saved yet").waitFor();
-  const t = await p.getByRole("status").filter({ hasText: "not saved yet" }).innerText(); ok(/mobile number/.test(t) && /gender/.test(t) && /country/.test(t), t); await c.close();
+  await p.getByText("Welcome to Quantiva, Asha").waitFor();
+  ok((await p.getByText("Some details were not saved yet").count()) === 0, "unexpected 'not saved' notice");
+  const sent = await (await fetch("http://localhost:8099/__last-register")).json();
+  const want = { firstName: "Asha", lastName: "Rao", email: "asha@example.com", mobileCountryCode: "+91", mobileNumber: "9876543210", gender: "FEMALE", country: "IN" };
+  for (const [k, v] of Object.entries(want)) ok(sent[k] === v, `${k}: sent ${JSON.stringify(sent[k])}, expected ${JSON.stringify(v)}`);
+  ok(/^\d{4}-\d{2}-\d{2}-draft$/.test(sent.termsVersion), `termsVersion ${sent.termsVersion}`);
+  ok(!("confirmPassword" in sent) && !("termsAccepted" in sent) && !("dialCode" in sent), "internal form fields leaked to the API"); await c.close();
 });
 
 // ---- pending screens ----
