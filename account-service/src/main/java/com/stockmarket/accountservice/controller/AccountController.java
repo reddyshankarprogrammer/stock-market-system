@@ -94,6 +94,7 @@ public class AccountController {
 
     @Operation(summary = "List a user's accounts",
             description = "The caller's own accounts; an ADMIN may list any existing user's accounts.")
+    @ApiResponse(responseCode = "200", description = "The accounts, newest first")
     @ApiResponse(responseCode = "403", description = "userId is not the caller and the caller is not ADMIN")
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<AccountResponse>> getUserAccounts(
