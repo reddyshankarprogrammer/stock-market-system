@@ -15,6 +15,7 @@ import com.stockmarket.accountservice.repository.TradeRepository;
 import com.stockmarket.accountservice.service.AccountAccessService;
 import com.stockmarket.accountservice.service.HoldingService;
 import com.stockmarket.accountservice.service.model.Money;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,7 @@ public class HoldingServiceImpl implements HoldingService {
     private final MarketDataClient marketDataClient;
     private final AccountMapper mapper;
     private final TradeRepository tradeRepository;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
@@ -197,12 +199,18 @@ public class HoldingServiceImpl implements HoldingService {
 
         if (livePrice.isPresent()) {
             BigDecimal price = livePrice.get();
+            if (persist) {
+                // Detached, so these valuation fields are never flushed through the versioned entity (two overlapping
+                // reads would then fail each other with an optimistic-lock conflict); the snapshot is stored separately.
+                entityManager.detach(holding);
+            }
             holding.setCurrentPrice(price);
             holding.setMarketValue(Money.amount(price.multiply(holding.getQuantity())));
             holding.setUnrealizedPnl(Money.amount(holding.getMarketValue().subtract(holding.getTotalCost())));
             holding.setPriceUpdatedAt(LocalDateTime.now());
             if (persist) {
-                holdingRepository.save(holding);
+                holdingRepository.updatePriceSnapshot(holding.getId(), holding.getCurrentPrice(), holding.getMarketValue(),
+                        holding.getUnrealizedPnl(), holding.getPriceUpdatedAt());
             }
         }
 

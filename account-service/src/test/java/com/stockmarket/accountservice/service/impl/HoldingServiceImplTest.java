@@ -48,7 +48,7 @@ class HoldingServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        service = new HoldingServiceImpl(holdingRepository, null, null, null, tradeRepository);
+        service = new HoldingServiceImpl(holdingRepository, null, null, null, tradeRepository, null);
         account = new InvestmentAccount();
         account.setId("acc-1");
         account.setUserId("user-1");
@@ -198,5 +198,29 @@ class HoldingServiceImplTest {
 
     private static BigDecimal bd(String value) {
         return new BigDecimal(value);
+    }
+
+    @Test
+    void readingHoldings_storesThePriceSnapshotWithoutSavingTheVersionedEntity() {
+        // Two overlapping reads used to fail each other with an optimistic-lock conflict (HTTP 409 on a GET).
+        var access = org.mockito.Mockito.mock(com.stockmarket.accountservice.service.AccountAccessService.class);
+        var market = org.mockito.Mockito.mock(com.stockmarket.accountservice.client.MarketDataClient.class);
+        var mapper = org.mockito.Mockito.mock(com.stockmarket.accountservice.mapper.AccountMapper.class);
+        var entityManager = org.mockito.Mockito.mock(jakarta.persistence.EntityManager.class);
+        var reading = new HoldingServiceImpl(holdingRepository, access, market, mapper, tradeRepository, entityManager);
+
+        Holding holding = Holding.builder().account(account).userId("user-1").symbol("AAPL").quantity(bd("5"))
+                .averagePrice(bd("180")).totalCost(bd("900.00")).realizedProfit(bd("0.00")).build();
+        holding.setId("h-1");
+        when(holdingRepository.findOpenPositions("acc-1")).thenReturn(List.of(holding));
+        when(market.findCurrentPrice("AAPL")).thenReturn(Optional.of(bd("200")));
+        when(mapper.toHoldingResponse(any(Holding.class))).thenReturn(new com.stockmarket.accountservice.dto.response.HoldingResponse());
+
+        reading.getHoldings("acc-1", "user-1");
+
+        verify(entityManager).detach(holding);
+        verify(holdingRepository).updatePriceSnapshot(org.mockito.ArgumentMatchers.eq("h-1"), org.mockito.ArgumentMatchers.eq(bd("200")),
+                org.mockito.ArgumentMatchers.eq(bd("1000.00")), org.mockito.ArgumentMatchers.eq(bd("100.00")), any(LocalDateTime.class));
+        org.mockito.Mockito.verify(holdingRepository, org.mockito.Mockito.never()).save(any(Holding.class));
     }
 }
