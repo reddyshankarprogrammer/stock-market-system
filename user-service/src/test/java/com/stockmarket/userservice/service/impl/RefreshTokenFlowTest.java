@@ -100,6 +100,20 @@ class RefreshTokenFlowTest {
     }
 
     @Test
+    void aPasswordResetEndsSessionsThatStartedBeforeIt() {
+        String token = jwtService.generateRefreshToken("user-123"); // issued now
+
+        user.setPasswordChangedAt(java.time.LocalDateTime.now().plusSeconds(10)); // reset happened after the token was issued
+        assertThrows(InvalidRefreshTokenException.class, () -> refresh(token));
+
+        user.setPasswordChangedAt(java.time.LocalDateTime.now().minusHours(1)); // reset was long before the token
+        assertNotNull(refresh(token).getAccessToken());
+
+        user.setPasswordChangedAt(null); // never reset
+        assertNotNull(refresh(token).getAccessToken());
+    }
+
+    @Test
     void unknownUser_isRejectedWithTheSameError() {
         lenient().when(userRepository.findById("ghost")).thenReturn(Optional.empty());
         assertThrows(InvalidRefreshTokenException.class, () -> refresh(jwtService.generateRefreshToken("ghost")));

@@ -73,7 +73,7 @@ Details: [Kubernetes architecture](docs/kubernetes-architecture.md).
 | account-service | 8086 | Investment accounts, ledger, platform and tracked trades, statement import, holdings, charges, taxes, performance, audit |
 | ai-service | 8000 | Placeholder (not implemented; deployed with 0 replicas) |
 
-Infrastructure: MySQL, Redis, Kafka (KRaft); locally in Docker Compose (plus Kafka UI on 8090), in production on K3s.
+Infrastructure: MySQL, Redis, Kafka (KRaft); locally in Docker Compose (plus Kafka UI on 8090 and the Mailpit email inbox on 8025), in production on K3s.
 
 Every service folder has a **`README.md`** (technical reference: API, data, config, integrations, limitations) and a **`CLAUDE.md`** (implementation guide: rules, pitfalls, step-by-step recipes, how to verify). The root [`CLAUDE.md`](CLAUDE.md) holds the system-wide rules.
 

@@ -10,13 +10,16 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 
 import com.stockmarket.userservice.entity.Gender;
 import com.stockmarket.userservice.entity.User;
-import com.stockmarket.userservice.entity.UserStatus;
+import com.stockmarket.userservice.service.AccountPolicy;
 import com.stockmarket.userservice.exception.InvalidRefreshTokenException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -148,11 +151,6 @@ public class UserServiceImpl implements UserService {
     }
 
 
-    // Statuses that must not get a new access token. Note: login does not check status today (known gap in the README).
-    private static final Set<UserStatus> REFRESH_DENIED = EnumSet.of(
-            UserStatus.INACTIVE, UserStatus.SUSPENDED, UserStatus.DELETED, UserStatus.BLOCKED, UserStatus.BANNED,
-            UserStatus.ACCOUNT_LOCKED, UserStatus.ACCOUNT_EXPIRED, UserStatus.ACCOUNT_DISABLED);
-
     @Override
     public AuthResponse refresh(RefreshRequest request) {
         String refreshToken = request.getRefreshToken();
@@ -165,8 +163,15 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.findById(jwtService.extractUserId(refreshToken))
                 .orElseThrow(InvalidRefreshTokenException::new);
-        if (user.getStatus() != null && REFRESH_DENIED.contains(user.getStatus())) {
+        if (AccountPolicy.isBlocked(user.getStatus())) {
             throw new InvalidRefreshTokenException();
+        }
+        // A password reset ends every session that started before it (tokens are stateless, so compare the issue time).
+        if (user.getPasswordChangedAt() != null) {
+            Instant changed = user.getPasswordChangedAt().atZone(ZoneId.systemDefault()).toInstant().truncatedTo(ChronoUnit.SECONDS);
+            if (jwtService.extractIssuedAt(refreshToken).toInstant().isBefore(changed)) {
+                throw new InvalidRefreshTokenException();
+            }
         }
 
         log.info("Access token refreshed for user: {}", user.getId());

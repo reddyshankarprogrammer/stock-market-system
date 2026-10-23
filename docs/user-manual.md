@@ -176,6 +176,8 @@ All paths are relative to `http://localhost:8080`. 🔒 means a token is require
 | POST | `/api/v1/users/register` | public | Create an account and log in |
 | POST | `/api/v1/users/login` | public | Log in, get new tokens |
 | POST | `/api/v1/users/refresh` | public | Exchange a refresh token for a new access token |
+| POST | `/api/v1/users/forgot-password` | public | Ask for a password-reset link by email |
+| POST | `/api/v1/users/reset-password` | public | Choose a new password with the emailed token |
 | GET | `/api/v1/users/me` | 🔒 | Your profile and wallet balance |
 | GET | `/api/v1/users/{userId}` | 🔒 | A profile by id (only your own) |
 | POST | `/api/v1/users/{userId}/funds/add?amount=` | 🔒 | Add money to your wallet (only your own) |
@@ -212,6 +214,22 @@ Returns `200 OK` with the same body as register.
 ```
 
 Returns `200 OK` with the same body, a **new** `accessToken` and the **same** `refreshToken`. Send the refresh token in the body, never as a Bearer token (the gateway rejects it there). A bad, expired or tampered token, an access token, an unknown user or a blocked account gives `401` with `Invalid refresh token`.
+
+**Forgot password** `POST /api/v1/users/forgot-password`
+
+```json
+{ "email": "asha@example.com" }
+```
+
+Always returns `202 Accepted` with `If an account exists for that email, a reset link has been sent`, whether or not the email is registered, so nobody can use it to find out who has an account. When the account exists, an email with a link to the web app (`/reset-password?token=...`) is sent. The link works once and expires after 30 minutes; asking again within a minute sends nothing new, and a newer link replaces the older one. Locally the email lands in Mailpit at <http://localhost:8025> (started by `docker compose up -d`); nothing leaves your machine.
+
+**Reset password** `POST /api/v1/users/reset-password`
+
+```json
+{ "token": "<from the email link>", "newPassword": "MyNewSecret123" }
+```
+
+`200 OK` and the new password works at once. The password must be 6 to 72 characters. An unknown, used or expired token (or a blocked account) gives `400` with `This reset link is invalid or has expired`. Resetting also ends every login session that started before it (refresh tokens); an access token already issued stays valid for up to 15 minutes.
 
 **My profile** `GET /api/v1/users/me` 🔒
 

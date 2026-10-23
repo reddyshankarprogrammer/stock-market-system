@@ -26,6 +26,18 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
+  # No email provider is chosen for production yet: until MAIL_HOST is set, reset emails fail (and are logged), not the request.
+  mail:
+    host: ${MAIL_HOST:mailpit}
+    port: ${MAIL_PORT:1025}
+
+app:
+  base-url: ${APP_BASE_URL:http://localhost:3000}
+  mail-from: ${MAIL_FROM:no-reply@quantiva.local}
+  password-reset:
+    expiry-minutes: ${PASSWORD_RESET_EXPIRY_MINUTES:30}
+    cooldown-seconds: ${PASSWORD_RESET_COOLDOWN_SECONDS:60}
+
 jwt:
   secret: ${JWT_SECRET:StockMarketSystemJwtSecretKey2026@TradingPlatform}
   access-token-expiry-minutes: ${JWT_ACCESS_TOKEN_EXPIRY_MINUTES:15}

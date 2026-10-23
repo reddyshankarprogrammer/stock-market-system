@@ -30,6 +30,7 @@ Free ports needed on `localhost`:
 | 6379 | Redis |
 | 9092 | Kafka (host listener) |
 | 8090 | Kafka UI |
+| 8025 / 1025 | Mailpit (development inbox for password-reset emails / SMTP) |
 | 8080 to 8086 | the seven Spring Boot services |
 
 ## 2. Configure `.env`

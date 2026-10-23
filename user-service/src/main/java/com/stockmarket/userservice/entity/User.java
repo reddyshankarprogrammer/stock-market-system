@@ -69,6 +69,9 @@ public class User {
     private String termsVersion;
 
     private LocalDateTime termsAcceptedAt;
+
+    /** Set by a password reset. Refresh tokens issued before this moment are refused. Null if never reset. */
+    private LocalDateTime passwordChangedAt;
 }
 
 

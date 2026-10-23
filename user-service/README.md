@@ -15,7 +15,7 @@ Accounts of people: registration, login, JWT issuing, profile, role and the wall
 
 ```powershell
 .\mvnw.cmd spring-boot:run        # from user-service/, needs MySQL + Kafka (docker compose up -d)
-.\mvnw.cmd test                   # 33 tests, no infrastructure (H2, mocks)
+.\mvnw.cmd test                   # 61 tests, no infrastructure (H2, mocks, an in-process SMTP server)
 ```
 
 ## Package layout
@@ -30,6 +30,8 @@ com.stockmarket.userservice
 ├── exception/                     GlobalExceptionHandler, UserAccessDeniedException
 ├── repository/UserRepository      findByEmail, existsByEmail
 ├── security/JwtService            issue/parse access + refresh tokens (HS256)
+├── service/PasswordResetService   forgot and reset password (hashed single-use tokens)
+├── service/MailService, impl/SmtpMailService   outgoing email; failures are logged, never thrown
 └── service/UserService, impl/UserServiceImpl
 ```
 
@@ -40,6 +42,8 @@ com.stockmarket.userservice
 | POST | `/register` | public | Create user (BCrypt), wallet = `initialBalance` (default 10000), publish `user.registered`, return tokens (201). Duplicate e-mail → 400. Optional profile fields below |
 | POST | `/login` | public | Tokens. Unknown e-mail → 404, wrong password → 401 |
 | POST | `/refresh` | public | Body `{refreshToken}`. Returns a new access token and the same refresh token (not rotated). Bad, expired, tampered or access token, unknown user, or a blocked status (INACTIVE, SUSPENDED, DELETED, BLOCKED, BANNED, ACCOUNT_LOCKED/EXPIRED/DISABLED) → 401 `Invalid refresh token`. Public because the access token has already expired; the gateway rejects refresh tokens on every other path |
+| POST | `/forgot-password` | public | Body `{email}`. **Always 202** with the same message, whether or not the email is registered. If it is (and the account is not blocked), a single-use link is emailed. Asking again within 60 s sends nothing new; asking later voids the older link |
+| POST | `/reset-password` | public | Body `{token, newPassword}` (6–72 characters). 200 and the new password works; the token is spent and any other pending links are voided. Unknown, used, expired or blocked-account token → 400 `This reset link is invalid or has expired` (one message for all) |
 | GET | `/me` | X-User-Id | Own profile |
 | GET | `/{userId}` | X-User-Id (+ X-User-Role) | Own profile, or any profile for ADMIN; else 403 |
 | POST | `/{userId}/funds/add?amount=` | X-User-Id | Owner only; amount > 0 |
@@ -72,6 +76,18 @@ Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, acc
 | created_at | |
 | mobile_country_code, mobile_number, gender, country | nullable profile fields (`varchar`; `gender` is `MALE`/`FEMALE`); existing users have none |
 | terms_version, terms_accepted_at | nullable; set together at registration, time from the server clock |
+| password_changed_at | nullable; set by a password reset. Refresh tokens issued before it are refused |
+
+### Table `password_reset_tokens`
+
+| Column | Notes |
+|---|---|
+| id | UUID string |
+| user_id | the user the link belongs to |
+| token_hash | SHA-256 of the token, unique. **The token itself is never stored**, so a database leak gives no working links |
+| expires_at | 30 minutes after creation (`app.password-reset.expiry-minutes`) |
+| used_at | set when the token is used or voided; null while it can still be used |
+| created_at | |
 
 ## Tokens (`JwtService`)
 
@@ -94,6 +110,10 @@ Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, acc
 | `hosts.mysql`, `hosts.kafka` | localhost by default; `docker` profile → `.env` hosts |
 | `spring.datasource.*` | `MYSQL_*` from `.env` |
 | `jwt.secret`, `jwt.issuer` | `JWT_SECRET` (no default; must equal the gateway's), `JWT_ISSUER` |
+| `hosts.mail`, `spring.mail.port` | localhost / `MAIL_PORT` (1025) by default (Mailpit from docker compose); `docker` profile: `MAIL_HOST` (default `mailpit`) |
+| `app.base-url` | `APP_BASE_URL` (default `http://localhost:3000`): where the reset link in the email points |
+| `app.mail-from` | `MAIL_FROM` |
+| `app.password-reset.expiry-minutes`, `.cooldown-seconds` | `PASSWORD_RESET_EXPIRY_MINUTES` (30), `PASSWORD_RESET_COOLDOWN_SECONDS` (60) |
 | tests | `src/test/resources/application.yaml` **replaces** the main file entirely (H2, fixed secret) |
 
 ## Known limitations
@@ -101,6 +121,9 @@ Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, acc
 - Login with an unknown e-mail returns 404 (reveals registered e-mails); should be 401.
 - Refresh tokens are stateless: they are not rotated and cannot be revoked, so a stolen one works until it expires (7 days) or the user's status blocks it. There is no logout endpoint (the web app only clears its cookies).
 - Login does not check `status`, so a SUSPENDED user can still log in; only `/refresh` refuses blocked statuses.
-- No rate limiting on `/login` or `/refresh`.
+- No rate limiting on `/login`, `/refresh` or `/reset-password` (`/forgot-password` has only the 60-second per-user cooldown).
+- A password reset ends refresh tokens issued before it, but an access token already issued keeps working until it expires (at most 15 minutes).
+- No email provider is chosen for production: until `MAIL_HOST` is set there, reset emails fail and are logged (the API answer is unchanged). Expired reset tokens are never deleted.
+- Reset links are single-use but the token is in the URL: the web app removes it from the address bar and sends no referrer.
 - `GlobalExceptionHandler` maps generic `RuntimeException`s by message text ("not found" → 404, "invalid credentials" → 401); prefer typed exceptions.
 - `JWT_EXPIRATION` in `.env` is not read (`jwt.access-token-expiry-minutes` is).

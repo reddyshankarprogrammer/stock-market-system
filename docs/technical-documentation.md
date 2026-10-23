@@ -100,7 +100,7 @@ flowchart LR
 ```
 stock-market-system/
 ├── .env                        shared configuration (all services + docker compose)
-├── docker-compose.yml          MySQL, Redis, Kafka, Kafka UI on network trading-network
+├── docker-compose.yml          MySQL, Redis, Kafka, Kafka UI, Mailpit on network trading-network
 ├── scripts/                    start-all.ps1, stop-all.ps1
 ├── docs/                       this documentation + postman/ collection and environment
 ├── logs/                       service logs written by start-all.ps1
@@ -162,7 +162,7 @@ It is a separate ledger: it does not share balances or holdings with user-servic
 | Publishes | `user.registered` |
 
 - Passwords are hashed with BCrypt.
-- `JwtService` issues an **access token** (15 min, `tokenType=ACCESS`, claims `userId`, `email`) and a **refresh token** (7 days, `tokenType=REFRESH`, claim `userId`). Subject is the user id, issuer `jwt.issuer`, algorithm HS256. `POST /api/v1/users/refresh` exchanges a refresh token for a new access token (public path; the refresh token is returned unchanged).
+- `JwtService` issues an **access token** (15 min, `tokenType=ACCESS`, claims `userId`, `email`) and a **refresh token** (7 days, `tokenType=REFRESH`, claim `userId`). Subject is the user id, issuer `jwt.issuer`, algorithm HS256. `POST /api/v1/users/refresh` exchanges a refresh token for a new access token (public path; the refresh token is returned unchanged). `POST /api/v1/users/forgot-password` and `/reset-password` (public paths) implement password reset: a 256-bit token is emailed as a link, only its SHA-256 hash is stored, it is single-use and expires after 30 minutes, the forgot answer never reveals whether an email exists, and a reset sets `users.password_changed_at` so older refresh tokens are refused.
 - Wallet operations: `addFunds` (user-facing), `deductFunds` and `creditFunds` (called by order-service). Deduct fails with *Insufficient wallet balance* if the balance is too low; all three reject amounts ≤ 0.
 - Ownership: `GET /{userId}` and `POST /{userId}/funds/add` require the path id to equal `X-User-Id`, otherwise `UserAccessDeniedException` → 403.
 - `SecurityConfig` disables CSRF and sessions and currently permits all requests; authentication is enforced at the gateway.
@@ -375,6 +375,15 @@ erDiagram
         varchar country "nullable, ISO 3166 alpha-2"
         varchar terms_version "nullable"
         datetime terms_accepted_at "nullable, server time"
+        datetime password_changed_at "nullable, set by a reset"
+    }
+    password_reset_tokens {
+        varchar id PK "UUID"
+        varchar user_id "the user"
+        varchar token_hash UK "SHA-256, never the token"
+        datetime expires_at "+30 min"
+        datetime used_at "null until used or voided"
+        datetime created_at
     }
     orders {
         varchar id PK "UUID"
@@ -428,7 +437,7 @@ Relationships are logical only: each table belongs to a different service, so th
 
 `JwtAuthFilter` runs on every request whose path starts with `/api/`:
 
-1. **Skipped** for `OPTIONS` (CORS preflight) and public paths: `/api/v1/users/register`, `/api/v1/users/login`, `/api/v1/users/refresh` (refresh token in the body), `/api/v1/market-data/**`. Non-API paths such as `/actuator/**` are never filtered.
+1. **Skipped** for `OPTIONS` (CORS preflight) and public paths: `/api/v1/users/register`, `/api/v1/users/login`, `/api/v1/users/refresh` (refresh token in the body), `/api/v1/users/forgot-password`, `/api/v1/users/reset-password` (emailed single-use token in the body), `/api/v1/market-data/**`. Non-API paths such as `/actuator/**` are never filtered.
 2. **Blocked with 403** for internal paths: `/api/v1/users/*/funds/deduct` and `/funds/credit`; and, unless the token's role is ADMIN, for `/api/v1/accounts/*/dividends` and `/api/v1/accounts/*/interest`.
 3. Requires `Authorization: Bearer <token>`; otherwise **401**.
 4. Verifies signature (HS256 with `jwt.secret`), expiry and issuer (`jwt.issuer`); any failure is **401**.
@@ -508,6 +517,7 @@ Activate the docker profile with a real `SPRING_PROFILES_ACTIVE=docker` environm
 | notification-service | `NOTIFICATION_SERVICE_PORT` | 8085 |
 | account-service | `ACCOUNT_SERVICE_PORT` | 8086 |
 | Kafka UI | `KAFKA_UI_PORT` | 8090 |
+| Mailpit (dev inbox) | `MAILPIT_UI_PORT` | 8025 (SMTP `MAIL_PORT` 1025) |
 
 ### Application properties
 

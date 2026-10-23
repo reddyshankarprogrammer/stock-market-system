@@ -42,6 +42,9 @@ class UserControllerTest {
     @MockitoBean
     private UserService userService;
 
+    @MockitoBean
+    private com.stockmarket.userservice.service.PasswordResetService passwordResetService;
+
     @Test
     void register_ValidRequest_ReturnsCreated() throws Exception {
         RegisterRequest request = new RegisterRequest();
@@ -136,6 +139,65 @@ class UserControllerTest {
                         .content("{\"refreshToken\":\"\"}"))
                 .andExpect(status().isBadRequest());
         verifyNoInteractions(userService);
+    }
+
+    @Test
+    void forgotPassword_answersTheSameWhateverTheEmail() throws Exception {
+        for (String email : new String[] {"known@example.com", "nobody@example.com"}) {
+            mockMvc.perform(post("/api/v1/users/forgot-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"email\":\"" + email + "\"}"))
+                    .andExpect(status().isAccepted())
+                    .andExpect(jsonPath("$.message").value("If an account exists for that email, a reset link has been sent"));
+        }
+        org.mockito.Mockito.verify(passwordResetService).requestReset("known@example.com");
+        org.mockito.Mockito.verify(passwordResetService).requestReset("nobody@example.com");
+    }
+
+    @Test
+    void forgotPassword_badEmail_isRejectedWithoutTouchingTheService() throws Exception {
+        mockMvc.perform(post("/api/v1/users/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"not-an-email\"}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(passwordResetService);
+    }
+
+    @Test
+    void resetPassword_validRequest_ReturnsOk() throws Exception {
+        mockMvc.perform(post("/api/v1/users/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"abc123\",\"newPassword\":\"BrandNewPass9\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Your password has been changed"));
+        org.mockito.Mockito.verify(passwordResetService).resetPassword("abc123", "BrandNewPass9");
+    }
+
+    @Test
+    void resetPassword_invalidToken_ReturnsBadRequestWithOneMessage() throws Exception {
+        org.mockito.Mockito.doThrow(new com.stockmarket.userservice.exception.InvalidResetTokenException())
+                .when(passwordResetService).resetPassword(eq("bad"), any());
+
+        mockMvc.perform(post("/api/v1/users/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"bad\",\"newPassword\":\"BrandNewPass9\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("This reset link is invalid or has expired"));
+    }
+
+    @Test
+    void resetPassword_badBodies_areRejected() throws Exception {
+        for (String body : new String[] {
+                "{\"token\":\"abc\",\"newPassword\":\"short\"}",
+                "{\"token\":\"abc\",\"newPassword\":\"" + "x".repeat(73) + "\"}",
+                "{\"token\":\"\",\"newPassword\":\"BrandNewPass9\"}",
+                "{\"newPassword\":\"BrandNewPass9\"}" }) {
+            mockMvc.perform(post("/api/v1/users/reset-password")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(passwordResetService);
     }
 
     @Test

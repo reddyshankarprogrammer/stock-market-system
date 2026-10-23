@@ -2,7 +2,11 @@ package com.stockmarket.userservice.controller;
 
 import com.stockmarket.userservice.dto.AuthResponse;
 import com.stockmarket.userservice.dto.LoginRequest;
+import com.stockmarket.userservice.dto.ForgotPasswordRequest;
+import com.stockmarket.userservice.dto.MessageResponse;
 import com.stockmarket.userservice.dto.RefreshRequest;
+import com.stockmarket.userservice.dto.ResetPasswordRequest;
+import com.stockmarket.userservice.service.PasswordResetService;
 import com.stockmarket.userservice.dto.RegisterRequest;
 import com.stockmarket.userservice.dto.UserResponse;
 import com.stockmarket.userservice.exception.UserAccessDeniedException;
@@ -23,6 +27,7 @@ import java.math.BigDecimal;
 public class UserController {
 
     private final UserService userService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(
@@ -48,6 +53,29 @@ public class UserController {
             @Valid @RequestBody RefreshRequest request) {
 
         return ResponseEntity.ok(userService.refresh(request));
+    }
+
+    /**
+     * Public. Always 202 with the same message, whether or not the email is registered (no account enumeration).
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<MessageResponse> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        passwordResetService.requestReset(request.getEmail());
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(new MessageResponse("If an account exists for that email, a reset link has been sent"));
+    }
+
+    /**
+     * Public (the user is locked out, so has no token). The reset token from the email is the credential.
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<MessageResponse> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+
+        passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(new MessageResponse("Your password has been changed"));
     }
 
     @GetMapping("/me")

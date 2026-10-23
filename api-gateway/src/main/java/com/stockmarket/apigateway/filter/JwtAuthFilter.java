@@ -59,6 +59,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             "/api/v1/users/register",
             "/api/v1/users/login",
             "/api/v1/users/refresh", // the refresh token is in the body; the expired access token cannot be required here
+            "/api/v1/users/forgot-password", // the user is locked out, so cannot have a token
+            "/api/v1/users/reset-password", // the emailed single-use token in the body is the credential
             "/api/v1/market-data/**");
 
     // Service-to-service endpoints, never exposed to clients: wallet settlement called by order-service.

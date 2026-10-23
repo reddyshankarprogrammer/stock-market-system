@@ -2,6 +2,39 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: forgot and reset password with an email service
+
+### Features
+
+| Feature | Where |
+|---|---|
+| `POST /api/v1/users/forgot-password` `{email}`: **always 202** with the same message, whether or not the email is registered. For a real, unblocked account it emails a single-use link; the email is sent in the background so response time does not reveal anything either. A 60-second per-user cooldown stops inbox flooding, and a newer link voids older ones. | `user-service` `PasswordResetService`, `UserController` |
+| `POST /api/v1/users/reset-password` `{token, newPassword}`: changes the password (BCrypt), spends the token, voids other pending links. One `400 This reset link is invalid or has expired` for unknown, used, expired or blocked-account tokens (typed `InvalidResetTokenException`). | same |
+| The token is 256 random bits; **only its SHA-256 hash is stored** (`password_reset_tokens`), valid 30 minutes, single use. | new table `password_reset_tokens` |
+| A reset sets `users.password_changed_at`; **refresh tokens issued before it are refused**, so old sessions end. | `UserServiceImpl.refresh`, `JwtService.extractIssuedAt` |
+| Outgoing email through Spring Mail; failures are logged and never change an API answer; works without mail configured (the sender is looked up lazily, tests do not set a host). | `MailService`, `SmtpMailService` |
+| Both paths are public in the gateway. | `api-gateway` `JwtAuthFilter.PUBLIC_PATHS` |
+| **Mailpit** (development inbox) added to docker compose: SMTP 1025, inbox at http://localhost:8025. Nothing leaves the machine. | `docker-compose.yml`, `.env.example` (`MAIL_HOST`, `MAIL_PORT`, `MAILPIT_UI_PORT`, `MAIL_FROM`, `APP_BASE_URL`) |
+| Web app: working Forgot Password and Reset Password pages. The confirmation is identical for every email; the reset page reads the token once and removes it from the address bar, and is served with `Referrer-Policy: no-referrer` and `Cache-Control: no-store`. | `web-app` `ForgotPasswordForm`, `ResetPasswordForm`, `/api/auth/forgot-password`, `/api/auth/reset-password`, `next.config.ts` |
+
+### Compatibility and limits
+
+- New endpoints, one new table and two nullable additions (`users.password_changed_at`); nothing existing changed. Hibernate `update` creates the table.
+- **No production email provider yet.** Until `MAIL_HOST`, `MAIL_FROM` and `APP_BASE_URL` are set for user-service in `k8s/user-service/configmap.yaml` (and credentials in its Secret), reset emails fail in the cluster and are only logged. Not changed in `k8s/` here because the provider and the public web address are undecided.
+- An access token already issued stays valid until it expires (at most 15 minutes) after a reset. Expired reset tokens are never deleted. No rate limiting on `/reset-password`.
+- `axllent/mailpit:latest` is not pinned (same as the existing `kafka-ui:latest`).
+
+### Changes to existing files
+
+| File | Change |
+|---|---|
+| `user-service/README.md`, `api-gateway/README.md`, `docs/user-manual.md`, `docs/technical-documentation.md` (ER diagram, ports, security, public paths), `docs/getting-started.md`, root `README.md`, root `CLAUDE.md` (infrastructure line, gaps) | Endpoints, tables, configuration, Mailpit |
+| `docs/postman/generate_collection.py` and the generated collection | 5 new requests (forgot, same answer for an unknown email, invalid email, invalid token, short password); 106 → 111 requests |
+
+### Tests
+
+user-service **61 tests pass** (18 new: real BCrypt change of password, hash-only storage, single use, expiry, blocked accounts, cooldown, older links voided, refresh refused after a reset, controller checks, SMTP sender, and a test that sends a real message over a socket to an in-process SMTP server). api-gateway 10 tests pass (assertions added). Web app: **38 of 38** browser checks against the mock gateway (7 new). Not run on MySQL, through the real gateway, with Mailpit in Docker, or with Newman.
+
 ## 2026-10-24: refresh-token endpoint; web app sessions renew themselves
 
 ### Features

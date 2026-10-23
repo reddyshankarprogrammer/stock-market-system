@@ -129,6 +129,19 @@ services:
     networks:
       - trading-network
 
+  # Catches outgoing email in development (password-reset links). SMTP on 1025, inbox in the browser on 8025.
+  # Nothing leaves your machine. Production needs a real email provider (not chosen yet).
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+      - "${MAIL_PORT:-1025}:1025"
+    mem_limit: 128m
+    networks:
+      - trading-network
+
   # ==========================================
   # ACCOUNT SERVICE
   # Opt-in: only starts with `docker compose --profile app up -d`, so the default

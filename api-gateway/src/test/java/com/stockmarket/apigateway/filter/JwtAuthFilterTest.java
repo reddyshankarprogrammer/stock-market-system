@@ -78,6 +78,8 @@ class JwtAuthFilterTest {
         assertThat(run(login).getStatus()).isEqualTo(200);
         MockHttpServletRequest refresh = new MockHttpServletRequest("POST", "/api/v1/users/refresh");
         assertThat(run(refresh).getStatus()).isEqualTo(200);
+        assertThat(run(new MockHttpServletRequest("POST", "/api/v1/users/forgot-password")).getStatus()).isEqualTo(200);
+        assertThat(run(new MockHttpServletRequest("POST", "/api/v1/users/reset-password")).getStatus()).isEqualTo(200);
         assertThat(run(get("/api/v1/market-data/stocks/AAPL")).getStatus()).isEqualTo(200);
         assertThat(run(get("/actuator/health")).getStatus()).isEqualTo(200);
     }

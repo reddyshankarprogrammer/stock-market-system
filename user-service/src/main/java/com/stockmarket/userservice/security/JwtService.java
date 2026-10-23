@@ -180,6 +180,13 @@ public class JwtService {
     }
 
     /**
+     * Extracts the issued-at date from token (second precision).
+     */
+    public Date extractIssuedAt(String token) {
+        return extractClaim(token, Claims::getIssuedAt);
+    }
+
+    /**
      * Extracts expiration date from token.
      */
     public Date extractExpiration(String token) {
