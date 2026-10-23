@@ -5,7 +5,7 @@ import { ACCESS_COOKIE, REFRESH_COOKIE } from "@/lib/auth/constants";
 // token itself is verified by the gateway on every API call, and /api/auth/me renews the access token from the
 // refresh cookie or clears both cookies. The access cookie lives 15 minutes, so a session that only has the refresh
 // cookie must still count as signed in here, or users would be sent to /login while they can be renewed.
-const PROTECTED = ["/dashboard", "/onboarding"];
+const PROTECTED = ["/dashboard", "/accounts", "/trades", "/portfolio", "/settings", "/onboarding"];
 const GUEST_ONLY = ["/login", "/register"];
 
 export function proxy(req: NextRequest) {
@@ -23,4 +23,6 @@ export function proxy(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/dashboard/:path*", "/onboarding/:path*", "/login", "/register"] };
+export const config = {
+  matcher: ["/dashboard/:path*", "/accounts/:path*", "/trades/:path*", "/portfolio/:path*", "/settings/:path*", "/onboarding/:path*", "/login", "/register"],
+};

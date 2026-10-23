@@ -425,6 +425,46 @@ await test("register: every field has a name and every control is at least 44 px
   ok(r.unnamed.length === 0, `unnamed: ${r.unnamed}`); ok(r.small.length === 0, `small targets: ${r.small.join(", ")}`); await c.close();
 });
 
+// ---- app shell ----
+const shellPaths = ["/dashboard", "/accounts", "/trades", "/portfolio", "/settings"];
+await test("shell: signed-out visitors are sent to /login from every app page", async () => {
+  const c = await newCtx(); const p = await c.newPage();
+  for (const path of shellPaths) { await p.goto(`${BASE}${path}`); ok(p.url().includes(`/login?next=${encodeURIComponent(path)}`), `${path} -> ${p.url()}`); }
+  await c.close();
+});
+await test("shell: sidebar from 1024 px up, bottom navigation below; no overflow at 360, 768, 1280, 1920, 2560 px", async () => {
+  for (const w of [360, 768, 1023, 1024, 1280, 1920, 2560]) {
+    const c = await newCtx({ viewport: { width: w, height: 900 } }); const p = await c.newPage(); await login(p); await p.waitForURL(/\/dashboard/);
+    await p.getByRole("heading", { level: 1 }).first().waitFor();
+    const r = await p.evaluate(() => {
+      const navs = [...document.querySelectorAll('nav[aria-label="Main"]')].map((n) => ({ shown: n.getBoundingClientRect().width > 0, fixed: getComputedStyle(n).position === "fixed" }));
+      return { navs, overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
+    });
+    const sidebar = r.navs.find((n) => !n.fixed), bottom = r.navs.find((n) => n.fixed);
+    ok(!r.overflow, `overflow at ${w}px`);
+    if (w >= 1024) ok(sidebar.shown && !bottom.shown, `${w}px: sidebar ${sidebar.shown}, bottom ${bottom.shown}`);
+    else ok(!sidebar.shown && bottom.shown, `${w}px: sidebar ${sidebar.shown}, bottom ${bottom.shown}`);
+    await c.close();
+  }
+});
+await test("shell: every nav item opens its page, is marked current, and has a 44 px target (phone and laptop)", async () => {
+  for (const [w, label] of [[375, "bottom"], [1280, "sidebar"]]) {
+    const c = await newCtx({ viewport: { width: w, height: 900 } }); const p = await c.newPage(); await login(p); await p.waitForURL(/\/dashboard/);
+    for (const [name, path] of [["Trades", "/trades"], ["Portfolio", "/portfolio"], ["Settings", "/settings"], ["Dashboard", "/dashboard"]]) {
+      const link = p.locator('nav[aria-label="Main"]:visible').getByRole("link", { name });
+      const box = await link.boundingBox(); ok(box && box.height >= 43.5, `${label} ${name} target ${box?.height}`);
+      await link.click(); await p.waitForURL(new RegExp(`${path}(\\?|$)`));
+      ok((await link.getAttribute("aria-current")) === "page", `${label} ${name} not marked current`);
+      await p.getByRole("heading", { level: 1 }).first().waitFor();
+    }
+    await c.close();
+  }
+});
+await test("shell: page skeletons say plainly that the screen is not built yet", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/trades`); await p.getByRole("heading", { name: "Trades" }).waitFor(); await p.getByText(/planned/).waitFor(); await c.close();
+});
+
 await browser.close();
 mock.close();
 const failed = results.filter(([p]) => !p);
