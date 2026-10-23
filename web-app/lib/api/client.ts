@@ -4,10 +4,10 @@ import { AuthError, defaultMessages } from "@/lib/auth/errors";
 export const API_BASE = "/api/gw";
 const CLIENT_TIMEOUT_MS = 10_000;
 
-/** fetch for openapi-fetch: same-origin cookies, a time limit, and a network failure turned into UNAVAILABLE. */
-export const apiFetch: typeof fetch = async (input, init) => {
+/** fetch for openapi-fetch: same-origin cookies, a time limit (longer for uploads), and a network failure turned into UNAVAILABLE. */
+export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, timeoutMs = CLIENT_TIMEOUT_MS): Promise<Response> => {
   try {
-    return await fetch(input, { ...init, credentials: "same-origin", signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS) });
+    return await fetch(input, { ...init, credentials: "same-origin", signal: AbortSignal.timeout(timeoutMs) });
   } catch {
     throw new AuthError("UNAVAILABLE", defaultMessages.UNAVAILABLE);
   }

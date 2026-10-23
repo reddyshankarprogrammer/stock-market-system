@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Brand } from "@/components/auth/Brand";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Providers } from "@/components/Providers";
@@ -23,7 +23,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <aside className="hidden border-r border-line lg:block">
           <div className="sticky top-0 flex h-dvh flex-col gap-6 overflow-y-auto p-4">
             <Brand />
-            <SidebarNav />
+            {/* usePathname() needs a boundary on routes with a dynamic segment (/accounts/[id]) */}
+            <Suspense fallback={null}>
+              <SidebarNav />
+            </Suspense>
             <div className="mt-auto flex flex-wrap items-center gap-3">
               <ShellThemeToggle />
               <LogoutButton />
@@ -41,7 +44,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <main className="mx-auto w-full max-w-5xl px-4 py-8 pb-24 sm:px-6 lg:py-10 lg:pb-10">{children}</main>
         </div>
       </div>
-      <BottomNav />
+      <Suspense fallback={null}>
+        <BottomNav />
+      </Suspense>
     </Providers>
   );
 }

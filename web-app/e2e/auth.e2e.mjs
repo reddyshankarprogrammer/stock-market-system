@@ -603,6 +603,60 @@ await test("settings: the preferences route validates, ignores unknown fields, b
   const anon = await newCtx(); ok((await anon.request.get(`${BASE}/api/preferences`)).status() === 401, "signed out GET"); await anon.close(); await c.close();
 });
 
+// ---- accounts, detail and statement upload ----
+const csv = (name, text) => ({ name, mimeType: "text/csv", buffer: Buffer.from(text) });
+const ZERODHA_CSV = "symbol,trade_date,trade_type,quantity,price,trade_id\nINFY,2026-10-01,buy,10,1500,x1\nINFY,2026-10-03,sell,4,1550,x2\nINFY,2026-10-03,hold,1,1550,x3\n";
+await test("accounts: the list links to a detail page whose figures come from the summary", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "detail@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/accounts`); await p.getByRole("link", { name: "Long-term growth" }).click(); await p.waitForURL(/\/accounts\/a-1$/);
+  await p.getByRole("heading", { name: "Long-term growth", level: 1 }).waitFor();
+  for (const t of ["$13,700.50", "$12,500.50", "$1,200.00", "+$80.00", "+$120.00", "1 open position"]) await p.getByText(t, { exact: true }).first().waitFor();
+  ok((await p.getByText("Broker statements").count()) === 0, "a platform account has no statement upload"); await c.close();
+});
+await test("accounts: open an account (validation, then straight to its page); tracking text follows the broker", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "opener@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/accounts`); await p.getByRole("button", { name: "Open an account" }).click();
+  await p.getByRole("button", { name: "Open account" }).click(); await p.getByText("Give the account a name").waitFor();
+  await p.getByLabel("Held at").selectOption("GROWW"); await p.getByText(/only tracks trades from your broker/).waitFor();
+  await p.getByLabel("Account name").fill("My Groww"); await p.getByRole("button", { name: "Open account" }).click();
+  await p.waitForURL(/\/accounts\/a-3$/); await p.getByRole("heading", { name: "My Groww", level: 1 }).waitFor();
+  await p.getByLabel("Upload a Groww statement").waitFor(); await c.close();
+});
+await test("statements: a CSV imports, shows what was imported and skipped, and the summary changes", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "uploader@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/accounts/a-2`); await p.getByLabel("Upload a Zerodha statement").setInputFiles(csv("tradebook.csv", ZERODHA_CSV));
+  await p.getByText("Statement imported").waitFor({ timeout: 15000 });
+  await p.getByText("Imported with warnings").waitFor(); await p.getByText(/2 trades imported, 0 already known, 1 rows skipped \(of 3 read\)/).waitFor();
+  await p.getByText("1 warning").click(); await p.getByText("unknown side 'hold'").waitFor();
+  await p.getByText("+₹200.00", { exact: true }).first().waitFor(); await c.close();
+});
+await test("statements: a duplicate, a wrong file type and a failed import each say what is wrong", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "uploader2@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/accounts/a-2`); const input = p.getByLabel("Upload a Zerodha statement"); await input.waitFor();
+  await input.setInputFiles(csv("bad.txt", "x")); await p.getByText("Choose a CSV, XLS or XLSX file.").waitFor();
+  await input.setInputFiles(csv("dup.csv", ZERODHA_CSV)); await p.getByText("This statement was already uploaded").waitFor({ timeout: 15000 });
+  await input.setInputFiles(csv("fail.csv", "nothing")); await p.getByText("Import failed").waitFor({ timeout: 15000 }); await p.getByText("No trade table found in the file").waitFor(); await c.close();
+});
+await test("statements: a statement can be deleted after a confirmation, and the page is signed-out safe", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p, "deleter@example.com"); await p.waitForURL(/\/dashboard/);
+  await p.goto(`${BASE}/accounts/a-2`); await p.getByLabel("Upload a Zerodha statement").setInputFiles(csv("one.csv", ZERODHA_CSV));
+  await p.getByText("one.csv", { exact: true }).waitFor({ timeout: 15000 }); await p.getByRole("button", { name: "Delete" }).click();
+  await p.getByRole("button", { name: "Keep" }).click(); await p.getByText("one.csv", { exact: true }).waitFor();
+  await p.getByRole("button", { name: "Delete" }).click(); await p.getByRole("button", { name: "Yes, delete" }).click();
+  await p.getByText("No statements uploaded yet.").waitFor({ timeout: 15000 }); await c.close();
+  const anon = await newCtx(); const q = await anon.newPage(); await q.goto(`${BASE}/accounts/a-2`); await q.waitForURL("**/login**"); await anon.close();
+});
+await test("statements: uploads through the BFF need the same origin and an allowed path", async () => {
+  const c = await newCtx(); const p = await c.newPage(); await login(p); await p.waitForURL(/\/dashboard/);
+  const form = { file: csv("tradebook.csv", ZERODHA_CSV) };
+  const evil = await c.request.post(`${BASE}/api/gw/api/v1/accounts/a-2/statements/upload`, { headers: { Origin: "https://evil.example" }, multipart: form });
+  ok(evil.status() === 403, `cross-origin upload ${evil.status()}`);
+  const other = await c.request.post(`${BASE}/api/gw/api/v1/accounts/a-2/statements`, { headers: { Origin: BASE }, multipart: form });
+  ok(other.status() === 415, `multipart elsewhere ${other.status()}`);
+  const good = await c.request.post(`${BASE}/api/gw/api/v1/accounts/a-2/statements/upload`, { headers: { Origin: BASE }, multipart: form });
+  ok(good.status() === 201, `upload ${good.status()}`); await c.close();
+});
+
 await browser.close();
 mock.close();
 const failed = results.filter(([p]) => !p);

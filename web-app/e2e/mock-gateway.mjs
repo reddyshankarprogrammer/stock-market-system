@@ -4,6 +4,7 @@
 // Special emails trigger behaviour: down@ -> login 500, slow@ -> login answers after 9 s (longer than the 8 s limit),
 // shortlived@ -> the access token is already expired, suspended@ -> refresh is refused, refresh-down@ -> refresh answers 500.
 import { createServer } from "node:http";
+import { createAccountMock } from "./mock-accounts.mjs";
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const now = () => Math.floor(Date.now() / 1000);
@@ -22,7 +23,7 @@ export function startMockGateway(port = 8099) {
   let lastRegister = null; // the last register body, so the test can check exactly what the web app forwarded
   let refreshCalls = 0;
   let passwordChanges = 0;
-  const accounts = new Map(); // email -> accounts
+  const accountMock = createAccountMock();
   const preferences = new Map(); // email -> settings
   let lastPrefsBody = null; // the last PUT /me/preferences body, to check what the web app forwarded
   // Onboarding answers per email. Users who logged in without registering count as already onboarded (so older tests
@@ -46,7 +47,7 @@ export function startMockGateway(port = 8099) {
     };
     let raw = "";
     for await (const c of req) raw += c;
-    const body = raw ? JSON.parse(raw) : {};
+    const body = raw && (req.headers["content-type"] ?? "").includes("json") ? JSON.parse(raw) : {}; // a multipart upload stays raw
     if (process.env.MOCK_LOG) console.log("  [mock]", req.method, req.url, raw ? raw.slice(0, 60) : "");
 
     if (req.method === "POST" && req.url === "/api/v1/users/login") {
@@ -115,25 +116,8 @@ export function startMockGateway(port = 8099) {
       const who = users.get(c.email) ?? { firstName: "Test", lastName: "User" };
       return send(200, { id: c.sub, email: c.email, firstName: who.firstName, lastName: who.lastName, walletBalance: 10000, status: "ACTIVE", createdAt: "2026-10-24T00:00:00", role: c.role, onboardingCompletedAt: onboardState(c.email).completedAt });
     }
-    // account-service, as the gateway routes it (/api/v1/accounts/**). The mock user id is always u-1; a user whose
-    // email starts with noaccounts@ has none, accounts-down@ gets a 500, anyone else starts with two accounts.
-    if (req.url.startsWith("/api/v1/accounts")) {
-      const c = claimsOf((req.headers.authorization ?? "").replace("Bearer ", ""));
-      if (!c || c.tokenType !== "ACCESS" || c.exp < now()) return send(401, { status: 401, message: "Unauthorized" });
-      if (c.email.startsWith("accounts-down@")) return send(500, { status: 500, message: "boom" });
-      if (!accounts.has(c.email)) accounts.set(c.email, c.email.startsWith("noaccounts@") ? [] : [
-        { id: "a-1", userId: "u-1", accountName: "Long-term growth", accountType: "INDIVIDUAL", brokerName: "PLATFORM", currency: "USD", balance: 12500.5, status: "ACTIVE" },
-        { id: "a-2", userId: "u-1", accountName: "Zerodha equity", accountType: "EQUITY", brokerName: "ZERODHA", currency: "INR", balance: 0, status: "ACTIVE" },
-      ]);
-      const mine = accounts.get(c.email);
-      const m = req.url.match(/^\/api\/v1\/accounts\/user\/([^/?]+)$/);
-      if (req.method === "GET" && m) return m[1] === "u-1" ? send(200, mine) : send(403, { status: 403, error: "Forbidden", message: "You can only view your own accounts" });
-      if (req.method === "POST" && req.url === "/api/v1/accounts") {
-        const created = { id: `a-${mine.length + 1}`, userId: "u-1", status: "ACTIVE", balance: 0, ...body };
-        mine.push(created);
-        return send(201, created);
-      }
-    }
+    // account-service (accounts, trades, holdings, statements): see e2e/mock-accounts.mjs
+    if (accountMock.handle(req, raw, body, claimsOf((req.headers.authorization ?? "").replace("Bearer ", "")), send)) return;
     // Settings and change password (user-service /me/preferences and /me/password). prefs-fail@ cannot save (500).
     if (req.url === "/api/v1/users/me/preferences" || req.url === "/api/v1/users/me/password") {
       const c = claimsOf((req.headers.authorization ?? "").replace("Bearer ", ""));

@@ -6,15 +6,16 @@ import { defaultMessages, type AuthErrorCode } from "@/lib/auth/errors";
 // Gateway URL, from the environment (see web-app/.env.example). Same host rule as the rest of the system: never hard-code hosts in code paths that matter.
 const GATEWAY = process.env.API_GATEWAY_URL ?? "http://localhost:8080";
 const TIMEOUT_MS = 8000; // no request waits longer than 8 seconds
+export const UPLOAD_TIMEOUT_MS = 60_000; // a statement is parsed and imported inside the upload request
 
 export type Profile = { userId: string; email: string; firstName: string; lastName: string; role: "USER" | "ADMIN" };
 
-export async function gateway(path: string, init: RequestInit = {}): Promise<Response | null> {
+export async function gateway(path: string, init: RequestInit & { timeoutMs?: number } = {}): Promise<Response | null> {
   try {
     return await fetch(`${GATEWAY}${path}`, {
       ...init,
       cache: "no-store",
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(init.timeoutMs ?? TIMEOUT_MS),
       headers: { "Content-Type": "application/json", Accept: "application/json", ...init.headers },
     });
   } catch {
@@ -93,7 +94,7 @@ export type AsUser = { kind: "ok"; res: Response; renewed: string | null } | { k
  * cleared when the session is really over, 503 when the service is unreachable (cookies kept: that is not a logout).
  * A non-2xx answer from user-service (for example a 400) is returned as "ok" with that response, for the caller to map.
  */
-export async function callAsUser(req: NextRequest, path: string, init: RequestInit = {}): Promise<AsUser> {
+export async function callAsUser(req: NextRequest, path: string, init: RequestInit & { timeoutMs?: number } = {}): Promise<AsUser> {
   let token = req.cookies.get(ACCESS_COOKIE)?.value ?? null;
   let renewed: string | null = null;
 
@@ -146,7 +147,7 @@ export function clearSession(res: NextResponse) {
 }
 
 /** CSRF defence for state-changing routes: cookies are SameSite=Lax, and the Origin header must match this site when present. */
-export function sameOriginOnly(req: NextRequest): NextResponse | null {
+export function sameOriginOnly(req: NextRequest, opts: { multipart?: boolean } = {}): NextResponse | null {
   const origin = req.headers.get("origin");
   // Compare hosts, not full origins: behind a TLS-terminating ingress the server sees http while the browser sends https.
   if (origin) {
@@ -155,6 +156,8 @@ export function sameOriginOnly(req: NextRequest): NextResponse | null {
     try { originHost = new URL(origin).host; } catch { /* malformed Origin is rejected below */ }
     if (originHost !== host) return fail("FORBIDDEN_ORIGIN", 403);
   }
-  if (!(req.headers.get("content-type") ?? "").includes("application/json") && req.method !== "GET") return fail("VALIDATION", 415, "Expected JSON");
+  const type = req.headers.get("content-type") ?? "";
+  const allowed = type.includes("application/json") || (opts.multipart === true && type.startsWith("multipart/form-data"));
+  if (!allowed && req.method !== "GET") return fail("VALIDATION", 415, opts.multipart ? "Expected JSON or a file upload" : "Expected JSON");
   return null;
 }

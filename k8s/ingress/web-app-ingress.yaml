@@ -20,9 +20,10 @@ metadata:
     nginx.org/redirect-to-https: "true"
     nginx.org/hsts: "true"
     nginx.org/hsts-max-age: "31536000"
-    nginx.org/client-max-body-size: "1m"
+    # Broker statements (up to 20 MB, account-service) are uploaded through /api/gw.
+    nginx.org/client-max-body-size: "25m"
     nginx.org/proxy-connect-timeout: "10s"
-    nginx.org/proxy-read-timeout: "60s"
+    nginx.org/proxy-read-timeout: "90s"
     nginx.org/limit-req-rate: "50r/s"
     nginx.org/limit-req-burst: "100"
     nginx.org/limit-req-key: "${binary_remote_addr}"
