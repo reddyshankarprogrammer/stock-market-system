@@ -21,6 +21,15 @@
   --font-sans: var(--font-inter);
   --font-display: var(--font-manrope);
 
+  /* Theme-aware roles for the app screens (login, register, dashboard); values are set on .theme-app below */
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-subtle: var(--subtle);
+  --color-link: var(--link);
+  --color-line: var(--line);
+  --color-soft: var(--soft);
+
   /* Shadows use navy, not black, so the page stays inside the brand palette */
   --shadow-sm: 0 1px 2px 0 rgb(11 31 58 / 0.15);
   --shadow-lg: 0 10px 15px -3px rgb(11 31 58 / 0.2), 0 4px 6px -4px rgb(11 31 58 / 0.2);
@@ -30,6 +39,44 @@
   /* One radius and one section spacing shared by every button, card and section */
   --radius-brand: 0.5rem;
   --spacing-section: 5rem;
+}
+
+/* App screens support light and dark. The landing page keeps its fixed look (its logo wordmark is navy), so the theme
+   applies only inside .theme-app. Dark follows the system unless the visitor picked one (html[data-theme]).
+   Borders and text keep at least 3:1 and 4.5:1 contrast in both themes (checked with the brand palette only). */
+.theme-app {
+  --canvas: #ffffff;
+  --panel: #ffffff;
+  --ink: #0b1f3a;
+  --subtle: #1e293b;
+  --link: #146ef5;
+  --line: rgb(30 41 59 / 0.6);
+  --soft: rgb(220 227 234 / 0.45);
+  background: var(--canvas);
+  color: var(--ink);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .theme-app {
+    --canvas: #0b1f3a;
+    --panel: #1e293b;
+    --ink: #ffffff;
+    --subtle: #dce3ea;
+    --link: #dce3ea;
+    --line: rgb(220 227 234 / 0.55);
+    --soft: rgb(255 255 255 / 0.06);
+    color-scheme: dark;
+  }
+}
+html[data-theme="dark"] .theme-app {
+  --canvas: #0b1f3a;
+  --panel: #1e293b;
+  --ink: #ffffff;
+  --subtle: #dce3ea;
+  --link: #dce3ea;
+  --line: rgb(220 227 234 / 0.55);
+  --soft: rgb(255 255 255 / 0.06);
+  color-scheme: dark;
 }
 
 html {
@@ -73,6 +120,34 @@ h3 {
 .qv-draw { stroke-dasharray: 400; animation: qv-draw 2.2s ease-out both; }
 .qv-grow { transform-box: fill-box; transform-origin: 50% 100%; animation: qv-grow 1.2s ease-out both; }
 .qv-rise { animation: qv-rise 0.8s ease-out both; }
+
+/* Clip scenes: 1280x720 stages recorded by scripts/record-clips.mjs (timings follow research-doc/07-feature-video-scripts.md).
+   The recorder rewinds and holds all animations, then plays them together, so each video starts on the first frame. */
+.clip-stage {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+  background: var(--quantiva-navy);
+  color: var(--quantiva-white);
+}
+@keyframes clip-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes clip-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes clip-pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+@keyframes clip-slide-in { from { opacity: 0; transform: translateX(56px); } to { opacity: 1; transform: none; } }
+@keyframes clip-file-in { from { opacity: 0; transform: translateX(-420px); } to { opacity: 1; transform: none; } }
+@keyframes clip-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes clip-dim { from { opacity: 1; } to { opacity: 0.28; } }
+@keyframes clip-ring {
+  from { opacity: 0.9; transform: translate(-50%, -50%) scale(0.4); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(2.2); }
+}
+@keyframes clip-lit {
+  from { background-color: var(--quantiva-graphite); color: var(--quantiva-silver); }
+  to { background-color: var(--quantiva-blue); color: var(--quantiva-white); }
+}
+@keyframes clip-press { 0% { transform: scale(1); } 40% { transform: scale(0.94); } 100% { transform: scale(1); } }
+@keyframes clip-border { from { border-color: transparent; } to { border-color: var(--quantiva-blue); } }
 
 @media (prefers-reduced-motion: reduce) {
   html {

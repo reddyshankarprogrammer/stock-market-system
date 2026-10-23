@@ -68,7 +68,7 @@ export function Pricing() {
         role="region"
         aria-label="Plan comparison table, scrolls sideways on small screens"
         tabIndex={0}
-        className="mt-4 overflow-x-auto rounded-brand border border-silver"
+        className="relative mt-4 overflow-x-auto rounded-brand border border-silver"
       >
         <table className="w-full min-w-[44rem] border-collapse text-left text-sm">
           <caption className="sr-only">Proposed contents of each plan. Prices and limits are not final.</caption>

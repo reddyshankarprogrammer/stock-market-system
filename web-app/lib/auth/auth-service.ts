@@ -1,0 +1,42 @@
+import { AuthError, defaultMessages, type AuthErrorCode } from "@/lib/auth/errors";
+import type { LoginValues, RegisterParsed } from "@/lib/auth/schemas";
+
+// Browser-side API for authentication. It talks only to our own route handlers (/api/auth/*, same origin),
+// which hold the tokens in httpOnly cookies and call user-service through the gateway. To move to another
+// identity system later (Keycloak), change the route handlers; pages and hooks keep using this file.
+export type Profile = { userId: string; email: string; firstName: string; lastName: string; role: "USER" | "ADMIN" };
+export type RegisterResult = { user: Profile; notSaved: string[] };
+
+const CLIENT_TIMEOUT_MS = 10_000; // a little above the 8 s server-side limit
+
+async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      ...init,
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", ...init.headers },
+      signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS),
+    });
+  } catch {
+    throw new AuthError("UNAVAILABLE", defaultMessages.UNAVAILABLE);
+  }
+  const body = (await res.json().catch(() => ({}))) as { code?: AuthErrorCode; message?: string };
+  if (!res.ok) {
+    const code = body.code ?? "UNKNOWN";
+    throw new AuthError(code, body.message ?? defaultMessages[code], res.status);
+  }
+  return body as T;
+}
+
+export const authService = {
+  login: async (v: LoginValues): Promise<Profile> => (await call<{ user: Profile }>("/api/auth/login", { method: "POST", body: JSON.stringify(v) })).user,
+
+  register: (v: RegisterParsed): Promise<RegisterResult> => call<RegisterResult>("/api/auth/register", { method: "POST", body: JSON.stringify(v) }),
+
+  logout: async (): Promise<void> => {
+    await call("/api/auth/logout", { method: "POST", body: "{}" });
+  },
+
+  me: async (): Promise<Profile> => (await call<{ user: Profile }>("/api/auth/me")).user,
+};

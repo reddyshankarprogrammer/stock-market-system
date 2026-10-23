@@ -33,8 +33,8 @@ export const nav = {
     { label: "Enterprise", href: "#security" },
   ],
   login: { label: "Login", href: "/login" },
-  getStarted: { label: "Get Started", href: "/signup" },
-  trial: { label: "Start Free Trial", href: "/signup" },
+  getStarted: { label: "Get Started", href: "/register" },
+  trial: { label: "Start Free Trial", href: "/register" },
 };
 
 export const hero = {
@@ -42,7 +42,7 @@ export const hero = {
   title: "The Intelligent Trading Operating System",
   subtitle:
     "Transform Market Data Into Alpha With Artificial Intelligence, Quantitative Analytics, Portfolio Intelligence, and Advanced Trading Automation.",
-  primaryCta: { label: "Start Free Trial", href: "/signup" },
+  primaryCta: { label: "Start Free Trial", href: "/register" },
   secondaryCta: { label: "Watch Demo", href: "#platform" },
   sampleNote: "Sample data for illustration",
   // Illustrative figures for the mock dashboard only; labelled as sample data on the page.
@@ -128,6 +128,37 @@ export const footer = {
 
 export type FeatureStatus = "In development" | "Planned";
 export type Art = "bars" | "line" | "nodes" | "chat" | "table";
+
+export const showcase = {
+  eyebrow: "See it working",
+  title: "Watch a month of trades become a clear next step",
+  intro: "Short clips of the interface we are building, using sample data. Nothing here is live yet.",
+  note: "Sample data. The features shown are in development.",
+  items: [
+    {
+      name: "calendar",
+      title: "See every trading day at a glance",
+      body: "Profit and loss by day with weekly totals. Open a day to see its trades, and filter by tag.",
+      points: [
+        "Colour strength shows the size of the day, and every loss carries a minus sign",
+        "Weekly totals in the last column",
+        "Filter by tag, symbol or account (planned)",
+      ],
+      label: "Clip, 8 seconds: a profit and loss calendar fills in, a day opens to show its trades, and the calendar is filtered by tag. Sample data.",
+    },
+    {
+      name: "import",
+      title: "Drop a statement, get a clean journal",
+      body: "Upload a broker statement and watch the trades appear, with charges matched to them.",
+      points: [
+        "Statement formats for Groww, Zerodha, Binance and Exness are supported in our backend",
+        "Charges matched to the right trades",
+        "The import screen itself is in development",
+      ],
+      label: "Clip, 8 seconds: a statement file is dropped, trades are read and listed, and the four supported broker formats are shown. Sample data.",
+    },
+  ],
+};
 
 export const platform = {
   eyebrow: "Platform",
@@ -309,10 +340,10 @@ export const pricing = {
   intro: "Prices and limits are not decided yet and are shown as TBC. The contents below are our current proposal.",
   priceText: "TBC",
   plans: [
-    { name: "Free", audience: "New traders", points: ["One broker account", "Journal and P&L calendar", "Limited history"], cta: { label: "Start Free Trial", href: "/signup" } },
-    { name: "Pro", audience: "Active traders", points: ["Unlimited accounts and history", "Full journal and reports", "Trade replay"], cta: { label: "Start Free Trial", href: "/signup" } },
-    { name: "AI Pro", audience: "Traders who want coaching", points: ["Everything in Pro", "AI trading coach", "Auto-tagging and CSV mapping"], cta: { label: "Start Free Trial", href: "/signup" } },
-    { name: "Quant Pro", audience: "Systematic traders", points: ["Everything in AI Pro", "Backtesting and price forecasts", "API access"], cta: { label: "Start Free Trial", href: "/signup" } },
+    { name: "Free", audience: "New traders", points: ["One broker account", "Journal and P&L calendar", "Limited history"], cta: { label: "Start Free Trial", href: "/register" } },
+    { name: "Pro", audience: "Active traders", points: ["Unlimited accounts and history", "Full journal and reports", "Trade replay"], cta: { label: "Start Free Trial", href: "/register" } },
+    { name: "AI Pro", audience: "Traders who want coaching", points: ["Everything in Pro", "AI trading coach", "Auto-tagging and CSV mapping"], cta: { label: "Start Free Trial", href: "/register" } },
+    { name: "Quant Pro", audience: "Systematic traders", points: ["Everything in AI Pro", "Backtesting and price forecasts", "API access"], cta: { label: "Start Free Trial", href: "/register" } },
     { name: "Enterprise", audience: "Teams, prop firms, institutions", points: ["Everything in Quant Pro", "Team workspaces and single sign-on", "Audit export and support SLA"], cta: { label: "Contact sales", href: "/contact" } },
   ] as Plan[],
   // true = included, false = not included, string = limit or note
@@ -365,7 +396,7 @@ export const faq = {
 
 export const finalCta = {
   title: "Review your next 100 trades with a clearer plan.",
-  primary: { label: "Start Free Trial", href: "/signup" },
+  primary: { label: "Start Free Trial", href: "/register" },
   secondary: { label: "See the platform", href: "#platform" },
 };
 

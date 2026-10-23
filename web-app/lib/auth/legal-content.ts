@@ -1,0 +1,125 @@
+import { TERMS_VERSION } from "@/lib/auth/constants";
+
+// DRAFT. Not reviewed by counsel and not yet in effect. It must be reviewed by a qualified lawyer (regulatory status,
+// governing law, limitation of liability, data protection) before launch. Contains no live prices, index levels or statistics.
+export const termsMeta = {
+  title: "Terms & Conditions and Risk Disclaimer",
+  version: TERMS_VERSION,
+  date: "24 October 2026",
+  draftNotice: "Draft for legal review. Not yet in effect.",
+};
+
+export type TermsSection = { id: string; title: string; body: string[] };
+
+export const termsSections: TermsSection[] = [
+  {
+    id: "education",
+    title: "1. Education and information only",
+    body: [
+      "Quantiva is a tool for recording, reviewing and learning from your own trading activity. Everything it shows, including journals, reports, charts, replays, backtests, forecasts, sentiment, AI answers and sample data, is provided for education and information only.",
+      "Quantiva does not provide investment, financial, tax, legal or accounting advice, and nothing on the platform is an offer, solicitation or recommendation to buy, sell or hold any security, derivative, currency or crypto asset.",
+    ],
+  },
+  {
+    id: "market-today",
+    title: "2. Market conditions notice (as of 24 October 2026)",
+    body: [
+      "Financial markets can move sharply and without warning. Economic data releases, central bank decisions, interest rate expectations, inflation, earnings, geopolitical events, regulatory changes and currency moves can change prices within seconds, and conditions on the day you read this may already be different.",
+      "In fast markets, prices can gap, orders can be filled at prices far from those you expected, liquidity can disappear, trading can be halted, and exchange or broker systems can fail or slow down. Expiry days for futures and options and the opening and closing minutes of a session are often especially volatile. Crypto markets trade around the clock, with very large swings.",
+      "This notice does not describe or predict current prices, index levels or trends, and Quantiva does not publish live market data in it. Always check current prices and conditions with your broker or the exchange before acting.",
+    ],
+  },
+  {
+    id: "risk",
+    title: "3. Trading and investing involve risk",
+    body: [
+      "You can lose some or all of the money you put into any market. Prices of shares, indices, bonds, funds, currencies, commodities, derivatives and crypto assets can fall as well as rise, and you may get back less than you invested.",
+      "Market risk, liquidity risk, volatility, settlement risk, counterparty risk and operational risk all apply. Only trade with money you can afford to lose, and consider speaking to a licensed financial adviser about your own situation.",
+    ],
+  },
+  {
+    id: "leverage",
+    title: "4. Derivatives, leverage and margin products",
+    body: [
+      "Futures, options, contracts for difference, margin trading and leveraged forex let you take positions larger than the money you put up. Leverage magnifies losses as much as gains, and you can lose more than your initial deposit.",
+      "Options can expire worthless, and short positions can have very large or unlimited losses. Studies by market regulators in several countries have reported that a large share of individual traders in leveraged and derivative products lose money. Make sure you understand a product fully before you trade it.",
+    ],
+  },
+  {
+    id: "crypto",
+    title: "5. Crypto assets",
+    body: [
+      "Crypto assets are extremely volatile, can be hard to value, may be lightly regulated or not regulated in your country, and may not be covered by any investor protection or compensation scheme. Exchanges and wallets can be hacked, can fail or can freeze withdrawals.",
+    ],
+  },
+  {
+    id: "currency",
+    title: "6. Currency, tax and cross-border risk",
+    body: [
+      "If an asset is priced in a currency other than your own, exchange rate moves can increase your losses or reduce your gains. Tax treatment depends on your circumstances and your country and can change. Quantiva's tax and charge calculations are estimates only; confirm them with a qualified tax professional.",
+    ],
+  },
+  {
+    id: "performance",
+    title: "7. Past performance, backtests and hypothetical results",
+    body: [
+      "Past performance does not guarantee future results. Backtests and simulations are hypothetical: they are built with the benefit of hindsight, usually ignore slippage, liquidity, fees and your own behaviour, and do not represent real trading. Sample figures, charts and examples on Quantiva are for illustration only.",
+    ],
+  },
+  {
+    id: "ai",
+    title: "8. AI-generated content",
+    body: [
+      "Where Quantiva offers AI features, such as a trading coach, auto-tagging or forecasts, the output is generated by statistical models and can be incomplete, outdated or wrong. It is a learning aid, never a recommendation, and you remain fully responsible for every decision you make. To answer a question, the relevant trade data may be sent to an AI provider; the Privacy Policy will describe this.",
+    ],
+  },
+  {
+    id: "data",
+    title: "9. Data, prices and imports",
+    body: [
+      "Prices and market data shown by Quantiva may be delayed, simulated, incomplete or inaccurate. Trades that you import from broker statements may contain errors, and Quantiva's matching of charges, taxes and dividends can be wrong. Check important figures against your broker's records.",
+    ],
+  },
+  {
+    id: "brokers",
+    title: "10. Brokers and third parties",
+    body: [
+      "Broker, exchange and product names are trademarks of their owners. Quantiva is not affiliated with, endorsed by or sponsored by any broker or exchange named on the platform. Quantiva does not hold your funds with your brokers and is not responsible for your broker's services.",
+    ],
+  },
+  {
+    id: "responsibility",
+    title: "11. Your responsibility",
+    body: [
+      "You are responsible for your own trading decisions, for keeping your password and devices secure, and for following the laws and regulations of the country where you live or trade, including any licensing, reporting and tax obligations. Quantiva may not be available, or may be restricted, in some countries.",
+    ],
+  },
+  {
+    id: "liability",
+    title: "12. Limits of liability",
+    body: [
+      "To the maximum extent the law allows, Quantiva and its owners are not liable for trading losses, lost profits, or indirect or consequential loss arising from your use of, or reliance on, the platform. [Wording to be confirmed by counsel.]",
+    ],
+  },
+  {
+    id: "privacy",
+    title: "13. Your information",
+    body: [
+      "We collect the details you give us at registration, such as your name, email, mobile number, gender and country, and the trading data you add. How we use and protect it is described in the Privacy Policy, which is being prepared and is not yet in effect.",
+    ],
+  },
+  {
+    id: "changes",
+    title: "14. Changes and governing law",
+    body: [
+      "These terms may change; we will ask you to accept the new version when they do. Governing law and jurisdiction: [to be confirmed by counsel].",
+    ],
+  },
+  {
+    id: "accept",
+    title: "15. Your confirmation",
+    body: [
+      "By accepting, you confirm that you have read this document to the end; that Quantiva is for education and information only and is not investment advice; that you understand trading and investing can result in the loss of your money; and that you are responsible for your own decisions.",
+    ],
+  },
+];

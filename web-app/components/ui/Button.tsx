@@ -8,12 +8,14 @@ type Props = ComponentProps<typeof Link> & {
   tone?: "light" | "dark";
 };
 
-const base =
+export const buttonBase =
   "inline-flex min-h-11 items-center justify-center rounded-brand px-5 py-2.5 text-sm font-semibold " +
   "transition duration-200 ease-out hover:-translate-y-0.5 focus-visible:-translate-y-0.5 motion-reduce:transform-none";
+export const buttonPrimary = "bg-electric text-white shadow-sm hover:shadow-lg hover:brightness-110";
+const base = buttonBase;
 
 const styles = {
-  primary: "bg-electric text-white shadow-sm hover:shadow-lg hover:brightness-110",
+  primary: buttonPrimary,
   "secondary-light": "border border-electric text-electric hover:bg-electric hover:text-white",
   "secondary-dark": "border border-silver text-white hover:bg-white hover:text-navy",
 };

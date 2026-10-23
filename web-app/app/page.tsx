@@ -1,4 +1,5 @@
 import { AICoach } from "@/components/AICoach";
+import { ClipShowcase } from "@/components/ClipShowcase";
 import { Faq } from "@/components/Faq";
 import { FinalCta } from "@/components/FinalCta";
 import { Footer } from "@/components/Footer";
@@ -58,6 +59,7 @@ export default function Home() {
       <main id="main">
         <Hero />
         <Trust />
+        <ClipShowcase />
         <Platform />
         <AICoach />
         <Solutions />
