@@ -108,7 +108,7 @@ Logs: `logs/<service>.log`; process ids: `logs/pids.txt`. No linter is configure
 - portfolio-service `GET /api/v1/portfolio/{userId}` has no ownership check.
 - order-service SELL is not checked against holdings; no compensation if saving fails after funds moved.
 - Market data only simulates six US stocks; external price APIs are unused.
-- Refresh tokens (`POST /api/v1/users/refresh`) are stateless: not rotated, not revocable, no logout endpoint; login with unknown e-mail returns 404 and login ignores the user status.
+- Refresh tokens (`POST /api/v1/users/refresh`) are stateless: not rotated, not revocable, no logout endpoint; blocking an account does not end an access token already issued (at most 15 minutes).
 - No production email provider yet: password-reset emails only work locally (Mailpit) until `MAIL_HOST`, `MAIL_FROM` and `APP_BASE_URL` are set for user-service in `k8s/user-service/configmap.yaml` (plus credentials in its Secret).
 - Notifications are in memory; account-service Kafka events have no consumers.
 - Broker statement column mappings are not yet confirmed with real files.

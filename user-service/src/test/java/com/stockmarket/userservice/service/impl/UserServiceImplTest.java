@@ -150,6 +150,78 @@ class UserServiceImplTest {
         when(jwtService.generateRefreshToken("user-123")).thenReturn("mock-refresh-token");
     }
 
+    private com.stockmarket.userservice.dto.LoginRequest loginRequest(String email, String password) {
+        com.stockmarket.userservice.dto.LoginRequest r = new com.stockmarket.userservice.dto.LoginRequest();
+        r.setEmail(email);
+        r.setPassword(password);
+        return r;
+    }
+
+    private User userWithStatus(com.stockmarket.userservice.entity.UserStatus status) {
+        User user = new User();
+        user.setId("user-123");
+        user.setEmail("test@example.com");
+        user.setPassword("encodedPassword");
+        user.setStatus(status);
+        return user;
+    }
+
+    @Test
+    void login_UnknownEmail_IsTheSameAsAWrongPassword_AndStillDoesTheBcryptWork() {
+        when(userRepository.findByEmail("nobody@example.com")).thenReturn(java.util.Optional.empty());
+        when(userRepository.findByEmail("test@example.com")).thenReturn(java.util.Optional.of(userWithStatus(null)));
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+
+        var unknown = assertThrows(com.stockmarket.userservice.exception.InvalidCredentialsException.class,
+                () -> userService.login(loginRequest("nobody@example.com", "whatever1")));
+        // a dummy comparison ran, so the response time does not reveal that the email is unregistered
+        verify(passwordEncoder, times(1)).matches(eq("whatever1"), anyString());
+
+        var wrong = assertThrows(com.stockmarket.userservice.exception.InvalidCredentialsException.class,
+                () -> userService.login(loginRequest("test@example.com", "wrong-password")));
+
+        assertEquals(wrong.getMessage(), unknown.getMessage(), "same message for unknown email and wrong password");
+        verifyNoInteractions(jwtService);
+    }
+
+    @Test
+    void login_BlockedAccount_IsRefusedOnlyAfterTheCorrectPassword() {
+        for (com.stockmarket.userservice.entity.UserStatus blocked : new com.stockmarket.userservice.entity.UserStatus[] {
+                com.stockmarket.userservice.entity.UserStatus.SUSPENDED, com.stockmarket.userservice.entity.UserStatus.BANNED,
+                com.stockmarket.userservice.entity.UserStatus.BLOCKED, com.stockmarket.userservice.entity.UserStatus.DELETED,
+                com.stockmarket.userservice.entity.UserStatus.ACCOUNT_LOCKED, com.stockmarket.userservice.entity.UserStatus.INACTIVE}) {
+            User user = userWithStatus(blocked);
+            when(userRepository.findByEmail("test@example.com")).thenReturn(java.util.Optional.of(user));
+
+            when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
+            assertThrows(com.stockmarket.userservice.exception.AccountNotActiveException.class,
+                    () -> userService.login(loginRequest("test@example.com", "password123")), blocked.name());
+
+            // a wrong password never reveals the status
+            when(passwordEncoder.matches("guess", "encodedPassword")).thenReturn(false);
+            assertThrows(com.stockmarket.userservice.exception.InvalidCredentialsException.class,
+                    () -> userService.login(loginRequest("test@example.com", "guess")), blocked.name());
+        }
+        verifyNoInteractions(jwtService);
+    }
+
+    @Test
+    void login_ActiveAndLegacyNullStatusUsers_CanStillLogIn() {
+        when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
+        when(jwtService.generateAccessToken(anyString(), anyString(), anyString())).thenReturn("access");
+        when(jwtService.generateRefreshToken(anyString())).thenReturn("refresh");
+
+        for (com.stockmarket.userservice.entity.UserStatus ok : new com.stockmarket.userservice.entity.UserStatus[] {
+                com.stockmarket.userservice.entity.UserStatus.ACTIVE, null,
+                com.stockmarket.userservice.entity.UserStatus.PENDING_VERIFICATION, com.stockmarket.userservice.entity.UserStatus.EMAIL_NOT_VERIFIED}) {
+            User user = userWithStatus(ok);
+            user.setRole(com.stockmarket.userservice.entity.Role.USER);
+            when(userRepository.findByEmail("test@example.com")).thenReturn(java.util.Optional.of(user));
+
+            assertEquals("access", userService.login(loginRequest("test@example.com", "password123")).getAccessToken(), String.valueOf(ok));
+        }
+    }
+
     @Test
     void login_Success() {
         User user = new User();

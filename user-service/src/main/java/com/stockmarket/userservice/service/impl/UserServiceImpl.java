@@ -20,6 +20,8 @@ import java.util.*;
 import com.stockmarket.userservice.entity.Gender;
 import com.stockmarket.userservice.entity.User;
 import com.stockmarket.userservice.service.AccountPolicy;
+import com.stockmarket.userservice.exception.AccountNotActiveException;
+import com.stockmarket.userservice.exception.InvalidCredentialsException;
 import com.stockmarket.userservice.exception.InvalidRefreshTokenException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -123,20 +125,29 @@ public class UserServiceImpl implements UserService {
 
 
 
+    /** A valid BCrypt hash nobody can match, compared against when the email is unknown. */
+    private static final String DUMMY_HASH = new BCryptPasswordEncoder().encode("not-a-real-password-" + UUID.randomUUID());
+
     @Override
     public AuthResponse login(LoginRequest request) {
 
         log.info("Login attempt: {}", request.getEmail());
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException(
-                        "User not found: " + request.getEmail()));
+        Optional<User> found = userRepository.findByEmail(request.getEmail());
+        if (found.isEmpty()) {
+            // Do the same BCrypt work as for a real user, so response time does not reveal whether the email exists.
+            passwordEncoder.matches(request.getPassword(), DUMMY_HASH);
+            throw new InvalidCredentialsException();
+        }
+        User user = found.get();
 
-        if (!passwordEncoder.matches(
-                request.getPassword(), user.getPassword())) {
-
-            throw new RuntimeException(
-                    "Invalid Credentials");
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new InvalidCredentialsException();
+        }
+        // Checked only after the password, so guessing passwords never reveals an account's status.
+        if (AccountPolicy.isBlocked(user.getStatus())) {
+            log.warn("Login refused, account not active: {}", user.getId());
+            throw new AccountNotActiveException();
         }
 
         log.info("Login successful: {}", user.getId());

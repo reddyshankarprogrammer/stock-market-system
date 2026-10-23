@@ -15,7 +15,7 @@ Accounts of people: registration, login, JWT issuing, profile, role and the wall
 
 ```powershell
 .\mvnw.cmd spring-boot:run        # from user-service/, needs MySQL + Kafka (docker compose up -d)
-.\mvnw.cmd test                   # 61 tests, no infrastructure (H2, mocks, an in-process SMTP server)
+.\mvnw.cmd test                   # 66 tests, no infrastructure (H2, mocks, an in-process SMTP server)
 ```
 
 ## Package layout
@@ -40,7 +40,7 @@ com.stockmarket.userservice
 | Method | Path | Auth | Behaviour |
 |---|---|---|---|
 | POST | `/register` | public | Create user (BCrypt), wallet = `initialBalance` (default 10000), publish `user.registered`, return tokens (201). Duplicate e-mail → 400. Optional profile fields below |
-| POST | `/login` | public | Tokens. Unknown e-mail → 404, wrong password → 401 |
+| POST | `/login` | public | Tokens. An unknown e-mail and a wrong password both give the same `401 Invalid Credentials` (and the same response time: a dummy BCrypt check runs for an unknown e-mail). Correct password but a blocking status (INACTIVE, SUSPENDED, DELETED, BLOCKED, BANNED, ACCOUNT_LOCKED/EXPIRED/DISABLED) → `403 This account is not active`; the status is only revealed after the correct password |
 | POST | `/refresh` | public | Body `{refreshToken}`. Returns a new access token and the same refresh token (not rotated). Bad, expired, tampered or access token, unknown user, or a blocked status (INACTIVE, SUSPENDED, DELETED, BLOCKED, BANNED, ACCOUNT_LOCKED/EXPIRED/DISABLED) → 401 `Invalid refresh token`. Public because the access token has already expired; the gateway rejects refresh tokens on every other path |
 | POST | `/forgot-password` | public | Body `{email}`. **Always 202** with the same message, whether or not the email is registered. If it is (and the account is not blocked), a single-use link is emailed. Asking again within 60 s sends nothing new; asking later voids the older link |
 | POST | `/reset-password` | public | Body `{token, newPassword}` (6–72 characters). 200 and the new password works; the token is spent and any other pending links are voided. Unknown, used, expired or blocked-account token → 400 `This reset link is invalid or has expired` (one message for all) |
@@ -118,9 +118,8 @@ Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, acc
 
 ## Known limitations
 
-- Login with an unknown e-mail returns 404 (reveals registered e-mails); should be 401.
 - Refresh tokens are stateless: they are not rotated and cannot be revoked, so a stolen one works until it expires (7 days) or the user's status blocks it. There is no logout endpoint (the web app only clears its cookies).
-- Login does not check `status`, so a SUSPENDED user can still log in; only `/refresh` refuses blocked statuses.
+- The blocking statuses are a fixed list in `AccountPolicy`; statuses such as PENDING_VERIFICATION and EMAIL_NOT_VERIFIED still log in (email verification does not exist yet). Blocking an account does not end an access token already issued (at most 15 minutes).
 - No rate limiting on `/login`, `/refresh` or `/reset-password` (`/forgot-password` has only the 60-second per-user cooldown).
 - A password reset ends refresh tokens issued before it, but an access token already issued keeps working until it expires (at most 15 minutes).
 - No email provider is chosen for production: until `MAIL_HOST` is set there, reset emails fail and are logged (the API answer is unchanged). Expired reset tokens are never deleted.

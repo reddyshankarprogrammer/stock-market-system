@@ -584,8 +584,7 @@ The Postman collection is generated, not hand-edited; it can also run in CI with
 | Trading | SELL orders are not checked against holdings | Query portfolio-service (or a holdings projection) before crediting |
 | Consistency | If saving `EXECUTED` fails after funds were deducted, the user is charged for a FAILED order; no compensation | Outbox pattern or a compensating credit |
 | Consistency | portfolio-service swallows consumer errors, so a failed update is lost | Use a `DefaultErrorHandler` with a dead-letter topic |
-| Auth | Refresh tokens are stateless: not rotated, not revocable, no logout endpoint; login ignores the user status | Store token ids (or a version per user) to revoke; check status at login |
-| Auth | Login with an unknown e-mail returns 404 *User not found*, which reveals which e-mails are registered | Return the same 401 as a wrong password |
+| Auth | Refresh tokens are stateless: not rotated, not revocable, no logout endpoint; blocking an account leaves an issued access token valid for up to 15 minutes | Store token ids (or a version per user) to revoke |
 | Notifications | In-memory only, lost on restart; delivery is log-only | Persist to a table; add push/e-mail/SMS senders |
 | Market data | Prices are simulated; `stock_quotes`, Redis keys and `stock.price.updated` have no consumers; Alpha Vantage / Finnhub keys unused | Real feed adapter; price history; consumers |
 | Data | One shared schema; Hibernate `ddl-auto: update` instead of migrations | Database per service; Flyway or Liquibase |

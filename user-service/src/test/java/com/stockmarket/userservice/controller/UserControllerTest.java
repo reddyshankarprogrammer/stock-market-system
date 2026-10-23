@@ -201,6 +201,28 @@ class UserControllerTest {
     }
 
     @Test
+    void login_BadCredentials_Returns401_WithOneMessage() throws Exception {
+        when(userService.login(any(LoginRequest.class))).thenThrow(new com.stockmarket.userservice.exception.InvalidCredentialsException());
+
+        mockMvc.perform(post("/api/v1/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"user@example.com\",\"password\":\"SecurePass123!\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Invalid Credentials"));
+    }
+
+    @Test
+    void login_AccountNotActive_Returns403() throws Exception {
+        when(userService.login(any(LoginRequest.class))).thenThrow(new com.stockmarket.userservice.exception.AccountNotActiveException());
+
+        mockMvc.perform(post("/api/v1/users/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"user@example.com\",\"password\":\"SecurePass123!\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("This account is not active"));
+    }
+
+    @Test
     void login_ValidRequest_ReturnsOk() throws Exception {
         LoginRequest request = new LoginRequest();
         request.setEmail("user@example.com");

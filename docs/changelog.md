@@ -2,6 +2,27 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: login hardening (no email enumeration, blocked accounts cannot log in)
+
+### Fixes
+
+| Problem | Fix | Where |
+|---|---|---|
+| Login with an unknown e-mail returned `404 User not found`, so anyone could find out which e-mails are registered | Unknown e-mail and wrong password both give `401 Invalid Credentials`. For an unknown e-mail a dummy BCrypt check runs, so the response time does not reveal it either. | `user-service` `UserServiceImpl.login` |
+| Login ignored the user status: a SUSPENDED, BANNED or locked user could still log in | After a **correct** password, a blocking status (INACTIVE, SUSPENDED, DELETED, BLOCKED, BANNED, ACCOUNT_LOCKED/EXPIRED/DISABLED) gives `403 This account is not active`. A wrong password never reveals the status. | same, `AccountPolicy` |
+| Login relied on matching the text of a generic `RuntimeException` ("not found", "invalid credentials") to pick a status | Typed `InvalidCredentialsException` (401) and `AccountNotActiveException` (403), mapped in `GlobalExceptionHandler` | `user-service` |
+| Web app | A blocked account sees "This account is not active. Please contact support." only after the correct password; a wrong password still shows the generic message | `web-app` `lib/auth/server.ts`, `errors.ts` |
+
+### Compatibility
+
+- **Behaviour change for clients:** an unknown e-mail now returns 401, not 404. The web app and Postman already treated both as a failed login.
+- Statuses such as PENDING_VERIFICATION and EMAIL_NOT_VERIFIED can still log in (email verification does not exist yet).
+- Blocking an account does not end an access token already issued (at most 15 minutes); refresh tokens are refused as before.
+
+### Tests
+
+user-service **66 tests pass** (5 new: same exception and message for unknown e-mail and wrong password with the dummy BCrypt check verified, six blocking statuses refused only after the correct password, ACTIVE / legacy null / pending-verification still log in, controller 401 and 403). Web app **39 of 39** browser checks (1 new, mock gateway updated to the real behaviour). Postman 111 → 112 requests (wrong-password test tightened to exactly 401, unknown-email test added). Not run on MySQL, through the real gateway or with Newman. Docs: user-service README, technical documentation (gaps), user manual, root `CLAUDE.md` gaps, web-app README, plan.
+
 ## 2026-10-24: forgot and reset password with an email service
 
 ### Features

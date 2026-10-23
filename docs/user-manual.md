@@ -205,7 +205,7 @@ Returns `201 Created` with the body shown in [step 1](#step-1-create-an-account)
 { "email": "asha@example.com", "password": "Secret123" }
 ```
 
-Returns `200 OK` with the same body as register.
+Returns `200 OK` with the same body as register. A wrong password and an unregistered e-mail give the same `401` (`Invalid Credentials`), so the answer never shows which e-mails have accounts. If the password is right but the account is suspended, banned, locked or otherwise not active, you get `403` (`This account is not active`).
 
 **Refresh** `POST /api/v1/users/refresh`
 
@@ -471,7 +471,7 @@ A failed order adds `orderId`.
 | 400 Bad Request | The request is invalid | Missing or invalid fields, e-mail already registered, amount ≤ 0 |
 | 401 Unauthorized | Not logged in | No `Authorization` header, invalid or expired token, refresh token used instead of access token, wrong password |
 | 403 Forbidden | Logged in, but not allowed | Another user's profile, wallet or order; internal funds endpoints |
-| 404 Not Found | It does not exist | Unknown order id, unknown stock symbol, login with an unregistered e-mail |
+| 404 Not Found | It does not exist | Unknown order id, unknown stock symbol |
 | 422 Unprocessable Entity | Order saved but not filled | Insufficient wallet balance |
 | 502 Bad Gateway | A downstream service is unavailable | user-service or market-data-service down while placing an order |
 
