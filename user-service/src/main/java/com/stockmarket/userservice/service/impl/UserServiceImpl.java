@@ -21,7 +21,9 @@ import com.stockmarket.userservice.entity.Gender;
 import com.stockmarket.userservice.entity.User;
 import com.stockmarket.userservice.service.AccountPolicy;
 import com.stockmarket.userservice.exception.AccountNotActiveException;
+import com.stockmarket.userservice.exception.IncorrectPasswordException;
 import com.stockmarket.userservice.exception.InvalidCredentialsException;
+import com.stockmarket.userservice.exception.UserNotFoundException;
 import com.stockmarket.userservice.exception.InvalidRefreshTokenException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -161,6 +163,30 @@ public class UserServiceImpl implements UserService {
                 refreshToken);
     }
 
+
+    @Override
+    public AuthResponse changePassword(String userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        if (AccountPolicy.isBlocked(user.getStatus())) {
+            throw new AccountNotActiveException();
+        }
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new IncorrectPasswordException();
+        }
+        if (request.getCurrentPassword().equals(request.getNewPassword())) {
+            throw new IllegalArgumentException("Choose a password that is different from the current one");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setPasswordChangedAt(LocalDateTime.now());
+        userRepository.save(user);
+        log.info("Password changed for user: {}", userId);
+
+        // Issued after passwordChangedAt (compared in whole seconds), so this session stays valid and older ones end.
+        return buildAuthResponse(user,
+                jwtService.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name()),
+                jwtService.generateRefreshToken(user.getId()));
+    }
 
     @Override
     public AuthResponse refresh(RefreshRequest request) {

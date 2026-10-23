@@ -8,7 +8,11 @@ import com.stockmarket.userservice.dto.RefreshRequest;
 import com.stockmarket.userservice.dto.ResetPasswordRequest;
 import com.stockmarket.userservice.dto.OnboardingRequest;
 import com.stockmarket.userservice.dto.OnboardingResponse;
+import com.stockmarket.userservice.dto.ChangePasswordRequest;
+import com.stockmarket.userservice.dto.PreferencesRequest;
+import com.stockmarket.userservice.dto.PreferencesResponse;
 import com.stockmarket.userservice.service.OnboardingService;
+import com.stockmarket.userservice.service.PreferencesService;
 import com.stockmarket.userservice.service.PasswordResetService;
 import com.stockmarket.userservice.dto.RegisterRequest;
 import com.stockmarket.userservice.dto.UserResponse;
@@ -32,6 +36,7 @@ public class UserController {
     private final UserService userService;
     private final PasswordResetService passwordResetService;
     private final OnboardingService onboardingService;
+    private final PreferencesService preferencesService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(
@@ -105,6 +110,32 @@ public class UserController {
             @RequestHeader("X-User-Id") String userId) {
 
         return ResponseEntity.ok(onboardingService.complete(userId));
+    }
+
+    /** Own settings (theme, language, notification channels, export format). Defaults for a user who never saved any. */
+    @GetMapping("/me/preferences")
+    public ResponseEntity<PreferencesResponse> getPreferences(
+            @RequestHeader("X-User-Id") String userId) {
+
+        return ResponseEntity.ok(preferencesService.get(userId));
+    }
+
+    /** Only the fields sent change. */
+    @PutMapping("/me/preferences")
+    public ResponseEntity<PreferencesResponse> savePreferences(
+            @RequestHeader("X-User-Id") String userId,
+            @Valid @RequestBody PreferencesRequest request) {
+
+        return ResponseEntity.ok(preferencesService.save(userId, request));
+    }
+
+    /** Change the caller's own password; answers with fresh tokens for the session that made the change. */
+    @PostMapping("/me/password")
+    public ResponseEntity<AuthResponse> changePassword(
+            @RequestHeader("X-User-Id") String userId,
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        return ResponseEntity.ok(userService.changePassword(userId, request));
     }
 
     @GetMapping("/me")

@@ -1,6 +1,10 @@
 package com.stockmarket.userservice.service.impl;
 
 import com.stockmarket.userservice.dto.AuthResponse;
+import com.stockmarket.userservice.dto.ChangePasswordRequest;
+import com.stockmarket.userservice.entity.UserStatus;
+import com.stockmarket.userservice.exception.AccountNotActiveException;
+import com.stockmarket.userservice.exception.IncorrectPasswordException;
 import com.stockmarket.userservice.dto.RegisterRequest;
 import com.stockmarket.userservice.entity.User;
 import com.stockmarket.userservice.repository.UserRepository;
@@ -339,5 +343,66 @@ class UserServiceImplTest {
 
         assertNotNull(response);
         assertEquals(BigDecimal.valueOf(6000), response.getWalletBalance());
+    }
+
+    // ---- change password ----
+
+    private User signedInUser() {
+        User user = new User();
+        user.setId("user-1");
+        user.setEmail("test@example.com");
+        user.setFirstName("John");
+        user.setPassword("old-hash");
+        return user;
+    }
+
+    @Test
+    void changePassword_savesTheNewHash_marksTheChange_andReturnsFreshTokensForThisSession() {
+        User user = signedInUser();
+        when(userRepository.findById("user-1")).thenReturn(java.util.Optional.of(user));
+        when(passwordEncoder.matches("OldPass123", "old-hash")).thenReturn(true);
+        when(passwordEncoder.encode("NewPass456")).thenReturn("new-hash");
+        when(jwtService.generateAccessToken("user-1", "test@example.com", "USER")).thenReturn("new-access");
+        when(jwtService.generateRefreshToken("user-1")).thenReturn("new-refresh");
+
+        AuthResponse response = userService.changePassword("user-1", new ChangePasswordRequest("OldPass123", "NewPass456"));
+
+        assertEquals("new-hash", user.getPassword());
+        assertNotNull(user.getPasswordChangedAt(), "older sessions must end");
+        assertEquals("new-access", response.getAccessToken());
+        assertEquals("new-refresh", response.getRefreshToken());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void changePassword_wrongCurrentPassword_isRefused_andNothingChanges() {
+        User user = signedInUser();
+        when(userRepository.findById("user-1")).thenReturn(java.util.Optional.of(user));
+        when(passwordEncoder.matches("wrong", "old-hash")).thenReturn(false);
+
+        assertThrows(IncorrectPasswordException.class, () -> userService.changePassword("user-1", new ChangePasswordRequest("wrong", "NewPass456")));
+
+        assertEquals("old-hash", user.getPassword());
+        assertNull(user.getPasswordChangedAt());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void changePassword_theSamePassword_isRefused() {
+        when(userRepository.findById("user-1")).thenReturn(java.util.Optional.of(signedInUser()));
+        when(passwordEncoder.matches("SamePass123", "old-hash")).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> userService.changePassword("user-1", new ChangePasswordRequest("SamePass123", "SamePass123")));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void changePassword_blockedAccount_isRefused_beforeThePasswordIsChecked() {
+        User user = signedInUser();
+        user.setStatus(UserStatus.SUSPENDED);
+        when(userRepository.findById("user-1")).thenReturn(java.util.Optional.of(user));
+
+        assertThrows(AccountNotActiveException.class, () -> userService.changePassword("user-1", new ChangePasswordRequest("OldPass123", "NewPass456")));
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
     }
 }

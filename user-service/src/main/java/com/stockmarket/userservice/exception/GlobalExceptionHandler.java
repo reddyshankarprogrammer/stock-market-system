@@ -41,6 +41,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
+    @ExceptionHandler(IncorrectPasswordException.class)
+    public ResponseEntity<Map<String, Object>> handleIncorrectPassword(IncorrectPasswordException ex) {
+        log.warn("Password change rejected: wrong current password");
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(InvalidResetTokenException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidResetToken(InvalidResetTokenException ex) {
         log.warn("Password reset rejected");

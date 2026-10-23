@@ -49,6 +49,9 @@ class UserControllerTest {
     @MockitoBean
     private com.stockmarket.userservice.service.OnboardingService onboardingService;
 
+    @MockitoBean
+    private com.stockmarket.userservice.service.PreferencesService preferencesService;
+
     @Test
     void register_ValidRequest_ReturnsCreated() throws Exception {
         RegisterRequest request = new RegisterRequest();
@@ -361,5 +364,60 @@ class UserControllerTest {
                 .andExpect(status().isForbidden());
 
         verifyNoInteractions(userService);
+    }
+
+    // ---- preferences and change password ----
+
+    @Test
+    void preferences_get_usesTheGatewayHeader_andNeedsIt() throws Exception {
+        when(preferencesService.get("user-1")).thenReturn(new com.stockmarket.userservice.dto.PreferencesResponse("DARK", "en", true, false, false, "CSV"));
+
+        mockMvc.perform(get("/api/v1/users/me/preferences").header("X-User-Id", "user-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.theme").value("DARK"))
+                .andExpect(jsonPath("$.notifyPush").value(false));
+
+        mockMvc.perform(get("/api/v1/users/me/preferences")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void preferences_put_savesForTheCaller_andRejectsUnknownValues() throws Exception {
+        when(preferencesService.save(eq("user-1"), any())).thenReturn(new com.stockmarket.userservice.dto.PreferencesResponse("LIGHT", "en", true, false, false, "CSV"));
+
+        mockMvc.perform(put("/api/v1/users/me/preferences").header("X-User-Id", "user-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"theme\":\"LIGHT\",\"userId\":\"someone-else\"}"))
+                .andExpect(status().isOk());
+        org.mockito.Mockito.verify(preferencesService).save(eq("user-1"), any());
+
+        mockMvc.perform(put("/api/v1/users/me/preferences").header("X-User-Id", "user-1")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"theme\":\"NEON\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(put("/api/v1/users/me/preferences").header("X-User-Id", "user-1")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"exportFormat\":\"XML\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void changePassword_wrongCurrentPassword_is400_not401_sotheSessionIsNotEnded() throws Exception {
+        when(userService.changePassword(eq("user-1"), any())).thenThrow(new com.stockmarket.userservice.exception.IncorrectPasswordException());
+
+        mockMvc.perform(post("/api/v1/users/me/password").header("X-User-Id", "user-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"wrong\",\"newPassword\":\"NewPass456\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Your current password is incorrect"));
+    }
+
+    @Test
+    void changePassword_validatesTheNewPassword_andNeverEchoesPasswords() throws Exception {
+        mockMvc.perform(post("/api/v1/users/me/password").header("X-User-Id", "user-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"OldPass123\",\"newPassword\":\"abc\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/v1/users/me/password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"OldPass123\",\"newPassword\":\"NewPass456\"}"))
+                .andExpect(status().isUnauthorized());
     }
 }
