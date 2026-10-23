@@ -101,12 +101,30 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 - **Not done, needs a decision:** two already pushed commits still contain the old name in their content (the CI/CD commit and the `research-doc` commit). Removing it from history would mean rewriting and force-pushing `main`, which was not requested and was not done.
 - Files: [04-product-technology-roadmap.md](../research-doc/04-product-technology-roadmap.md), [06-ai-prompt-library.md](../research-doc/06-ai-prompt-library.md), [roadmap.html](../research-doc/roadmap.html).
 
+## 14. Commit and push the branch
+
+- **Request:** commit and push.
+- **Done:** three commits on `feature/frontend-landing-page` (`162497a` Dockerfile vendor label, `853efde` web-app scaffold and stage 1, `a8a8839` research-doc and this history folder), then `git push -u origin feature/frontend-landing-page`. All authored with the Gmail address from the repo config. Checked beforehand that no added line contained the former company name.
+- **Note:** Git printed LF/CRLF warnings; harmless.
+
+## 15. Stop the dev server, landing page stage 2, pull request
+
+- **Request:** after a clarifying question, all three of: build stage 2, open a pull request, stop the dev server.
+- **Dev server:** the background task was stopped, but a child Node process kept port 3000; it was identified as this project's `next` server and stopped by process id. Ports 3000 and 3100 are free.
+- **Stage 2 built in `web-app/` (uncommitted):** platform section (8 modules with honest "In development" / "Planned" labels and expandable "Learn more"), scripted and labelled AI coach demo, solutions tabs (full ARIA tabs pattern), pricing with five plans, billing toggle and comparison table (prices TBC), security section with real statuses, FAQ (8 questions), final call to action, JSON-LD (Organization, Product, FAQPage built from the visible FAQ), placeholder `/contact`, `/legal/terms`, `/legal/privacy`, `/legal/risk`. Copy lives in `web-app/lib/content.ts`.
+- **Fixes from the mockup review (section 11) applied:** eyebrow text uses navy on light backgrounds, tap targets 44 px in header, footer, summaries and buttons, plan and platform labels never rely on colour alone (values are printed), illustrations play once so no pause control is needed, risk line under the hero dashboard, no off-palette colours, navy shadows instead of black, dead footer links replaced by pages.
+- **Corrections made while building:** the trust section claimed "per-user data ownership checks on every request" as Live; that overstated reality (root `CLAUDE.md` section 7 lists a known gap in portfolio-service), so it now reads "across all services" and "In progress". A dynamic legal route failed to build with Cache Components (`dynamicParams` not allowed), so it was replaced by three static pages that return real 404s for unknown paths.
+- **Verified on the production build:** `npm run lint` clean, `npx tsc --noEmit` clean, `npm run build` generates 10 pages; served on port 3100: one H1, no heading jumps, three JSON-LD blocks, FAQ schema has 8 entries matching the page, no broken `#` anchors, canonical, Open Graph and Twitter tags present, only the six brand hex colours in the HTML, unknown paths return 404. Contrast of the new colour pairs measured at 4.59:1 or higher.
+- **Not verified:** not viewed in a browser, no Lighthouse run, no check at 320–1920 px, keyboard use of the tabs and toggles tested only by reading the code.
+- **Pull request not opened:** the GitHub CLI is not installed in either shell, and no token was taken from the credential manager. The compare URL is https://github.com/reddyshankarprogrammer/stock-market-system/pull/new/feature/frontend-landing-page; stage 2 is not committed yet, so a pull request opened now would contain stage 1 only.
+
 ## Open items after this session
 
 | Item | Where |
 |---|---|
-| Stage 2 sections: platform (8 blocks), AI coach demo, solutions tabs, pricing, security, FAQ, final call to action, JSON-LD (Organization, Product, FAQPage) | Master prompt in [06-ai-prompt-library.md](../research-doc/06-ai-prompt-library.md) |
-| Footer links `/legal/terms`, `/legal/privacy`, `/legal/risk` have no pages yet (404) | `web-app/lib/content.ts` |
+| Commit and push stage 2 (built, verified, uncommitted); open the pull request by hand or install the GitHub CLI | Section 15 above |
+| Legal pages are placeholders; real Terms and Privacy Policy need counsel before launch | `web-app/lib/content.ts` |
+| Run Lighthouse and test 320–1920 px, keyboard and screen reader on stage 2 | [06-ai-prompt-library.md](../research-doc/06-ai-prompt-library.md) A1 "Done when" |
 | Trust section statuses (Live, In progress, Planned) must be confirmed against the real deployment | `web-app/lib/content.ts`, [04-product-technology-roadmap.md](../research-doc/04-product-technology-roadmap.md) section 11 |
 | Share image is the 512 px icon, a placeholder | `web-app/app/layout.tsx` |
 | Dockerfile, `k8s/web-app/`, Argo CD and CI lists | Unit 18 of [05-daily-implementation-plan.md](../research-doc/05-daily-implementation-plan.md) |
