@@ -4,6 +4,7 @@ import { Brand } from "@/components/auth/Brand";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Providers } from "@/components/Providers";
 import { BottomNav, SidebarNav } from "@/components/shell/AppNav";
+import { ModeSwitch } from "@/components/shell/ModeSwitch";
 import { PreferencesSync } from "@/components/shell/PreferencesSync";
 import { ShellThemeToggle } from "@/components/shell/ShellThemeToggle";
 import { THEME_KEY } from "@/lib/auth/constants";
@@ -23,6 +24,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <aside className="hidden border-r border-line lg:block">
           <div className="sticky top-0 flex h-dvh flex-col gap-6 overflow-y-auto p-4">
             <Brand />
+            <ModeSwitch mode="app" />
             {/* usePathname() needs a boundary on routes with a dynamic segment (/accounts/[id]) */}
             <Suspense fallback={null}>
               <SidebarNav />
@@ -36,6 +38,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <div className="min-w-0">
           <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line p-4 sm:px-6 lg:hidden">
             <Brand />
+            <ModeSwitch mode="app" />
             <div className="flex flex-wrap items-center gap-3">
               <ShellThemeToggle />
               <LogoutButton />

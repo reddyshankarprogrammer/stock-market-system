@@ -37,11 +37,6 @@ export function Overview() {
         </FormAlert>
       ) : (
         <div className="grid gap-8">
-          <p className="text-sm">
-            <Link href="/terminal" className="inline-flex min-h-11 items-center font-semibold text-link underline underline-offset-4">
-              Preview the trading terminal (sample data)
-            </Link>
-          </p>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <AccountPicker id="dashboard-account" />
             <p className="text-sm text-subtle">

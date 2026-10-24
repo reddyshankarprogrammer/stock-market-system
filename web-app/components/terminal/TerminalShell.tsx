@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ModeSwitch } from "@/components/shell/ModeSwitch";
 import { Activity, BarChart3, Bell, BookOpen, Briefcase, ChevronsLeft, ChevronsRight, FlaskConical, LayoutDashboard, LineChart, ListChecks, Menu, PieChart, ScanSearch, Settings, ShieldAlert, Sparkles, Star, Target, X, type LucideIcon } from "lucide-react";
 
 type Item = { label: string; icon: LucideIcon; href?: string };
@@ -116,20 +117,18 @@ export function TerminalShell({ children }: { children: ReactNode }) {
     <div className="min-h-dvh bg-term-bg text-term-text [color-scheme:dark] lg:flex">
       <aside className={`sticky top-0 hidden h-dvh shrink-0 flex-col gap-4 overflow-y-auto border-r border-term-line bg-term-panel p-3 transition-[width] duration-200 motion-reduce:transition-none lg:flex ${collapsed ? "w-[4.5rem]" : "w-64"}`}>
         <Brand collapsed={collapsed} />
+        <ModeSwitch mode="terminal" dark compact={collapsed} />
         <NavList collapsed={collapsed} />
         <button type="button" onClick={() => writeCollapsed(!collapsed)} aria-pressed={collapsed} aria-label={collapsed ? "Expand the sidebar" : "Collapse the sidebar"} className="mt-auto flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-term-muted hover:bg-term-panel-strong hover:text-term-text">
           {collapsed ? <ChevronsRight aria-hidden="true" size={20} /> : <ChevronsLeft aria-hidden="true" size={20} />}
           <span className={collapsed ? "sr-only" : ""}>Collapse</span>
         </button>
-        <Link href="/dashboard" className="flex min-h-11 items-center rounded-xl px-3 text-sm text-term-muted underline underline-offset-4 hover:text-term-text">
-          <span className={collapsed ? "sr-only" : ""}>Back to the Quantiva app</span>
-          {collapsed && <span aria-hidden="true">←</span>}
-        </Link>
       </aside>
 
       <div className="min-w-0 flex-1">
         <header className="flex items-center justify-between gap-3 border-b border-term-line px-4 py-2 lg:hidden">
-          <Brand collapsed={false} />
+          <Brand collapsed />
+          <ModeSwitch mode="terminal" dark />
           <button ref={opener} type="button" onClick={() => setOpen(true)} aria-label="Open the menu" aria-expanded={open} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-term-field">
             <Menu aria-hidden="true" size={22} />
           </button>
@@ -144,10 +143,8 @@ export function TerminalShell({ children }: { children: ReactNode }) {
                   <X aria-hidden="true" size={22} />
                 </button>
               </div>
+              <ModeSwitch mode="terminal" dark />
               <NavList collapsed={false} onNavigate={() => setOpen(false)} />
-              <Link href="/dashboard" className="flex min-h-11 items-center px-3 text-sm text-term-muted underline underline-offset-4">
-                Back to the Quantiva app
-              </Link>
             </div>
           </div>
         )}

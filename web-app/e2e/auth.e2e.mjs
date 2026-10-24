@@ -902,6 +902,54 @@ await test("terminal: no WCAG 2.1 A or AA violations found by axe, on a desktop 
   }
 });
 
+// ---- switching between app mode and terminal mode ----
+await test("mode switch: one click between the app and the terminal, in both directions, on a laptop and on a phone", async () => {
+  for (const [w, label] of [[1440, "laptop"], [360, "phone"]]) {
+    const c = await newCtx({ viewport: { width: w, height: 900 } }); const p = await c.newPage(); await login(p, "mode@example.com"); await p.waitForURL(/\/dashboard/);
+    const sw = () => p.getByRole("navigation", { name: "Mode" }).and(p.locator(":visible"));
+    await sw().getByRole("link", { name: "App" }).waitFor(); ok((await sw().getByRole("link", { name: "App" }).getAttribute("aria-current")) === "page", `${label}: App is current in the app`);
+    await sw().getByRole("link", { name: "Terminal" }).click(); await p.waitForURL(/\/terminal$/); await p.getByRole("heading", { name: "Dashboard", level: 1 }).waitFor();
+    ok((await sw().getByRole("link", { name: "Terminal" }).getAttribute("aria-current")) === "page", `${label}: Terminal is current in the terminal`);
+    ok(!(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), `${label}: terminal overflows`);
+    await sw().getByRole("link", { name: "App" }).click(); await p.waitForURL(/\/dashboard/); await p.getByRole("heading", { level: 1 }).first().waitFor();
+    ok(!(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), `${label}: app overflows`);
+    await c.close();
+  }
+});
+await test("mode switch: the phone drawer has it too, and a collapsed terminal sidebar keeps it as icons", async () => {
+  const [c, q] = await terminal({ viewport: { width: 360, height: 800 } });
+  await q.getByRole("button", { name: "Open the menu" }).click(); const dlg = q.getByRole("dialog", { name: "Terminal menu" });
+  await dlg.getByRole("navigation", { name: "Mode" }).getByRole("link", { name: "App" }).click(); await q.waitForURL(/\/dashboard/); await c.close();
+  const [c2, p] = await terminal({ viewport: { width: 1440, height: 900 } });
+  await p.getByRole("button", { name: "Collapse the sidebar" }).click(); await p.getByRole("button", { name: "Expand the sidebar" }).waitFor();
+  const icons = p.locator("aside").getByRole("navigation", { name: "Mode" }); const app = icons.getByRole("link", { name: "App" }); ok((await app.boundingBox()).height >= 43.5, "icon target too small");
+  await app.click(); await p.waitForURL(/\/dashboard/); await p.goto(`${BASE}/terminal`); await p.getByRole("button", { name: "Expand the sidebar" }).click(); await c2.close();
+});
+
+// ---- switching between app mode and terminal mode ----
+await test("mode switch: one click between the app and the terminal, in both directions, on a laptop and on a phone", async () => {
+  for (const [w, label] of [[1440, "laptop"], [360, "phone"]]) {
+    const c = await newCtx({ viewport: { width: w, height: 900 } }); const p = await c.newPage(); await login(p, "mode@example.com"); await p.waitForURL(/\/dashboard/);
+    const sw = () => p.getByRole("navigation", { name: "Mode" }).filter({ visible: true });
+    await sw().getByRole("link", { name: "App" }).waitFor(); ok((await sw().getByRole("link", { name: "App" }).getAttribute("aria-current")) === "page", `${label}: App is current in the app`);
+    await sw().getByRole("link", { name: "Terminal" }).click(); await p.waitForURL(/\/terminal$/); await p.getByRole("heading", { name: "Dashboard", level: 1 }).waitFor();
+    ok((await sw().getByRole("link", { name: "Terminal" }).getAttribute("aria-current")) === "page", `${label}: Terminal is current in the terminal`);
+    ok(!(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), `${label}: terminal overflows`);
+    await sw().getByRole("link", { name: "App" }).click(); await p.waitForURL(/\/dashboard/); await p.getByRole("heading", { level: 1 }).first().waitFor();
+    ok(!(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), `${label}: app overflows`);
+    await c.close();
+  }
+});
+await test("mode switch: the phone drawer has it too, and a collapsed terminal sidebar keeps it as icons", async () => {
+  const [c, q] = await terminal({ viewport: { width: 360, height: 800 } });
+  await q.getByRole("button", { name: "Open the menu" }).click(); const dlg = q.getByRole("dialog", { name: "Terminal menu" });
+  await dlg.getByRole("navigation", { name: "Mode" }).getByRole("link", { name: "App" }).click(); await q.waitForURL(/\/dashboard/); await c.close();
+  const [c2, p] = await terminal({ viewport: { width: 1440, height: 900 } });
+  await p.getByRole("button", { name: "Collapse the sidebar" }).click(); await p.getByRole("button", { name: "Expand the sidebar" }).waitFor();
+  const app = p.locator("aside").getByRole("navigation", { name: "Mode" }).getByRole("link", { name: "App" }); ok((await app.boundingBox()).height >= 43.5, "icon target too small");
+  await app.click(); await p.waitForURL(/\/dashboard/); await p.goto(`${BASE}/terminal`); await p.getByRole("button", { name: "Expand the sidebar" }).click(); await c2.close();
+});
+
 await browser.close();
 mock.close();
 const failed = results.filter(([p]) => !p);
