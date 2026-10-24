@@ -2,6 +2,29 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: terminal pages (markets, portfolio, positions, orders, journal) and the mode switch
+
+### Features
+
+| Feature | Where |
+|---|---|
+| **App \| Terminal** switch in both shells (laptop, phone header, terminal drawer, collapsed sidebar as icons) | `web-app/components/shell/ModeSwitch.tsx` |
+| Terminal sidebar follows the second brief (16 destinations); six are pages, ten are marked "Soon" | `web-app/components/terminal/TerminalShell.tsx` |
+| Markets, Portfolio, Positions, Orders (ticket, book, cancel) and Journal (entry form, emotion chart, filters) on sample data, with a shared `DataTable`, `PageFrame`, extra chart types and a Zustand store | `web-app/components/terminal/pages/`, `web-app/lib/terminal/` |
+| 7 more unit checks (15) and 9 more browser checks, including axe (WCAG 2.1 A and AA) and overflow at 360, 768 and 1440 px for all five pages | `web-app/tests/`, `web-app/e2e/` |
+
+### Bugs found by testing and fixed
+
+| Bug | Fix |
+|---|---|
+| The Markets page scrolled sideways on a phone: a screen-reader-only text in the last table column escaped the scroll region (absolutely positioned elements are not clipped unless their container is positioned) | The scroll region is `relative` (DataTable and the trading activity table) |
+| A new ticket order did not appear on top of the book (the sample orders of the sample day were later in the day than the real clock) | Sample orders of that day are early morning; ticket orders get the real time of day, at least 09:00 |
+| The terminal header overflowed on a 360 px phone once the mode switch was added | Icon-only brand in the phone header |
+
+### Known limits
+
+Everything is sample data and says so. Orders and journal entries are kept in the browser's page state and disappear on reload. Ten of the sixteen sidebar entries are not built. The second brief asks for PostgreSQL, Spring Boot 3.5 on every service, Next.js 15 and shadcn: none of that was changed (the system uses MySQL, Boot 4 for most services, Next.js 16, no shadcn), by decision with the owner. No manual screen-reader review yet.
+
 ## 2026-10-24: trading terminal preview (`/terminal`, sample data)
 
 ### Features

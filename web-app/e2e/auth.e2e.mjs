@@ -827,11 +827,11 @@ await test("terminal: it needs a session; the page says its data is sample data;
   for (const label of ["Portfolio value", "Today's P&L", "Monthly P&L", "Win rate", "Open positions", "Risk score", "Sharpe ratio"]) await cards.filter({ hasText: label }).waitFor();
   ok((await cards.first().locator("svg").count()) >= 1, "sparkline"); ok(/^\$\d{3},\d{3}$/.test(await kpi(p, "value")), `portfolio value ${await kpi(p, "value")}`); await c.close();
 });
-await test("terminal: sidebar lists the 16 destinations, only the dashboard is a link, the rest say they are not built; right panel actions are honest", async () => {
+await test("terminal: sidebar lists the 16 destinations, six are links, the rest say they are not built; right panel actions are honest", async () => {
   const [c, p] = await terminal({ viewport: { width: 1440, height: 900 } });
   const nav = p.getByRole("navigation", { name: "Terminal" }); ok((await nav.locator("li").count()) === 16, "16 items");
-  ok((await nav.getByRole("link").count()) === 1 && (await nav.getByRole("link", { name: "Dashboard" }).getAttribute("aria-current")) === "page", "only Dashboard is a link");
-  ok((await nav.locator("button[aria-disabled=true]").count()) === 15, "15 disabled items"); await nav.getByRole("button", { name: /Markets/ }).click({ force: true }); // aria-disabled: Playwright would wait for it to be enabled ok(p.url().endsWith("/terminal"), "a disabled item navigated");
+  ok((await nav.getByRole("link").count()) === 6 && (await nav.getByRole("link", { name: "Dashboard" }).getAttribute("aria-current")) === "page", "the six built pages are links");
+  ok((await nav.locator("button[aria-disabled=true]").count()) === 10, "10 disabled items"); await nav.locator('button[title^="Analytics:"]').click({ force: true }); // aria-disabled: Playwright would wait for it to be enabled ok(p.url().endsWith("/terminal"), "a disabled item navigated");
   await p.getByRole("link", { name: "Place order" }).waitFor(); ok((await p.locator("aside button[aria-disabled=true]").filter({ hasText: "Soon" }).count()) >= 3, "run screener, backtest, signal are marked soon");
   await p.getByText("Not generated from your data and not investment advice").waitFor(); await c.close();
 });
@@ -948,6 +948,86 @@ await test("mode switch: the phone drawer has it too, and a collapsed terminal s
   await p.getByRole("button", { name: "Collapse the sidebar" }).click(); await p.getByRole("button", { name: "Expand the sidebar" }).waitFor();
   const app = p.locator("aside").getByRole("navigation", { name: "Mode" }).getByRole("link", { name: "App" }); ok((await app.boundingBox()).height >= 43.5, "icon target too small");
   await app.click(); await p.waitForURL(/\/dashboard/); await p.goto(`${BASE}/terminal`); await p.getByRole("button", { name: "Expand the sidebar" }).click(); await c2.close();
+});
+
+// ---- terminal pages: markets, portfolio, positions, orders, journal ----
+const tpage = async (path, o = {}) => { const c = await newCtx(o); const p = await c.newPage(); await login(p, "pages@example.com"); await p.waitForURL(/\/dashboard/); await p.goto(`${BASE}/terminal/${path}`); return [c, p]; };
+const heading = (p, name) => p.getByRole("heading", { name, level: 1 }).waitFor();
+await test("terminal pages: the sidebar links reach all six pages and mark the current one", async () => {
+  const [c, p] = await terminal({ viewport: { width: 1440, height: 900 } });
+  for (const [name, path] of [["Markets", "/terminal/markets"], ["Portfolio", "/terminal/portfolio"], ["Positions", "/terminal/positions"], ["Orders", "/terminal/orders"], ["Journal", "/terminal/journal"], ["Dashboard", "/terminal"]]) {
+    const link = p.getByRole("navigation", { name: "Terminal" }).getByRole("link", { name }); await link.click(); await p.waitForURL((u) => u.pathname === path); await heading(p, name);
+    ok((await link.getAttribute("aria-current")) === "page", `${name} not marked current`);
+  }
+  await c.close();
+});
+await test("markets: four indices, quotes sorted by change, filters narrow the table, gainers lead", async () => {
+  const [c, p] = await tpage("markets", { viewport: { width: 1440, height: 900 } }); await heading(p, "Markets");
+  ok((await p.getByLabel("Indices (sample data)").locator("dt").count()) === 4, "four indices");
+  const table = p.getByRole("region", { name: "Quotes table" }); ok((await table.getByRole("columnheader", { name: "Change %" }).getAttribute("aria-sort")) === "descending", "default sort");
+  await p.getByLabel("Market", { exact: true }).selectOption("India"); await p.getByText(/6 of 16 instruments/).waitFor();
+  ok((await table.locator("tbody tr td:nth-child(8)").allInnerTexts()).every((t) => t.startsWith("India")), "only India");
+  await p.getByLabel("Search").fill("tata"); await p.getByText("1 of 16 instruments").waitFor(); ok((await table.locator("tbody tr").count()) === 1, "one row");
+  await p.getByLabel("Search").fill("zzz"); await p.getByText("No instruments match the filters.").waitFor();
+  await p.getByLabel("Search").fill(""); await p.getByLabel("Market", { exact: true }).selectOption(""); await p.getByText("16 of 16 instruments").waitFor();
+  const top = await p.getByRole("region", { name: "Top gainers" }).locator("li").first().innerText(); const first = await table.locator("tbody tr").first().innerText();
+  ok(first.includes(top.split(/\s/)[0]), `top gainer ${top.split(/\s/)[0]} should lead the table sorted by change`); await c.close();
+});
+await test("portfolio: the holdings add up to the figures and the weights; allocation and equity charts have tables", async () => {
+  const [c, p] = await tpage("portfolio", { viewport: { width: 1440, height: 900 } }); await heading(p, "Portfolio");
+  const n = Number((await p.getByLabel("Portfolio figures (sample data)").locator("div", { hasText: "Holdings" }).locator("dd").first().innerText()).trim());
+  ok(n > 0, "holdings count"); const rowsShown = await p.getByRole("region", { name: "Holdings table" }).locator("tbody tr").count(); ok(n <= 8 ? rowsShown === n : (await p.getByTestId("range").innerText()).endsWith(`of ${n}`), `table rows ${rowsShown} vs holdings ${n}`);
+  const weights = await p.getByRole("region", { name: "Holdings table" }).locator("tbody tr td:nth-child(10)").allInnerTexts(); ok(weights.length > 0 && weights.every((w) => /^\d+\.\d%$/.test(w)), "weights");
+  for (const t of ["Sector allocation", "Asset allocation", "Geographic allocation", "Equity curve"]) await p.getByRole("figure", { name: t }).waitFor(); await c.close();
+});
+await test("positions: only open trades; the filters change every figure; the position nearest its stop is named", async () => {
+  const [c, p] = await tpage("positions", { viewport: { width: 1440, height: 900 } }); await heading(p, "Positions");
+  const stat = async (label) => (await p.getByLabel("Position figures (sample data)").locator("div", { hasText: label }).locator("dd").first().innerText()).trim();
+  const all = Number(await stat("Open positions")); ok(all > 0, "open positions"); await p.getByText(/Closest to its stop/).waitFor();
+  await p.getByLabel("Risk").selectOption("High"); await p.waitForFunction((n) => Number(document.querySelector("dl[aria-label='Position figures (sample data)'] dd")?.textContent) < n, all);
+  ok(Number(await stat("High risk")) === Number(await stat("Open positions")), "high risk equals open positions under the High filter");
+  await p.getByLabel("Strategy").selectOption("Value"); ok((await p.getByRole("region", { name: "Positions table" }).locator("tbody tr td:nth-child(2)").allInnerTexts()).every((t) => t === "Value"), "strategy filter");
+  const stops = await p.getByRole("region", { name: "Positions table" }).locator("tbody tr").evaluateAll((rows) => rows.map((r) => [Number(r.children[6].textContent.replace(/[^0-9.]/g, "")), Number(r.children[5].textContent.replace(/[^0-9.]/g, ""))]));
+  ok(stops.every(([stop, price]) => stop < price * 1.5), "stop is below the entry"); await c.close();
+});
+await test("orders: the ticket validates, adds an open order on top, an open order can be cancelled, and the book filters", async () => {
+  const [c, p] = await tpage("orders", { viewport: { width: 1440, height: 900 } }); await heading(p, "Orders");
+  const ticket = p.getByRole("form", { name: "Order ticket" }); const openBefore = Number(await p.getByLabel("Order figures (sample data)").locator("div", { hasText: "Open orders" }).locator("dd").first().innerText());
+  await ticket.getByLabel("Type").selectOption("Limit"); await ticket.getByRole("button", { name: "Add order" }).click(); await p.getByText("A limit order needs a limit price").waitFor();
+  await ticket.getByLabel("Quantity").fill("0"); await ticket.getByLabel("Limit price").fill("190"); await ticket.getByRole("button", { name: "Add order" }).click(); await p.getByText("Enter at least 1 share").waitFor();
+  await ticket.getByLabel("Quantity").fill("7"); await ticket.getByRole("button", { name: "Add order" }).click(); await p.getByText(/only in this sample list: nothing was sent to a broker/).waitFor();
+  const first = p.getByRole("region", { name: "Order book table" }).locator("tbody tr").first(); const text = await first.innerText(); ok(text.includes("N00001") && text.includes("Open") && text.includes("AAPL"), `new order on top: ${text}`);
+  ok(Number(await p.getByLabel("Order figures (sample data)").locator("div", { hasText: "Open orders" }).locator("dd").first().innerText()) === openBefore + 1, "open orders +1");
+  await p.getByRole("button", { name: "Cancel order N00001" }).click(); await p.getByRole("region", { name: "Order book table" }).locator("tbody tr").first().getByText("Cancelled").waitFor();
+  ok((await p.getByRole("button", { name: "Cancel order N00001" }).count()) === 0, "a cancelled order cannot be cancelled again");
+  await p.getByRole("group", { name: "Status" }).getByRole("button", { name: "Rejected" }).click(); ok((await p.getByRole("region", { name: "Order book table" }).locator("tbody tr td:nth-child(10)").allInnerTexts()).every((t) => t.startsWith("Rejected")), "rejected filter");
+  await p.getByRole("group", { name: "Status" }).getByRole("button", { name: "All", exact: true }).click(); await p.getByLabel("Search orders by symbol").fill("zzz"); await p.getByText("No orders match.").waitFor(); await c.close();
+});
+await test("journal: an entry needs notes, is saved on top and counted; the filters and Show more work", async () => {
+  const [c, p] = await tpage("journal", { viewport: { width: 1440, height: 900 } }); await heading(p, "Journal");
+  const count = async () => Number((await p.getByLabel("Journal figures (sample data)").locator("div", { hasText: "Entries" }).locator("dd").first().innerText()).trim()); const before = await count();
+  const form = p.getByRole("form", { name: "New journal entry" }); await form.getByRole("button", { name: "Save entry" }).click(); await p.getByText("Write a few words about the trade").waitFor();
+  await form.getByLabel("What happened").fill("Waited for the retest and kept the stop."); await form.getByLabel("How did you feel?").selectOption("Calm"); await form.getByRole("button", { name: "Save entry" }).click();
+  await p.getByText("Entry saved to this page (sample).").waitFor(); ok((await count()) === before + 1, "entries +1"); ok((await p.locator("[data-entry]").first().innerText()).includes("Waited for the retest"), "new entry on top");
+  await p.getByLabel("Search").fill("retest"); await p.getByText(/1 of \d+ entries/).waitFor(); await p.getByLabel("Search").fill("");
+  await p.locator("#je-emotion").selectOption("FOMO"); ok((await p.locator("[data-entry]").allInnerTexts()).every((t) => t.includes("FOMO")), "emotion filter");
+  await p.locator("#je-emotion").selectOption(""); ok((await p.locator("[data-entry]").count()) === 8, "eight shown first"); await p.getByRole("button", { name: /Show more/ }).click(); ok((await p.locator("[data-entry]").count()) === 16, "sixteen after Show more");
+  await p.getByRole("figure", { name: "Profit and loss by state of mind" }).waitFor(); await c.close();
+});
+await test("terminal pages: no sideways scroll at 360 and 768 px, 44 px controls, and axe finds no WCAG 2.1 A or AA violation", async () => {
+  for (const path of ["markets", "portfolio", "positions", "orders", "journal"]) {
+    for (const w of [360, 768, 1440]) {
+      const [c, p] = await tpage(path, { viewport: { width: w, height: 900 } }); await p.getByRole("heading", { level: 1 }).first().waitFor(); await p.waitForTimeout(400);
+      ok(!(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), `${path} overflows at ${w}px`);
+      const small = await p.evaluate(() => [...document.querySelectorAll("main button, main select, main input:not([type=checkbox])")].filter((e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height < 43.5 && !e.closest(".sr-only") && !e.closest("[aria-hidden=true]"); }).map((e) => (e.textContent || e.id || e.tagName).trim().slice(0, 18)));
+      ok(small.length === 0, `${path} small controls at ${w}px: ${small}`);
+      if (w !== 768) {
+        const res = await new AxeBuilder({ page: p }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+        ok(res.violations.length === 0, `${path} ${w}px: ` + res.violations.map((v) => `${v.id} (${v.nodes.length}): ${v.nodes[0].target.join(" ")}`).join(" | "));
+      }
+      await c.close();
+    }
+  }
 });
 
 await browser.close();

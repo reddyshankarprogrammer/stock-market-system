@@ -3,28 +3,29 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { ModeSwitch } from "@/components/shell/ModeSwitch";
-import { Activity, BarChart3, Bell, BookOpen, Briefcase, ChevronsLeft, ChevronsRight, FlaskConical, LayoutDashboard, LineChart, ListChecks, Menu, PieChart, ScanSearch, Settings, ShieldAlert, Sparkles, Star, Target, X, type LucideIcon } from "lucide-react";
+import { Activity, BarChart3, BookOpen, Briefcase, CalendarClock, ChevronsLeft, ChevronsRight, FlaskConical, LayoutDashboard, LineChart, ListChecks, Menu, Percent, PieChart, ScanSearch, Settings, ShieldAlert, Sparkles, Target, X, type LucideIcon } from "lucide-react";
 
 type Item = { label: string; icon: LucideIcon; href?: string };
 
-// Only the dashboard exists. The other entries are shown, as the design asks, but clearly marked as not built yet.
+// Dashboard, Markets, Portfolio, Positions, Orders and Journal exist. The other entries are shown, as the brief asks, but marked as not built yet.
 const NAV: Item[] = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/terminal" },
-  { label: "Markets", icon: LineChart },
-  { label: "Watchlist", icon: Star },
-  { label: "Portfolio", icon: Briefcase },
-  { label: "Orders", icon: ListChecks },
-  { label: "Positions", icon: Target },
-  { label: "Trading Journal", icon: BookOpen },
+  { label: "Markets", icon: LineChart, href: "/terminal/markets" },
+  { label: "Portfolio", icon: Briefcase, href: "/terminal/portfolio" },
+  { label: "Positions", icon: Target, href: "/terminal/positions" },
+  { label: "Orders", icon: ListChecks, href: "/terminal/orders" },
+  { label: "Journal", icon: BookOpen, href: "/terminal/journal" },
   { label: "Analytics", icon: BarChart3 },
-  { label: "Strategies", icon: FlaskConical },
   { label: "AI Signals", icon: Sparkles },
-  { label: "Backtesting", icon: Activity },
   { label: "Screener", icon: ScanSearch },
+  { label: "Option Analytics", icon: Percent },
+  { label: "Futures Analytics", icon: CalendarClock },
+  { label: "Strategy Builder", icon: FlaskConical },
+  { label: "Backtesting", icon: Activity },
   { label: "Risk Management", icon: ShieldAlert },
   { label: "Reports", icon: PieChart },
-  { label: "Notifications", icon: Bell },
   { label: "Settings", icon: Settings },
 ];
 
@@ -55,13 +56,14 @@ function writeCollapsed(v: boolean) {
 }
 
 function NavList({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+  const pathname = usePathname();
   return (
     <nav aria-label="Terminal">
       <ul className="grid gap-1">
         {NAV.map(({ label, icon: Icon, href }) => (
           <li key={label}>
             {href ? (
-              <Link href={href} aria-current="page" onClick={onNavigate} title={collapsed ? label : undefined} className="flex min-h-11 items-center gap-3 rounded-xl bg-term-panel-strong px-3 text-sm font-semibold text-term-teal">
+              <Link href={href} aria-current={pathname === href ? "page" : undefined} onClick={onNavigate} title={collapsed ? label : undefined} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold ${pathname === href ? "bg-term-panel-strong text-term-teal" : "text-term-text hover:bg-term-panel-strong"}`}>
                 <Icon aria-hidden="true" size={20} />
                 <span className={collapsed ? "sr-only" : ""}>{label}</span>
               </Link>

@@ -4,7 +4,7 @@ import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import type { Kpi } from "@/lib/terminal/sample-data";
 
 // Each card: large metric, trend (a sign as well as a colour), a sparkline and a teal accent line on the right.
-function Spark({ data, positive, id }: { data: number[]; positive: boolean; id: string }) {
+export function Spark({ data, positive, id }: { data: number[]; positive: boolean; id: string }) {
   const color = positive ? "#00e5b0" : "#ff7a8a";
   const points = data.map((v, i) => ({ i, v }));
   return (

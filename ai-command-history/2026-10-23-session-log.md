@@ -286,6 +286,19 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 - **Not done:** the other eight pages of the brief; real data in the terminal; a manual screen-reader and keyboard review; Figma files; the screenshot-based layout match (screenshot missing).
 - **Docs:** web-app README, prompt library D6, changelog.
 
+## 30. Mode switch and the first five terminal pages (24 October)
+
+- **Requests:** (1) "from login mode, make easy switch to terminal mode, keep switching mode in login dashboard"; (2) a second pasted brief (16 pages, PostgreSQL, Spring Boot 3.5, Next.js 15, shadcn, "production-ready"). Several short messages in between ("reset again", "restart port 3000 only", "continue").
+- **Questions asked and answered:** extend the terminal with sample data in the existing stack (not a stack switch, no new backend); first pass is the core five pages (Markets, Portfolio, Positions, Orders, Journal); yes to restarting the web app and finishing the mode switch first.
+- **Mode switch:** `ModeSwitch` in both shells, on a phone too, icons when collapsed; replaces the text link on the dashboard. Committed (`36c0ca9`).
+- **Pages:** sample data (`sample-extra.ts`, 7 more unit checks), `DataTable`, `PageFrame`, `CategoryBars`, `LineSeries`, a Zustand store for ticket orders and journal entries, five pages, sidebar rebuilt to the 16 destinations of the brief.
+- **Verified:** ESLint, `tsc`, build; 15 unit checks; browser checks for each page (filters, sorting, validation, ticket and cancel, journal entry and Show more, sidebar links with `aria-current`) plus axe WCAG 2.1 A and AA, overflow at 360, 768 and 1440 px and 44 px controls on all five pages; full browser suite.
+- **Bugs found, fixed:** screen-reader text escaping a scroll region (page scrolled sideways on a phone), new orders sorting below sample orders, header overflow on a phone with the switch.
+- **Process:** port 3000 now serves a copy of the build under `logs/web-live` (not committed), so rebuilding on 3100 for tests no longer takes the page you are reviewing away; to update 3000, copy `.next/standalone` over it and restart. Machine memory was low at times (a background command was stopped by Claude Code).
+- **Decisions you may want to change:** the brief's stack differences were not followed (kept MySQL, Boot 4 services, Next.js 16, no shadcn); orders and journal live in page state only; ten destinations stay "Soon".
+- **Not done:** Analytics, AI Signals, Screener, Option Analytics, Futures Analytics, Strategy Builder, Backtesting, Risk Management, Reports, Settings of the terminal; real data; backend; manual accessibility review; pushing these commits.
+- **Docs:** web-app README, changelog.
+
 ## Open items after this session
 
 | Item | Where |

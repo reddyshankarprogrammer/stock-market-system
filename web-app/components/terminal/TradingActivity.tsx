@@ -104,7 +104,7 @@ export function TradingActivity({ trades }: { trades: Trade[] }) {
         </p>
       ) : (
         <>
-          <div role="region" aria-label="Trading activity table" tabIndex={0} className="mt-4 overflow-x-auto rounded-xl border border-term-line">
+          <div role="region" aria-label="Trading activity table" tabIndex={0} className="relative mt-4 overflow-x-auto rounded-xl border border-term-line">
             <table className="w-full min-w-[60rem] text-left text-sm">
               <caption className="sr-only">
                 Sample trades, sorted by {sort.id} {sort.dir === "asc" ? "ascending" : "descending"}, {rows.length} rows

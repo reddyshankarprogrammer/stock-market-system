@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Area, AreaChart, Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { allocation, equityCurve, monthlyReturns, sectorPerformance, winLoss, type Trade } from "@/lib/terminal/sample-data";
 
 const TEAL = "#00e5b0";
@@ -13,7 +13,7 @@ const signed0 = (n: number) => (n > 0 ? "+" : n < 0 ? "-" : "") + usd0.format(Ma
 const tooltipStyle = { background: "#0f151c", border: "1px solid rgb(255 255 255 / 0.2)", borderRadius: 12, color: "#e6edf3", fontSize: 13 };
 
 /** A chart is a picture: the same numbers are always available as a table for screen readers (and the picture is hidden from them). */
-function Figure({ id, title, note, height = 240, table, children }: { id: string; title: string; note?: string; height?: number; table: { head: string[]; rows: (string | number)[][] }; children: ReactNode }) {
+export function Figure({ id, title, note, height = 240, table, children }: { id: string; title: string; note?: string; height?: number; table: { head: string[]; rows: (string | number)[][] }; children: ReactNode }) {
   return (
     <figure aria-labelledby={`${id}-t`} className="min-w-0 rounded-2xl border border-term-line bg-term-panel p-4 backdrop-blur">
       <figcaption>
@@ -95,7 +95,7 @@ export function MonthlyReturns({ trades }: { trades: Trade[] }) {
   );
 }
 
-function Donut({ id, title, note, data }: { id: string; title: string; note?: string; data: { name: string; value: number; label: string }[] }) {
+export function Donut({ id, title, note, data }: { id: string; title: string; note?: string; data: { name: string; value: number; label: string }[] }) {
   return (
     <Figure id={id} title={title} note={note} height={180} table={{ head: ["Name", "Share"], rows: data.map((d) => [d.name, d.label]) }}>
       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
@@ -177,5 +177,43 @@ export function Allocations({ trades }: { trades: Trade[] }) {
         );
       })}
     </div>
+  );
+}
+
+/** Bars by category, teal above zero and red below, with the numbers as a table. `format` writes a value as text. */
+export function CategoryBars({ id, title, note, data, format, height }: { id: string; title: string; note?: string; data: { name: string; value: number }[]; format: (v: number) => string; height?: number }) {
+  return (
+    <Figure id={id} title={title} note={note} height={height ?? 220} table={{ head: ["Name", "Value"], rows: data.map((d) => [d.name, format(d.value)]) }}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+        <BarChart accessibilityLayer={false} data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <XAxis dataKey="name" {...axis} interval={0} />
+          <YAxis {...axis} width={56} tickFormatter={(v: number) => (Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : String(v))} />
+          <Tooltip contentStyle={tooltipStyle} formatter={(v) => format(Number(v))} cursor={{ fill: "rgb(255 255 255 / 0.06)" }} />
+          <Bar dataKey="value" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+            {data.map((d) => (
+              <Cell key={d.name} fill={d.value >= 0 ? TEAL : LOSS} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </Figure>
+  );
+}
+
+/** One or more lines over the same labels. */
+export function LineSeries({ id, title, note, data, lines, format, height }: { id: string; title: string; note?: string; data: Record<string, string | number>[]; lines: { key: string; name: string; color?: string }[]; format: (v: number) => string; height?: number }) {
+  return (
+    <Figure id={id} title={title} note={note} height={height ?? 240} table={{ head: ["Label", ...lines.map((l) => l.name)], rows: data.filter((_, i) => i % Math.max(1, Math.floor(data.length / 8)) === 0).map((d) => [String(d.label), ...lines.map((l) => format(Number(d[l.key])))]) }}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+        <LineChart accessibilityLayer={false} data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <XAxis dataKey="label" {...axis} minTickGap={40} />
+          <YAxis {...axis} width={56} domain={["auto", "auto"]} />
+          <Tooltip contentStyle={tooltipStyle} formatter={(v) => format(Number(v))} labelStyle={{ color: MUTED }} />
+          {lines.map((l, i) => (
+            <Line key={l.key} type="monotone" dataKey={l.key} name={l.name} stroke={l.color ?? PALETTE[i % PALETTE.length]} strokeWidth={2} dot={false} isAnimationActive={false} />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    </Figure>
   );
 }
