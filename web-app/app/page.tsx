@@ -11,6 +11,7 @@ import { Pricing } from "@/components/Pricing";
 import { Security } from "@/components/Security";
 import { Solutions } from "@/components/Solutions";
 import { Trust } from "@/components/Trust";
+import { WaitlistForm } from "@/components/WaitlistForm";
 import { faq, site } from "@/lib/content";
 
 // Structured data states only what is true: no ratings, no prices, no contact details that do not exist.
@@ -66,6 +67,7 @@ export default function Home() {
         <Pricing />
         <Security />
         <Faq />
+        <WaitlistForm />
         <FinalCta />
       </main>
       <Footer />

@@ -776,6 +776,45 @@ await test("portfolio: an account without positions says so; the picker and a ph
   ok(!(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), "page overflows"); await c.close();
 });
 
+// ---- landing page waitlist ----
+let ipSeq = 0;
+const fromIp = (o = {}) => newCtx({ ...o, extraHTTPHeaders: { "x-forwarded-for": `203.0.113.${++ipSeq}` } }); // each test is a different visitor for the rate limit
+const waitlistForm = (p) => p.getByRole("form", { name: "Join the launch list" });
+await test("waitlist: the form checks the email and the consent before anything is sent", async () => {
+  const c = await fromIp(); const p = await c.newPage(); await p.goto(`${BASE}/`);
+  const form = waitlistForm(p); await form.scrollIntoViewIfNeeded();
+  await form.getByRole("button", { name: "Join the list" }).click(); await p.getByText("Enter your email").waitFor(); await p.getByText("Please agree to be contacted about the launch").waitFor();
+  await form.getByLabel("Email").fill("not-an-email"); await form.getByLabel(/I agree to be contacted/).check(); await form.getByRole("button", { name: "Join the list" }).click(); await p.getByText("Enter a valid email address").waitFor();
+  ok((await mockGet("/__waitlist")).length === 0 || !(await mockGet("/__waitlist")).includes("not-an-email"), "an invalid email reached the backend"); await c.close();
+});
+await test("waitlist: joining shows the confirmation; the same address again gets the same answer and is stored once, in lower case", async () => {
+  const c = await fromIp(); const p = await c.newPage(); await p.goto(`${BASE}/`);
+  const join = async (page) => { const f = waitlistForm(page); await f.getByLabel("Email").fill("Fan@Example.com"); await f.getByLabel(/I agree to be contacted/).check(); await f.getByRole("button", { name: "Join the list" }).click(); await page.getByText("You are on the list. We will write to you when Quantiva opens.").waitFor({ timeout: 15000 }); };
+  await join(p); await c.close();
+  const c2 = await fromIp(); const p2 = await c2.newPage(); await p2.goto(`${BASE}/`); await join(p2); await c2.close();
+  ok((await mockGet("/__waitlist")).filter((e) => e === "fan@example.com").length === 1, "stored more than once or not in lower case");
+});
+await test("waitlist: a service outage is reported and nothing claims success", async () => {
+  const c = await fromIp(); const p = await c.newPage(); await p.goto(`${BASE}/`);
+  const f = waitlistForm(p); await f.getByLabel("Email").fill("down@waitlist.example"); await f.getByLabel(/I agree to be contacted/).check(); await f.getByRole("button", { name: "Join the list" }).click();
+  await p.getByRole("alert").filter({ hasText: "temporarily unavailable" }).waitFor({ timeout: 15000 }); ok((await p.getByText("You are on the list").count()) === 0, "claimed success"); await c.close();
+});
+await test("waitlist: the route ignores bots (honeypot), blocks other origins, and slows a script down (429 with Retry-After)", async () => {
+  const c = await fromIp(); const post = (data, origin = BASE) => c.request.post(`${BASE}/api/waitlist`, { headers: { "Content-Type": "application/json", Origin: origin }, data });
+  const bot = await post({ email: "bot@example.com", consent: true, company: "Acme" }); ok(bot.status() === 200, `honeypot ${bot.status()}`);
+  ok(!(await mockGet("/__waitlist")).includes("bot@example.com"), "the honeypot answer must store nothing");
+  ok((await post({ email: "x@example.com", consent: false })).status() === 400, "consent false accepted");
+  ok((await post({ email: "x@example.com", consent: true }, "https://evil.example")).status() === 403, "cross-origin");
+  let limited = null; for (let i = 0; i < 12 && !limited; i++) { const r = await post({ email: `burst${i}@example.com`, consent: true }); if (r.status() === 429) limited = r; }
+  ok(limited, "no 429 after 12 quick requests"); ok(limited.headers()["retry-after"] === "60", "Retry-After"); await c.close();
+});
+await test("waitlist: the landing page has no sideways scroll at 320 px with the form on it", async () => {
+  const c = await fromIp({ viewport: { width: 320, height: 800 } }); const p = await c.newPage(); await p.goto(`${BASE}/`); await waitlistForm(p).waitFor();
+  ok(!(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), "overflow");
+  const small = await waitlistForm(p).evaluate((f) => [...f.querySelectorAll("button, input:not([tabindex='-1']):not([type=checkbox])")].filter((e) => e.getBoundingClientRect().height < 43.5).map((e) => e.id || e.tagName));
+  ok(small.length === 0, `small targets: ${small}`); await c.close();
+});
+
 await browser.close();
 mock.close();
 const failed = results.filter(([p]) => !p);

@@ -25,6 +25,7 @@ export function startMockGateway(port = 8099) {
   let passwordChanges = 0;
   const accountMock = createAccountMock();
   const preferences = new Map(); // email -> settings
+  const waitlist = new Set();
   let lastPrefsBody = null; // the last PUT /me/preferences body, to check what the web app forwarded
   // Onboarding answers per email. Users who logged in without registering count as already onboarded (so older tests
   // still reach the dashboard); a registered user starts blank, like a real new account.
@@ -141,6 +142,15 @@ export function startMockGateway(port = 8099) {
         return send(200, { userId: c.sub, email: c.email, firstName: "Test", lastName: "User", walletBalance: 10000, ...tokens(c.email) });
       }
     }
+    // Public waitlist (user-service POST /me ... /waitlist): same 202 for a new and a listed email, 400 for bad input,
+    // down@waitlist.example is a 500. GET /__waitlist lists what was stored (lower case, once).
+    if (req.method === "POST" && req.url === "/api/v1/users/waitlist") {
+      if (body.email === "down@waitlist.example") return send(500, { status: 500, message: "boom" });
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email ?? "") || body.consent !== true) return send(400, { status: 400, message: "Validation failed" });
+      waitlist.add(String(body.email).trim().toLowerCase());
+      return send(202, { message: "You are on the list. We will write to you when Quantiva opens." });
+    }
+    if (req.method === "GET" && req.url === "/__waitlist") return send(200, [...waitlist]);
     if (req.method === "GET" && req.url === "/__last-prefs") return send(200, lastPrefsBody ?? {});
     if (req.method === "GET" && req.url === "/__last-register") return send(200, lastRegister ?? {});
     if (req.method === "GET" && req.url === "/__stats") return send(200, { refreshCalls, passwordChanges, forgotRequests, passwords: Object.fromEntries(passwords) });

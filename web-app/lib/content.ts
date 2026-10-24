@@ -408,3 +408,13 @@ export const legal = {
   },
   risk: { title: "Risk Disclosure", body: footer.risk },
 } as const;
+
+// The launch list on the landing page. Quantiva is not open for general use: the copy says so and promises only what the
+// system does (the address is stored with the time of consent, nothing else, and no email is sent from the form).
+export const waitlist = {
+  eyebrow: "Launch list",
+  title: "Be the first to know when Quantiva opens",
+  intro: "Quantiva is not open for general use yet. Leave your email and we will write to you about the launch. We use your address for nothing else.",
+  consent: "I agree to be contacted about the Quantiva launch.",
+  success: "You are on the list. We will write to you when Quantiva opens.",
+};
