@@ -62,8 +62,8 @@ Follow `user-service/CLAUDE.md` and root `CLAUDE.md` section 5 (contract first; 
 | 7 | ~~App shell and typed API client (original units 31–32)~~ **done 24 Oct** (shell, typed client for account-service, Accounts page; springdoc for the other services still to do) | 0 (was 2) |
 | 8 | ~~Settings screens and preferences (original units 33–36)~~ **done 24 Oct** except sessions, devices, two-factor, passkeys and login history, which need Keycloak (deferred with it) | 0 (was 4) |
 | 9 | ~~Accounts, statement upload, trades, dashboard, portfolio, MVP demo (original units 37–40)~~ **done 24 Oct** (verified on the real stack with a Zerodha tradebook; other brokers' statement layouts still unconfirmed) | 0 (was 4) |
-| 10 | Waitlist form on the landing page (original unit 23) | 2 |
-| | **Total** | **3** (25 before backend steps 1 to 3, 5 and 6, the onboarding screens, the deployment, the app shell, settings and the MVP screens were done) |
+| 10 | ~~Waitlist form on the landing page (original unit 23)~~ **done 24 Oct** (stores the address with consent; sending the launch email waits for an email provider) | 0 (was 2) |
+| | **Total** | **1** (only the decision log is left; it needs your answers: launch market, billing provider and the open product questions) |
 
 Moved to after the MVP: landing page clips 3–8, the hero video and "Watch Demo" modal, Verify Email (backend step 4), Keycloak with passkeys and social login (original units 6–16).
 

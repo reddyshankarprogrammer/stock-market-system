@@ -53,7 +53,7 @@ flowchart LR
 | Integration tests | `build-test` | `*ApplicationTests`, `*V2Tests`; MySQL 8.4, Valkey and Kafka run as job service containers, account-service starts Testcontainers |
 | Code coverage | `build-test` | JaCoCo `prepare-agent` on both test steps, report in the job summary and artifact `reports-<service>` |
 | SonarQube | `build-test` | only when `SONAR_TOKEN` is set; waits for the quality gate |
-| Web app | `web-app` | Node 24: `npm ci`, ESLint, `tsc --noEmit`, `next build`, a check that `lib/api/*.d.ts` matches `openapi/*.json`, then the 82 browser checks (Playwright, Chromium) against the standalone server and a mock gateway |
+| Web app | `web-app` | Node 24: `npm ci`, ESLint, `tsc --noEmit`, `next build`, a check that `lib/api/*.d.ts` matches `openapi/*.json`, then the 87 browser checks (Playwright, Chromium) against the standalone server and a mock gateway |
 | Manifests | `validate-manifests` | `kubectl kustomize` + kubeconform, no Secrets, dashboards up to date, ShellCheck |
 | OWASP, Trivy, secrets | `security` → `security.yml` | reusable workflow. OWASP Dependency-Check is Maven-only; the web app's npm dependencies are covered by the Trivy filesystem scan of `package-lock.json` and by Dependabot (npm) |
 | Docker build, scan, push | `docker` | matrix of 9 (web-app included; ai-service skipped until `requirements.txt` exists); push only on `main` / `develop` |

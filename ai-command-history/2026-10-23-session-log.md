@@ -263,6 +263,17 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 - **Not done:** websocket prices (polling instead); renaming, closing and funding accounts in the UI; statement layouts of Groww, Binance and Exness checked only by account-service's unit tests, not with real files; pushing.
 - **Docs:** web-app README, changelog, cicd-pipeline, [plan 05](../research-doc/05-daily-implementation-plan.md) (total 7 to 3).
 
+## 28. Waitlist (24 October)
+
+- **Request:** plan item 10, under the standing instruction "keep working automatically and complete all the tasks".
+- **Branch:** `feature/waitlist` (cut from `feature/mvp-screens`).
+- **user-service and gateway:** public `POST /api/v1/users/waitlist`, table `waitlist_entries` (lower-case unique email, time of consent, source), idempotent and the same 202 answer for a new and a listed email, the address is never logged; the path is public in `JwtAuthFilter`. 88 user-service tests, gateway filter test extended.
+- **Web app:** landing section with email, consent and a privacy-policy link, honeypot, `/api/waitlist` route handler with Zod validation and a per-pod rate limit (10 a minute per address, 429 with `Retry-After`).
+- **Verified:** 87 browser checks on the mock (5 new: validation, success and idempotence in lower case, outage, honeypot and origin and rate limit, 320 px layout); `tsc`, ESLint, build. The one failure in the first full run (an export-format settings check, 30 s timeout) passed on its own: the machine was heavily loaded (the run took more than ten minutes).
+- **Not run:** a real-stack waitlist check (user-service was not restarted with the new jar; the mock covers the browser behaviour and the unit tests the service); Newman for the three new requests.
+- **Decisions I made that you may want to change:** the form promises only what the system does (address kept with the time of consent, no email sent); no name or interest field (less personal data); the honeypot and per-pod limiter are cheap measures, not a security boundary.
+- **Docs:** user-service README, user manual, technical documentation, gateway README, Postman generator, web-app README, root CLAUDE.md known gaps, changelog, [plan 05](../research-doc/05-daily-implementation-plan.md) (total 3 to 1).
+
 ## Open items after this session
 
 | Item | Where |

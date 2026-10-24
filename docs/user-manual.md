@@ -178,6 +178,7 @@ All paths are relative to `http://localhost:8080`. 🔒 means a token is require
 | POST | `/api/v1/users/refresh` | public | Exchange a refresh token for a new access token |
 | POST | `/api/v1/users/forgot-password` | public | Ask for a password-reset link by email |
 | POST | `/api/v1/users/reset-password` | public | Choose a new password with the emailed token |
+| POST | `/api/v1/users/waitlist` | public | Join the launch list (email and consent) |
 | GET | `/api/v1/users/me/onboarding` | 🔒 | Your onboarding answers |
 | PUT | `/api/v1/users/me/onboarding` | 🔒 | Save onboarding answers (one step or several) |
 | POST | `/api/v1/users/me/onboarding/complete` | 🔒 | Finish onboarding |
@@ -228,6 +229,14 @@ Returns `200 OK` with the same body, a **new** `accessToken` and the **same** `r
 ```
 
 Always returns `202 Accepted` with `If an account exists for that email, a reset link has been sent`, whether or not the email is registered, so nobody can use it to find out who has an account. When the account exists, an email with a link to the web app (`/reset-password?token=...`) is sent. The link works once and expires after 30 minutes; asking again within a minute sends nothing new, and a newer link replaces the older one. Locally the email lands in Mailpit at <http://localhost:8025> (started by `docker compose up -d`); nothing leaves your machine.
+
+**Join the launch list** `POST /api/v1/users/waitlist` (public)
+
+```json
+{ "email": "asha@example.com", "consent": true, "source": "landing" }
+```
+
+`consent` must be `true` (otherwise `400`), the email must be valid. The answer is always `202` with `You are on the list. We will write to you when Quantiva opens.`, whether or not the address was already listed. The list is not an account and no email is sent yet.
 
 **Reset password** `POST /api/v1/users/reset-password`
 

@@ -2,6 +2,20 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: launch list on the landing page (waitlist)
+
+### Features
+
+| Feature | Where |
+|---|---|
+| `POST /api/v1/users/waitlist` (public): email and consent, lower-case unique address with the time of consent, the same 202 for a new and a listed email, address never logged; new table `waitlist_entries`; public path in the gateway | `user-service`, `api-gateway` |
+| Landing page section "Join the launch list": validation, consent link to the privacy policy, honeypot, `/api/waitlist` route with a per-pod rate limit (429 and `Retry-After`) | `web-app/components/WaitlistForm.tsx`, `web-app/app/api/waitlist/` |
+| 5 new browser checks (87), 5 new user-service tests (88), gateway filter test, 3 Postman requests | `web-app/e2e/`, `user-service`, `docs/postman` |
+
+### Known limits
+
+The list is write-only (no export, no reading, no email). The rate limit counts per web pod and is not a security boundary. The privacy text that should cover the list is still a draft for legal review. A user-service rate limit and a shared limiter are open.
+
 ## 2026-10-24: MVP screens (accounts, statement upload, trades, dashboard, portfolio)
 
 ### Features

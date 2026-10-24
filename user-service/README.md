@@ -15,7 +15,7 @@ Accounts of people: registration, login, JWT issuing, profile, role and the wall
 
 ```powershell
 .\mvnw.cmd spring-boot:run        # from user-service/, needs MySQL + Kafka (docker compose up -d)
-.\mvnw.cmd test                   # 83 tests, no infrastructure (H2, mocks, an in-process SMTP server)
+.\mvnw.cmd test                   # 88 tests, no infrastructure (H2, mocks, an in-process SMTP server)
 ```
 
 ## Package layout
@@ -33,6 +33,7 @@ com.stockmarket.userservice
 ├── service/PasswordResetService   forgot and reset password (hashed single-use tokens)
 ├── service/OnboardingService      the answers of the onboarding wizard (saved step by step)
 ├── service/PreferencesService     settings (theme, language, notifications, export format), partial saves
+├── service/WaitlistService        public launch list (idempotent, email never logged)
 ├── service/MailService, impl/SmtpMailService   outgoing email; failures are logged, never thrown
 └── service/UserService, impl/UserServiceImpl
 ```
@@ -46,6 +47,7 @@ com.stockmarket.userservice
 | POST | `/refresh` | public | Body `{refreshToken}`. Returns a new access token and the same refresh token (not rotated). Bad, expired, tampered or access token, unknown user, or a blocked status (INACTIVE, SUSPENDED, DELETED, BLOCKED, BANNED, ACCOUNT_LOCKED/EXPIRED/DISABLED) → 401 `Invalid refresh token`. Public because the access token has already expired; the gateway rejects refresh tokens on every other path |
 | POST | `/forgot-password` | public | Body `{email}`. **Always 202** with the same message, whether or not the email is registered. If it is (and the account is not blocked), a single-use link is emailed. Asking again within 60 s sends nothing new; asking later voids the older link |
 | POST | `/reset-password` | public | Body `{token, newPassword}` (6–72 characters). 200 and the new password works; the token is spent and any other pending links are voided. Unknown, used, expired or blocked-account token → 400 `This reset link is invalid or has expired` (one message for all) |
+| POST | `/waitlist` | public | Launch list of the landing page. Body `{email, consent: true, source?}` (email valid and at most 254 characters, consent must be `true`, source lower-case letters, digits or dashes). Always **202** with the same message for a new and an already listed email, so it reveals nothing; the address is stored lower-case and unique with the time of consent; it is never logged and no email is sent. Not an account: no password, no access |
 | GET | `/me/onboarding` | X-User-Id | Own onboarding answers: `{tradingExperience, brokerPreferences[], plan, completed, completedAt}` (all empty for a new user). The user id is the gateway header, never the URL or body |
 | PUT | `/me/onboarding` | X-User-Id | Save one step or several; **only the fields sent change**, so a half-finished onboarding can be resumed. `tradingExperience` BEGINNER, INTERMEDIATE, ADVANCED or PROFESSIONAL; `brokerPreferences` (1 to 6 of GROWW, ZERODHA, BINANCE, EXNESS, OTHER, NONE; duplicates removed; NONE cannot be combined); `plan` FREE, PRO, AI_PRO, QUANT_PRO or ENTERPRISE (an interest only: billing does not exist yet). Bad values → 400 |
 | POST | `/me/onboarding/complete` | X-User-Id | Marks onboarding done (needs experience, brokers and plan saved first, else 400). Completing again keeps the first time. `UserResponse.onboardingCompletedAt` then becomes non-null |
@@ -87,6 +89,17 @@ Responses: `AuthResponse {userId, email, firstName, lastName, walletBalance, acc
 | password_changed_at | nullable; set by a password reset or a password change. Refresh tokens issued before it (compared in whole seconds) are refused |
 | trading_experience, broker_preferences, selected_plan | nullable onboarding answers (`broker_preferences` is comma-separated, sorted, e.g. `GROWW,ZERODHA`); existing users have none |
 | onboarding_completed_at | nullable; set once, at microsecond precision (what MySQL stores) |
+
+### Table `waitlist_entries`
+
+| Column | Notes |
+|---|---|
+| id | UUID primary key |
+| email | lower-case, **unique** (`uk_waitlist_email`), at most 254 characters |
+| consented_at | when the visitor agreed to be contacted (server clock, microseconds) |
+| source | optional, where the form was shown (the web app sends `landing`) |
+
+Personal data: export or delete rows on request; nothing reads them yet.
 
 ### Table `user_preferences`
 
@@ -143,7 +156,7 @@ One row per user, created by the first save (a user without a row has the defaul
 
 - Refresh tokens are stateless: they are not rotated and cannot be revoked, so a stolen one works until it expires (7 days) or the user's status blocks it. There is no logout endpoint (the web app only clears its cookies).
 - The blocking statuses are a fixed list in `AccountPolicy`; statuses such as PENDING_VERIFICATION and EMAIL_NOT_VERIFIED still log in (email verification does not exist yet). Blocking an account does not end an access token already issued (at most 15 minutes).
-- No rate limiting on `/login`, `/refresh` or `/reset-password` (`/forgot-password` has only the 60-second per-user cooldown).
+- No rate limiting in user-service on `/login`, `/refresh`, `/reset-password` or `/waitlist` (the web app's `/api/waitlist` has a per-pod limit of 10 requests a minute per address and a honeypot field) (`/forgot-password` has only the 60-second per-user cooldown).
 - A password reset ends refresh tokens issued before it, but an access token already issued keeps working until it expires (at most 15 minutes).
 - No email provider is chosen for production: until `MAIL_HOST` is set there, reset emails fail and are logged (the API answer is unchanged). Expired reset tokens are never deleted.
 - Reset links are single-use but the token is in the URL: the web app removes it from the address bar and sends no referrer.

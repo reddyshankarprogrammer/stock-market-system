@@ -111,6 +111,8 @@ Logs: `logs/<service>.log`; process ids: `logs/pids.txt`. No linter is configure
 - Market data only simulates six US stocks; external price APIs are unused.
 - Refresh tokens (`POST /api/v1/users/refresh`) are stateless: not rotated, not revocable, no logout endpoint; blocking an account does not end an access token already issued (at most 15 minutes).
 - No production email provider yet: password-reset emails only work locally (Mailpit) until `MAIL_HOST`, `MAIL_FROM` and `APP_BASE_URL` are set for user-service in `k8s/user-service/configmap.yaml` (plus credentials in its Secret).
+- No shared rate limiting: the web app limits `/api/waitlist` per pod only; user-service has none on login, refresh, reset or waitlist.
+- The launch list (`waitlist_entries`) is write-only: nothing reads, exports or mails it yet, and the privacy policy text is a draft.
 - Notifications are in memory; account-service Kafka events have no consumers.
 - Broker statement column mappings are not yet confirmed with real files.
 - `user-service/application-docker.yaml` and `JwtService` still contain fallback values for the DB password and `jwt.secret`; Kubernetes always sets them, but the fallbacks should be removed.

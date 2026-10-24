@@ -381,6 +381,12 @@ erDiagram
         varchar selected_plan "nullable, interest only"
         datetime onboarding_completed_at "nullable"
     }
+    waitlist_entries {
+        varchar id PK "UUID"
+        varchar email UK "lower case"
+        datetime consented_at
+        varchar source "nullable, landing"
+    }
     user_preferences {
         varchar user_id PK "the user"
         varchar theme "SYSTEM | DARK | LIGHT"
@@ -451,7 +457,7 @@ Relationships are logical only: each table belongs to a different service, so th
 
 `JwtAuthFilter` runs on every request whose path starts with `/api/`:
 
-1. **Skipped** for `OPTIONS` (CORS preflight) and public paths: `/api/v1/users/register`, `/api/v1/users/login`, `/api/v1/users/refresh` (refresh token in the body), `/api/v1/users/forgot-password`, `/api/v1/users/reset-password` (emailed single-use token in the body), `/api/v1/market-data/**`. Non-API paths such as `/actuator/**` are never filtered.
+1. **Skipped** for `OPTIONS` (CORS preflight) and public paths: `/api/v1/users/register`, `/api/v1/users/login`, `/api/v1/users/refresh` (refresh token in the body), `/api/v1/users/forgot-password`, `/api/v1/users/reset-password` (emailed single-use token in the body), `/api/v1/users/waitlist` (landing page visitors have no account), `/api/v1/market-data/**`. Non-API paths such as `/actuator/**` are never filtered.
 2. **Blocked with 403** for internal paths: `/api/v1/users/*/funds/deduct` and `/funds/credit`; and, unless the token's role is ADMIN, for `/api/v1/accounts/*/dividends` and `/api/v1/accounts/*/interest`.
 3. Requires `Authorization: Bearer <token>`; otherwise **401**.
 4. Verifies signature (HS256 with `jwt.secret`), expiry and issuer (`jwt.issuer`); any failure is **401**.

@@ -31,7 +31,7 @@ Single entry point: validates JWTs, forwards the caller's identity, routes `/api
 
 Order of checks for every request whose path starts with `/api/`:
 
-1. Skip `OPTIONS` and `PUBLIC_PATHS`: `/api/v1/users/register`, `/api/v1/users/login`, `/api/v1/users/refresh`, `/api/v1/users/forgot-password`, `/api/v1/users/reset-password`, `/api/v1/market-data/**`.
+1. Skip `OPTIONS` and `PUBLIC_PATHS`: `/api/v1/users/register`, `/api/v1/users/login`, `/api/v1/users/refresh`, `/api/v1/users/forgot-password`, `/api/v1/users/reset-password`, `/api/v1/users/waitlist`, `/api/v1/market-data/**`.
 2. `INTERNAL_PATHS` → 403 always: `/api/v1/users/*/funds/deduct`, `/funds/credit`.
 3. `Authorization: Bearer …` missing → 401.
 4. Verify HS256 signature (`jwt.secret`), expiry, issuer (`jwt.issuer`), `tokenType=ACCESS` → otherwise 401 (JSON body).
