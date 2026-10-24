@@ -207,6 +207,9 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: Unit tests
+        run: npm run test:unit
+
       - name: API types are up to date with openapi/*.json
         run: |
           npm run api:types

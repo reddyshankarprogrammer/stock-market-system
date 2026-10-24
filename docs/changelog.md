@@ -2,6 +2,31 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: trading terminal preview (`/terminal`, sample data)
+
+### Features
+
+| Feature | Where |
+|---|---|
+| Dark-only trading terminal dashboard from the design brief: collapsible sidebar and mobile drawer, filter bar, 7 KPI cards with sparklines, trading activity table (sort, filter, page, column menu, CSV export), equity curve, monthly returns, win/loss, sector performance, three allocation donuts, quick actions and an AI widget | `web-app/app/(terminal)/terminal/`, `web-app/components/terminal/` |
+| Seeded sample data and the figures computed from it, with 8 `node --test` unit tests (`npm run test:unit`, also a CI step) | `web-app/lib/terminal/sample-data.ts`, `web-app/tests/` |
+| `term-*` colour tokens, Recharts, lucide-react and @axe-core/playwright; 8 new browser checks (95 with the waitlist ones), including axe on desktop and phone | `web-app/app/globals.css`, `web-app/e2e/` |
+| Brief saved as D6 in the prompt library | `research-doc/06-ai-prompt-library.md` |
+
+### Bugs found by testing and fixed
+
+| Bug | Fix |
+|---|---|
+| The page was 1681 px wide on a 1440 px screen and the right panel covered the table: grid columns sized to the table's minimum width | Explicit single columns (`grid-cols-1` is `minmax(0,1fr)`) |
+| 10 px sideways scroll at 768 px: the screen-reader tables of the charts were positioned outside the page | They sit in a clipped `sr-only` wrapper |
+| axe: focusable chart parts inside `aria-hidden` (Recharts' keyboard layer and pie slices) | `accessibilityLayer={false}` and `rootTabIndex={-1}`; the numbers are in tables instead |
+| The column menu did not close on Escape | Escape closes it and returns focus |
+| A disabled sidebar item could not be clicked by the test (aria-disabled means disabled to Playwright) | The test clicks with `force` to prove nothing happens |
+
+### Known limits
+
+All figures are generated sample data; strategies, AI signals, risk scores and Sharpe ratios have no backend. Only the dashboard exists of the nine pages in the brief. The stack in the brief (Next.js 15, shadcn, ECharts, TradingView) differs from the repository's (Next.js 16, no shadcn): Recharts and Lucide were added. A screenshot named in the brief did not come through. axe covers only part of WCAG: a manual keyboard and screen-reader review is open.
+
 ## 2026-10-24: launch list on the landing page (waitlist)
 
 ### Features

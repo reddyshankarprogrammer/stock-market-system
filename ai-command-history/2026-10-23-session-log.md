@@ -274,6 +274,18 @@ Plans referenced throughout: [research-doc/04-product-technology-roadmap.md](../
 - **Decisions I made that you may want to change:** the form promises only what the system does (address kept with the time of consent, no email sent); no name or interest field (less personal data); the honeypot and per-pod limiter are cheap measures, not a security boundary.
 - **Docs:** user-service README, user manual, technical documentation, gateway README, Postman generator, web-app README, root CLAUDE.md known gaps, changelog, [plan 05](../research-doc/05-daily-implementation-plan.md) (total 3 to 1).
 
+## 29. Trading terminal dashboard (24 October)
+
+- **Request:** a pasted design brief ("Design a modern fintech trading platform dashboard UI for Quantiva": dark only, `#080B0F`, teal `#00E5B0`, sidebar, filter bar, 7 KPI cards, trades table, analytics, allocation, right panel; nine pages; Next.js 15, shadcn, TradingView/Recharts/ECharts; "Figma-ready"). A screenshot named in it did not arrive.
+- **Questions asked and answered:** build it in the web app (not Figma, not prompt-only); brief palette for the terminal screens only; first pass = the dashboard page only.
+- **Branch:** `feature/terminal-dashboard` (cut from `feature/waitlist`).
+- **Built:** `/terminal` with seeded sample data (`lib/terminal/sample-data.ts`, 8 `node --test` checks), shell, filter bar, KPI cards, trading activity table with CSV export, six charts with table alternatives, right panel; the brief saved as D6 in the prompt library; a link from the signed-in dashboard.
+- **Verified:** ESLint, `tsc`, build; 8 unit checks; 8 new browser checks (session needed, sample banner and 7 cards, sidebar honesty, filters drive the KPIs and the table, sort/page/columns/CSV equals the filtered rows, chart tables, collapse and drawer, no overflow at five widths with 44 px controls, axe WCAG 2.1 A/AA with 0 violations on desktop and phone). Screenshots at 1440, 768 and 360 px were looked at.
+- **Bugs found, fixed:** page wider than the screen (grid sized by the table), 10 px overflow at 768 px (hidden chart tables), focusable chart internals under `aria-hidden`, column menu without Escape.
+- **Decisions you may want to change:** the terminal data is sample data and says so everywhere (no real data: strategies, signals, risk and Sharpe have no backend); only Dashboard is a link in the sidebar, the other 15 destinations are inert and marked "Soon"; Recharts and Lucide used, not shadcn, ECharts or TradingView; AI assistant text is fixed sample text.
+- **Not done:** the other eight pages of the brief; real data in the terminal; a manual screen-reader and keyboard review; Figma files; the screenshot-based layout match (screenshot missing).
+- **Docs:** web-app README, prompt library D6, changelog.
+
 ## Open items after this session
 
 | Item | Where |

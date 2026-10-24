@@ -18,6 +18,18 @@
   --color-graphite: var(--quantiva-graphite);
   --color-silver: var(--quantiva-silver);
 
+  /* Trading terminal (dark only, /terminal). An exception to the brand palette, taken from the design brief of 24 Oct 2026:
+     black #080B0F, neon teal #00E5B0. Text and field colours were chosen for contrast: muted text 7.9:1 and loss red 8:1
+     on the black, field borders 4.3:1 (WCAG 1.4.11 asks 3:1 for the edge of a control). */
+  --color-term-bg: #080b0f;
+  --color-term-panel: rgb(255 255 255 / 0.045);
+  --color-term-panel-strong: rgb(255 255 255 / 0.08);
+  --color-term-line: rgb(255 255 255 / 0.14);
+  --color-term-field: #7b8794;
+  --color-term-text: #e6edf3;
+  --color-term-muted: #9aa7b4;
+  --color-term-teal: #00e5b0;
+  --color-term-loss: #ff7a8a;
   --font-sans: var(--font-inter);
   --font-display: var(--font-manrope);
 

@@ -77,6 +77,23 @@ npm run e2e:auth                                                        # termin
 - **Other services:** only account-service has springdoc today. Adding it to the other services (user-service is Boot 3, the rest Boot 4) is still to do.
 - **Tests:** `npm run e2e:auth` (87 checks, mock gateway) and `npm run e2e:accounts:real` (8 checks on the real stack: two users, create and list accounts, foreign access 403, traversal, cross-origin, renewal). The real-stack test leaves two users and four accounts behind: delete them as the file header describes.
 
+## Trading terminal (preview, sample data)
+
+`/terminal` is a dark-only, institutional-style dashboard built from the design brief of 24 October 2026 (saved as D6 in `research-doc/06-ai-prompt-library.md`). **Every figure on it is sample data** generated from a fixed seed in `lib/terminal/sample-data.ts` (96 trades, 16 instruments, 5 strategies, fixed "today" 2026-10-24) and the page says so in a banner. Strategies, signals, risk scores and Sharpe ratios have no backend yet, so the real accounts are not used here; the signed-in app (`/dashboard`, `/trades`, `/portfolio`) is the real one and links to the preview.
+
+| Part | What it does |
+|---|---|
+| Shell | Collapsible sidebar (the choice is remembered) with the 16 destinations of the brief: only Dashboard is a link, the other 15 are marked "Soon" and cannot be activated; below 1024 px a drawer (Escape closes it and returns focus) |
+| Filter bar | Asset, market, exchange, date range, portfolio, strategy, risk, search, Clear and Refresh. The filters narrow the trades and **every card, chart and table follows them** |
+| KPI cards | Portfolio value, today's P&L, monthly P&L, win rate, open positions, risk score, Sharpe ratio: figure, trend (arrow and sign, not colour alone), sparkline, teal accent line |
+| Trading activity | The 12 columns of the brief, status chips, sorting with `aria-sort`, 10 per page, a column menu, and **Export CSV** of exactly the rows and columns on screen (formula-safe: a text cell starting with `=`, `+`, `-` or `@` is neutralised) |
+| Analytics and allocation | Equity curve, monthly returns, win/loss ratio, sector performance, and three allocation donuts (sector, asset, geography), drawn with Recharts. Each chart is hidden from assistive technology and has the same numbers as a table; allocation percentages add up to 100 |
+| Right panel | Place order (links to the real Trades page), Run screener, Start backtest and Generate AI signal (marked "Soon"); an AI widget whose text is fixed sample text, labelled as such and as not advice |
+
+Palette (exception to the brand colours, only here): background `#080B0F`, teal `#00E5B0`, loss `#FF7A8A`, muted text `#9AA7B4`, field borders `#7B8794` for 3:1 against the black. Tokens are `term-*` in `app/globals.css`. Checks: `npm run test:unit` (8 `node --test` checks of the sample data: determinism, profit and ROI from prices, sector and monthly totals, allocation sums, KPI count and sparklines, filters, CSV) and 8 browser checks, including axe (WCAG 2.1 A and AA) on a desktop and a phone, no sideways scroll at 360, 768, 1024, 1440 and 2560 px, and 44 px controls. axe finds only part of the accessibility problems: a screen-reader and keyboard review is still to do.
+
+Not built: the other pages of the brief (portfolio, market analysis, journal, strategy builder, screener, analytics, risk management, AI assistant), TradingView or ECharts charts, shadcn components, real data.
+
 ## Launch list (waitlist)
 
 The landing page has a "Join the launch list" section (`components/WaitlistForm.tsx`, `id="waitlist"`) before the final call to action: email, a consent checkbox that links to the privacy policy, and a button. It posts to `/api/waitlist`, which checks the same Zod schema, answers bots that fill the hidden `company` field with success without storing anything, allows 10 requests a minute per address (per pod, `lib/rate-limit.ts`; 429 with `Retry-After`), and calls the public `POST /api/v1/users/waitlist` of user-service. A new and an already listed email get the same confirmation. The copy says Quantiva is not open yet and promises only what is true: the address is kept with the time of consent and no email is sent. Open: who may read the list and how it is exported, the sending of the launch email (no email provider is chosen), a shared rate limiter, and the privacy policy text that covers the list (the legal pages are drafts).

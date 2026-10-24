@@ -439,6 +439,18 @@ metric, suggestion}], risks[], questions_for_trader[].
 
 ---
 
+### D6. Trading terminal dashboard (design brief of 24 October 2026)
+
+Built as `/terminal` in the web app (first pass: the dashboard only, with sample data). The brief, shortened to what was asked:
+
+- **Look:** premium institutional trading platform, dark only, background `#080B0F`, glass cards, neon teal `#00E5B0`, 8 px spacing, 12 px corners, no gaming or flashy crypto look; Bloomberg, TradingView and Interactive Brokers as the quality bar; a screenshot was meant to be attached as layout inspiration (it did not arrive, so only the written brief was used).
+- **Layout:** collapsible left sidebar (Dashboard, Markets, Watchlist, Portfolio, Orders, Positions, Trading Journal, Analytics, Strategies, AI Signals, Backtesting, Screener, Risk Management, Reports, Notifications, Settings); filter bar (asset, market, exchange, date range, portfolio, strategy, risk, search, refresh); seven KPI cards (portfolio value, today's and monthly P&L, win rate, open positions, risk score, Sharpe ratio) each with trend, sparkline and a teal accent line; trading activity table (12 columns, filter, sort, pagination, CSV export, column management); performance analytics (equity curve, monthly returns, win/loss ratio, sector performance, AI insights); portfolio allocation (sector, asset, geography); right panel with quick actions and an AI widget.
+- **Stack named in the brief:** React 19, Next.js 15, TypeScript, Tailwind, shadcn UI, TradingView charts, Recharts, ECharts, Lucide icons. Used instead: the existing Next.js 16, Tailwind 4 and TypeScript, Recharts and Lucide (no shadcn, ECharts or TradingView library yet).
+- **Pages asked for:** dashboard, portfolio, market analysis, journal, strategy builder, screener, analytics, risk management, AI assistant. Done: the dashboard. The rest are listed in the sidebar as "Soon".
+- **Decisions taken with the owner:** the terminal screens use the brief's palette while the rest of the app keeps the Quantiva brand; first pass is the dashboard only; build it in the web app (Figma files cannot be produced here).
+
+Notes for the next pass: the data is generated from a fixed seed (`web-app/lib/terminal/sample-data.ts`) because strategies, signals, risk scores and Sharpe ratios have no backend; wiring real trades from account-service is a separate step.
+
 ## Part E. Quality and operations
 
 ### E1. Load test plan

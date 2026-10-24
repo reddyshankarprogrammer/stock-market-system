@@ -4,6 +4,7 @@
 //   npm run e2e:auth                                                             # terminal 2
 // It checks behaviour in a real browser: validation, error states, cookies, protected routes, terms gating, theme, layout.
 import { chromium } from "playwright";
+import AxeBuilder from "@axe-core/playwright";
 import { startMockGateway } from "./mock-gateway.mjs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3100";
@@ -813,6 +814,92 @@ await test("waitlist: the landing page has no sideways scroll at 320 px with the
   ok(!(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), "overflow");
   const small = await waitlistForm(p).evaluate((f) => [...f.querySelectorAll("button, input:not([tabindex='-1']):not([type=checkbox])")].filter((e) => e.getBoundingClientRect().height < 43.5).map((e) => e.id || e.tagName));
   ok(small.length === 0, `small targets: ${small}`); await c.close();
+});
+
+// ---- trading terminal (sample data) ----
+const terminal = async (o = {}) => { const c = await newCtx(o); const p = await c.newPage(); await login(p, "term@example.com"); await p.waitForURL(/\/dashboard/); await p.goto(`${BASE}/terminal`); await p.getByRole("heading", { name: "Dashboard", level: 1 }).waitFor(); return [c, p]; };
+const kpi = async (p, key) => (await p.getByTestId(`kpi-${key}`).innerText()).trim();
+await test("terminal: it needs a session; the page says its data is sample data; seven KPI cards with a trend, a sparkline and the figure", async () => {
+  const anon = await newCtx(); const q = await anon.newPage(); await q.goto(`${BASE}/terminal`); ok(q.url().includes("/login?next=%2Fterminal"), q.url()); await anon.close();
+  const [c, p] = await terminal();
+  await p.getByText("Sample data: these are not your accounts or your trades").waitFor();
+  const cards = p.locator("[data-kpi]"); ok((await cards.count()) === 7, "seven KPI cards");
+  for (const label of ["Portfolio value", "Today's P&L", "Monthly P&L", "Win rate", "Open positions", "Risk score", "Sharpe ratio"]) await cards.filter({ hasText: label }).waitFor();
+  ok((await cards.first().locator("svg").count()) >= 1, "sparkline"); ok(/^\$\d{3},\d{3}$/.test(await kpi(p, "value")), `portfolio value ${await kpi(p, "value")}`); await c.close();
+});
+await test("terminal: sidebar lists the 16 destinations, only the dashboard is a link, the rest say they are not built; right panel actions are honest", async () => {
+  const [c, p] = await terminal({ viewport: { width: 1440, height: 900 } });
+  const nav = p.getByRole("navigation", { name: "Terminal" }); ok((await nav.locator("li").count()) === 16, "16 items");
+  ok((await nav.getByRole("link").count()) === 1 && (await nav.getByRole("link", { name: "Dashboard" }).getAttribute("aria-current")) === "page", "only Dashboard is a link");
+  ok((await nav.locator("button[aria-disabled=true]").count()) === 15, "15 disabled items"); await nav.getByRole("button", { name: /Markets/ }).click({ force: true }); // aria-disabled: Playwright would wait for it to be enabled ok(p.url().endsWith("/terminal"), "a disabled item navigated");
+  await p.getByRole("link", { name: "Place order" }).waitFor(); ok((await p.locator("aside button[aria-disabled=true]").filter({ hasText: "Soon" }).count()) >= 3, "run screener, backtest, signal are marked soon");
+  await p.getByText("Not generated from your data and not investment advice").waitFor(); await c.close();
+});
+await test("terminal: filters narrow the trades and every KPI follows (open positions equals the open rows)", async () => {
+  const [c, p] = await terminal({ viewport: { width: 1440, height: 900 } });
+  await p.getByText("96 of 96 sample trades match").waitFor(); const openAll = Number(await kpi(p, "open"));
+  await p.getByLabel("Strategy").selectOption("Momentum"); await p.getByText(/^\d+ of 96 sample trades match$/).filter({ hasNotText: "96 of 96" }).waitFor();
+  const shown = Number((await p.getByText(/^\d+ of 96 sample trades match$/).innerText()).split(" ")[0]); ok(shown > 0 && shown < 96, `shown ${shown}`);
+  await p.getByRole("group", { name: "Status" }).getByRole("button", { name: "Open" }).click(); const openNow = Number(await kpi(p, "open"));
+  ok(openNow <= openAll, "open positions should not grow"); ok((await p.getByTestId("range").innerText()).endsWith(`of ${openNow}`), `table ${await p.getByTestId("range").innerText()} vs KPI ${openNow}`);
+  await p.getByLabel("Market").selectOption("India"); await p.getByLabel("Exchange").selectOption("NASDAQ"); await p.getByText("No sample trades match the filters.").waitFor();
+  await p.getByRole("button", { name: "Clear filters" }).click(); await p.getByText("96 of 96 sample trades match").waitFor(); await c.close();
+});
+await test("terminal: the table sorts (aria-sort), pages, hides columns and exports exactly what it shows as CSV", async () => {
+  const [c, p] = await terminal({ viewport: { width: 1440, height: 900 } });
+  const table = p.getByRole("region", { name: "Trading activity table" }); const head = table.getByRole("columnheader");
+  ok((await head.count()) === 12, "12 columns"); for (const h of ["Status", "Entry date", "Exit date", "Symbol", "Company", "Strategy", "Buy price", "Sell price", "Quantity", "Profit/Loss", "ROI %", "Holding days"]) await table.getByRole("columnheader", { name: h }).waitFor();
+  await p.getByTestId("range").filter({ hasText: "Showing 1 to 10 of 96" }).waitFor(); ok(await p.getByRole("button", { name: "Previous" }).isDisabled(), "previous on page 1");
+  await p.getByRole("button", { name: "Next" }).click(); await p.getByText("Showing 11 to 20 of 96").waitFor();
+  const pl = table.getByRole("columnheader", { name: "Profit/Loss" }); await pl.getByRole("button").click(); await pl.getByRole("button").click();
+  ok((await pl.getAttribute("aria-sort")) === "ascending", "ascending after two clicks"); await p.getByText("Showing 1 to 10 of 96").waitFor();
+  const nums = await table.locator("tbody tr").evaluateAll((rows) => rows.map((r) => Number(r.children[9].textContent.replace(/[^0-9.-]/g, "").replace(/^(\d)/, "$1")) * (r.children[9].textContent.trim().startsWith("-") ? 1 : 1)));
+  ok(nums.length === 10, "ten rows"); ok(nums.every((n, i) => i === 0 || Math.abs(n) >= 0), "numbers parse");
+  const signedVals = await table.locator("tbody tr").evaluateAll((rows) => rows.map((r) => { const t = r.children[9].textContent.trim(); const n = Number(t.replace(/[^0-9.]/g, "")); return t.startsWith("-") ? -n : n; }));
+  ok(signedVals.every((v, i) => i === 0 || signedVals[i - 1] <= v), `not ascending: ${signedVals}`);
+  await p.getByRole("button", { name: "Columns" }).click(); await p.getByLabel("Company").uncheck(); await p.keyboard.press("Escape");
+  ok((await table.getByRole("columnheader", { name: "Company" }).count()) === 0 && (await head.count()) === 11, "Company column hidden");
+  await p.getByLabel("Strategy").selectOption("Value"); const total = Number((await p.getByText(/^\d+ of 96 sample trades match$/).innerText()).split(" ")[0]);
+  const [download] = await Promise.all([p.waitForEvent("download"), p.getByRole("button", { name: "Export CSV" }).click()]);
+  ok(download.suggestedFilename() === "quantiva-sample-trades.csv", download.suggestedFilename());
+  const text = await (await import("node:fs/promises")).readFile(await download.path(), "utf8"); const lines = text.trim().split("\r\n");
+  ok(lines.length === total + 1, `csv lines ${lines.length} vs ${total} filtered trades + header`); ok(lines[0].split(",").length === 11 && !lines[0].includes("Company"), `csv header ${lines[0]}`);
+  ok(lines.slice(1).every((l) => l.includes("Value")), "csv rows are the filtered rows"); await c.close();
+});
+await test("terminal: every chart has its numbers as a table for screen readers; the picture is hidden from them", async () => {
+  const [c, p] = await terminal({ viewport: { width: 1440, height: 900 } });
+  for (const [name, rows] of [["Equity curve", null], ["Monthly returns", 12], ["Win / loss ratio", 2], ["Sector performance", null], ["Sector allocation", null], ["Asset allocation", null], ["Geographic allocation", null]]) {
+    const fig = p.getByRole("figure", { name }); await fig.waitFor();
+    const n = await fig.locator("table tbody tr").count(); ok(n > 0 && (rows === null || n === rows), `${name}: ${n} table rows`);
+    ok((await fig.locator("[aria-hidden=true] svg, svg[aria-hidden=true]").count()) >= 1, `${name}: the chart should be hidden from assistive technology`);
+  }
+  ok(/^\d+\.\d{2}$/.test((await p.getByTestId("winloss-ratio").innerText()).trim()), "ratio text"); await c.close();
+});
+await test("terminal: the sidebar collapses to icons, the choice survives a reload; a phone gets a drawer with Escape to close", async () => {
+  const [c, p] = await terminal({ viewport: { width: 1440, height: 900 } });
+  const aside = p.locator("aside").first(); const w0 = (await aside.boundingBox()).width;
+  await p.getByRole("button", { name: "Collapse the sidebar" }).click(); await p.getByRole("button", { name: "Expand the sidebar" }).waitFor();
+  await p.waitForTimeout(400); ok((await aside.boundingBox()).width < w0 / 2, "sidebar did not shrink"); await p.reload(); await p.getByRole("button", { name: "Expand the sidebar" }).waitFor();
+  await p.getByRole("button", { name: "Expand the sidebar" }).click(); await c.close();
+  const [c2, q] = await terminal({ viewport: { width: 360, height: 800 } });
+  ok(!(await q.getByRole("navigation", { name: "Terminal" }).isVisible()), "nav hidden before the menu opens");
+  await q.getByRole("button", { name: "Open the menu" }).click(); const dlg = q.getByRole("dialog", { name: "Terminal menu" }); await dlg.waitFor(); await dlg.getByRole("link", { name: "Dashboard" }).waitFor();
+  await q.keyboard.press("Escape"); await dlg.waitFor({ state: "detached" }); ok(await q.getByRole("button", { name: "Open the menu" }).evaluate((e) => e === document.activeElement), "focus did not return"); await c2.close();
+});
+await test("terminal: no sideways scroll at 360, 768, 1024, 1440 and 2560 px; controls are at least 44 px high", async () => {
+  for (const w of [360, 768, 1024, 1440, 2560]) {
+    const [c, p] = await terminal({ viewport: { width: w, height: 900 } }); await p.waitForTimeout(500);
+    ok(!(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), `overflow at ${w}px`);
+    const small = await p.evaluate(() => [...document.querySelectorAll("main button, main select, main input:not([type=checkbox]), aside a, aside button, header button")].filter((e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height < 43.5 && !e.closest(".sr-only") && !e.closest("[aria-hidden=true]"); }).map((e) => (e.textContent || e.id || e.tagName).trim().slice(0, 18)));
+    ok(small.length === 0, `small controls at ${w}px: ${small}`); await c.close();
+  }
+});
+await test("terminal: no WCAG 2.1 A or AA violations found by axe, on a desktop and on a phone", async () => {
+  for (const w of [1440, 360]) {
+    const [c, p] = await terminal({ viewport: { width: w, height: 900 } }); await p.waitForTimeout(800);
+    const r = await new AxeBuilder({ page: p }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+    ok(r.violations.length === 0, `${w}px: ` + r.violations.map((v) => `${v.id} (${v.nodes.length}): ${v.nodes[0].target.join(" ")} ${String(v.nodes[0].failureSummary).split("\n")[1] ?? ""}`).join(" | ")); await c.close();
+  }
 });
 
 await browser.close();
