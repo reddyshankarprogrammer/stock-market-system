@@ -8,7 +8,7 @@ import { NAV_ITEMS } from "./nav";
 const isActive = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
 /** Sidebar from the lg breakpoint up, a fixed bottom bar below it. The same links in both, so the layout is the only difference. */
-export function SidebarNav() {
+export function SidebarNav({ collapsed = false }: { collapsed?: boolean }) {
   const pathname = usePathname();
   return (
     <nav aria-label="Main" className="hidden lg:block">
@@ -20,10 +20,11 @@ export function SidebarNav() {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
+                title={collapsed ? item.label : undefined}
                 className={`flex min-h-11 items-center gap-3 rounded-brand px-3 text-sm font-semibold hover:bg-soft ${active ? "bg-soft text-link" : "text-ink"}`}
               >
                 <NavIcon name={item.icon} />
-                {item.label}
+                <span className={collapsed ? "sr-only" : ""}>{item.label}</span>
               </Link>
             </li>
           );

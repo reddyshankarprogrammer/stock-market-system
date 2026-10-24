@@ -1030,6 +1030,29 @@ await test("terminal pages: no sideways scroll at 360 and 768 px, 44 px controls
   }
 });
 
+// ---- the app's collapsible left menu ----
+await test("app sidebar: collapses to icons and expands again, the choice survives a reload and a new page, links keep names and 44 px targets", async () => {
+  const c = await newCtx({ viewport: { width: 1440, height: 900 } }); const p = await c.newPage(); await login(p, "sidebar@example.com"); await p.waitForURL(/\/dashboard/);
+  const aside = p.locator("aside").first(); await aside.waitFor(); const open = (await aside.boundingBox()).width; ok(open > 200, `open width ${open}`);
+  const main = p.getByRole("main"); const mainOpen = (await main.boundingBox()).width;
+  await p.getByRole("button", { name: "Collapse the menu" }).click(); await p.getByRole("button", { name: "Expand the menu" }).waitFor(); await p.waitForTimeout(400);
+  const shut = (await aside.boundingBox()).width; ok(shut < 100, `collapsed width ${shut}`);
+  ok((await main.boundingBox()).width >= mainOpen, "the page should use the freed space");
+  const nav = aside.getByRole("navigation", { name: "Main" });
+  for (const name of ["Dashboard", "Accounts", "Trades", "Portfolio", "Settings"]) { const link = nav.getByRole("link", { name }); ok((await link.boundingBox()).height >= 43.5, `${name} target`); ok((await link.getAttribute("title")) === name, `${name} has a tooltip`); }
+  ok((await aside.getByRole("navigation", { name: "Mode" }).getByRole("link", { name: "Terminal" }).boundingBox()).height >= 43.5, "mode icon target");
+  ok((await aside.getByRole("button", { name: "Log out" }).boundingBox()).height >= 43.5, "log out icon target"); ok((await aside.locator('[aria-label="Colour theme"]').count()) === 0, "the theme switch is hidden while collapsed (it is in Settings)");
+  await nav.getByRole("link", { name: "Trades" }).click(); await p.waitForURL(/\/trades/); await p.getByRole("heading", { name: "Trades", level: 1 }).waitFor();
+  ok((await p.locator("aside").first().boundingBox()).width < 100, "still collapsed on the next page"); await p.reload(); await p.getByRole("button", { name: "Expand the menu" }).waitFor();
+  ok(!(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)), "overflow while collapsed");
+  await p.getByRole("button", { name: "Expand the menu" }).click(); await p.getByRole("button", { name: "Collapse the menu" }).waitFor(); await p.waitForTimeout(400);
+  ok(Math.abs((await p.locator("aside").first().boundingBox()).width - open) < 2, "expanded width restored"); await p.locator('aside [aria-label="Colour theme"]').waitFor(); await c.close();
+});
+await test("app sidebar: a phone has no collapse button (it uses the bottom bar)", async () => {
+  const c = await newCtx({ viewport: { width: 375, height: 800 } }); const p = await c.newPage(); await login(p, "sidebar2@example.com"); await p.waitForURL(/\/dashboard/);
+  ok(!(await p.getByRole("button", { name: /the menu/ }).isVisible()), "collapse button visible on a phone"); await p.getByRole("navigation", { name: "Main" }).filter({ visible: true }).getByRole("link", { name: "Accounts" }).waitFor(); await c.close();
+});
+
 await browser.close();
 mock.close();
 const failed = results.filter(([p]) => !p);

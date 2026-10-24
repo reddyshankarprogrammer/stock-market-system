@@ -2,6 +2,10 @@
 
 All notable changes to the Stock Market System. Dates are when the change was made.
 
+## 2026-10-24: collapsible left menu in the app
+
+The signed-in app's sidebar (laptop and desktop) can collapse to icons and expand again, like the terminal's. The choice is remembered (`localStorage`, shared hook `lib/use-collapsed.ts`), the page uses the freed width, every link keeps its name (screen-reader text and a tooltip) and a 44 px target, the mode switch and log out become icons, the theme switch is hidden while collapsed (it is in Settings > General). A phone keeps its bottom bar. 2 new browser checks.
+
 ## 2026-10-24: terminal pages (markets, portfolio, positions, orders, journal) and the mode switch
 
 ### Features

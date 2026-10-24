@@ -3,7 +3,8 @@ import { Suspense, type ReactNode } from "react";
 import { Brand } from "@/components/auth/Brand";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Providers } from "@/components/Providers";
-import { BottomNav, SidebarNav } from "@/components/shell/AppNav";
+import { BottomNav } from "@/components/shell/AppNav";
+import { AppSidebar } from "@/components/shell/AppSidebar";
 import { ModeSwitch } from "@/components/shell/ModeSwitch";
 import { PreferencesSync } from "@/components/shell/PreferencesSync";
 import { ShellThemeToggle } from "@/components/shell/ShellThemeToggle";
@@ -20,22 +21,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <Providers>
       <PreferencesSync />
       <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      <div className="theme-app min-h-dvh lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <aside className="hidden border-r border-line lg:block">
-          <div className="sticky top-0 flex h-dvh flex-col gap-6 overflow-y-auto p-4">
-            <Brand />
-            <ModeSwitch mode="app" />
-            {/* usePathname() needs a boundary on routes with a dynamic segment (/accounts/[id]) */}
-            <Suspense fallback={null}>
-              <SidebarNav />
-            </Suspense>
-            <div className="mt-auto flex flex-wrap items-center gap-3">
-              <ShellThemeToggle />
-              <LogoutButton />
-            </div>
-          </div>
-        </aside>
-        <div className="min-w-0">
+      <div className="theme-app min-h-dvh lg:flex">
+        <AppSidebar />
+        <div className="min-w-0 flex-1">
           <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line p-4 sm:px-6 lg:hidden">
             <Brand />
             <ModeSwitch mode="app" />
