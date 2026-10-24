@@ -13,6 +13,8 @@ import com.stockmarket.userservice.dto.PreferencesRequest;
 import com.stockmarket.userservice.dto.PreferencesResponse;
 import com.stockmarket.userservice.service.OnboardingService;
 import com.stockmarket.userservice.service.PreferencesService;
+import com.stockmarket.userservice.service.WaitlistService;
+import com.stockmarket.userservice.dto.WaitlistRequest;
 import com.stockmarket.userservice.service.PasswordResetService;
 import com.stockmarket.userservice.dto.RegisterRequest;
 import com.stockmarket.userservice.dto.UserResponse;
@@ -37,6 +39,7 @@ public class UserController {
     private final PasswordResetService passwordResetService;
     private final OnboardingService onboardingService;
     private final PreferencesService preferencesService;
+    private final WaitlistService waitlistService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(
@@ -57,6 +60,19 @@ public class UserController {
      * Public (the gateway cannot require an access token here: the old one has expired). The refresh token travels
      * in the body, never in the Authorization header, because the gateway rejects refresh tokens on protected paths.
      */
+    /**
+     * Public (visitors of the landing page have no account). Always 202 with the same message, whether or not the email
+     * was already on the list.
+     */
+    @PostMapping("/waitlist")
+    public ResponseEntity<MessageResponse> joinWaitlist(
+            @Valid @RequestBody WaitlistRequest request) {
+
+        waitlistService.join(request);
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(new MessageResponse("You are on the list. We will write to you when Quantiva opens."));
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(
             @Valid @RequestBody RefreshRequest request) {

@@ -52,6 +52,9 @@ class UserControllerTest {
     @MockitoBean
     private com.stockmarket.userservice.service.PreferencesService preferencesService;
 
+    @MockitoBean
+    private com.stockmarket.userservice.service.WaitlistService waitlistService;
+
     @Test
     void register_ValidRequest_ReturnsCreated() throws Exception {
         RegisterRequest request = new RegisterRequest();
@@ -419,5 +422,30 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"currentPassword\":\"OldPass123\",\"newPassword\":\"NewPass456\"}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    // ---- waitlist ----
+
+    @Test
+    void waitlist_isPublic_answers202_andNeverEchoesTheEmail() throws Exception {
+        mockMvc.perform(post("/api/v1/users/waitlist")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"asha@example.com\",\"consent\":true,\"source\":\"landing\"}"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.message").value("You are on the list. We will write to you when Quantiva opens."));
+        org.mockito.Mockito.verify(waitlistService).join(any());
+    }
+
+    @Test
+    void waitlist_needsAValidEmail_andConsent() throws Exception {
+        mockMvc.perform(post("/api/v1/users/waitlist").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"not-an-email\",\"consent\":true}")).andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/v1/users/waitlist").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"asha@example.com\",\"consent\":false}")).andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/v1/users/waitlist").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"asha@example.com\",\"consent\":true,\"source\":\"<script>\"}")).andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/v1/users/waitlist").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"consent\":true}")).andExpect(status().isBadRequest());
+        org.mockito.Mockito.verify(waitlistService, org.mockito.Mockito.never()).join(any());
     }
 }
